@@ -1,0 +1,50 @@
+@import 'tailwindcss';
+
+@source '../views/livewire/**/*.blade.php';
+@source '../views/layouts/proposal.blade.php';
+
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-brand: #ed2537;
+    --color-brand-dark: #c91e2e;
+    --color-brand-light: #f43f4f;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+canvas {
+    touch-action: none;
+}
+
+/* Prose overrides for rich text in light theme */
+.prose-light {
+    color: #4b5563;
+}
+
+.prose-light h2,
+.prose-light h3,
+.prose-light h4 {
+    color: #111827;
+}
+
+.prose-light a {
+    color: #ed2537;
+}
+
+.prose-light strong {
+    color: #111827;
+}
+
+.prose-light ul li::marker,
+.prose-light ol li::marker {
+    color: #ed2537;
+}
+
+.prose-light blockquote {
+    border-left-color: #ed2537;
+    color: #6b7280;
+}
