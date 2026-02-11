@@ -4,7 +4,7 @@
 @source '../views/layouts/proposal.blade.php';
 
 @theme {
-    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
     --color-brand: #ed2537;
@@ -47,4 +47,17 @@ canvas {
 .prose-light blockquote {
     border-left-color: #ed2537;
     color: #6b7280;
+}
+
+/* Hero cover image Ken Burns drift */
+@keyframes hero-drift {
+    0%   { transform: scale(1)    translate(0, 0); }
+    25%  { transform: scale(1.06) translate(-0.5%, -0.3%); }
+    50%  { transform: scale(1.04) translate(0.3%, -0.5%); }
+    75%  { transform: scale(1.07) translate(-0.3%, 0.2%); }
+    100% { transform: scale(1)    translate(0, 0); }
+}
+
+.animate-hero-drift {
+    animation: hero-drift 25s ease-in-out infinite;
 }

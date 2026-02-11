@@ -1,0 +1,58 @@
+.service-box_wrapper {
+    .service-title {
+        .line-animation {
+            right: 0;
+        }
+    }
+}
+
+.half-line-btn {
+    &:before {
+        right: 0;
+    }
+
+    i {
+        margin-left: 0;
+        margin-right: 10px;
+    }
+}
+
+.service-item {
+    &_icon {
+        &:before {
+            left: unset;
+            right: -16px;
+        }
+    }
+}
+
+.service-block {
+    &_img {
+        margin-left: 0;
+        margin-right: var(--space-x);
+    }
+}
+
+.appointment-img {
+    margin-right: 0;
+    margin-left: 72px;
+}
+
+.feature-box-wrap {
+    .feature-box {
+        margin-right: 0;
+        margin-left: 0px;
+    }
+}
+
+.service-tab {
+    .service-list {
+        ul {
+            padding: 0px 23px 0px 0px; 
+
+            li {
+                text-align: right;
+            }
+        }
+    }
+}

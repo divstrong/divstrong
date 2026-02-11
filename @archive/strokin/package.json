@@ -1,0 +1,12 @@
+{
+  "name": "strokin",
+  "version": "1.0.0",
+  "description": "Golf stroke allocation app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["golf"],
+  "author": "",
+  "license": "MIT"
+}

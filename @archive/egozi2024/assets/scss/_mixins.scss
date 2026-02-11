@@ -1,0 +1,29 @@
+/* ============= MIXINS CSS AREA =============== */
+
+@mixin transition($transitionProparty) {
+  -webkit-transition: $transitionProparty;
+  -ms-transition: $transitionProparty;
+  transition: $transitionProparty;
+}
+
+@mixin transform($value) {
+ -webkit-transform: $value;
+    -moz-transform: $value;
+   -ms-transform: $value;
+    -o-transform: $value;
+     transform: $value;
+ }
+ 
+ @mixin box-sizing($value) {
+ -webkit-box-sizing: $value;
+    -moz-box-sizing: $value;
+     box-sizing: $value;
+ }
+ 
+ @mixin box-shadow($value) {
+ -webkit-box-shadow: $value;
+    -moz-box-shadow: $value;
+     box-shadow: $value;
+ }
+
+ /* ============= MIXINS CSS AREA ENDS =============== */

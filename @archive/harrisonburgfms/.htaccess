@@ -1,0 +1,6 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redirect any request under /harrisonburgfms to /harrisonburgfms/public
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

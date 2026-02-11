@@ -1,0 +1,355 @@
+/* ============= CASE STUDY CSS AREA =============== */
+
+// casestydy //
+.casestudy5-section-area{
+    @media #{$xs} {
+        padding: 50px 0 50px;
+      }
+      @media #{$md} {
+        padding: 50px 0 50px;
+      }
+    .casestudy5-header{
+        margin-bottom: 60px;
+        span{
+            font-size: $small_font_size;
+            font-family: $font2;
+            display: inline-block;
+            padding: 8px 10px;
+            font-weight: $regular;
+            color: $bg5;
+            background: $bg12;
+            border-radius: 4px;
+            margin-bottom: 24px;
+            line-height: 16px;
+        }
+        h2{
+            font-family: $font2;
+            font-size: $heading2_size + 4;
+            font-weight: $semi_bold;
+            color: $bg5;
+            position: relative;
+            @media #{$xs} {
+                font-size: $heading3_size;
+                line-height: 42px;
+              }
+            img{
+                position: absolute;
+                top: -15px;
+                @media #{$xss} {
+                    right: 0;
+                  }
+            }
+        }
+    }
+    .casestudy5-all-area{
+        position: relative;
+        margin-bottom: 190px;
+        @media #{$xs} {
+            margin-bottom: 30px;
+        }
+        @media #{$md} {
+            margin-bottom: 30px;
+        }
+        &:hover{
+            .casestudy5-images{
+                overflow: hidden;
+                border-radius: 5px;
+                img{
+                    transform: scale(1.1);
+                    transition: all .4s ease-in-out;
+                }
+            }
+        }
+
+        .casestudy5-images{
+            overflow: hidden;
+            border-radius: 4px;
+            img{
+                height: 100%;
+                width: 100%;
+                object-fit: cover;
+                border-radius: 5px;
+                transition: all .4s ease-in-out;
+            }
+        }
+        .casestudy5-content-area{
+            border-radius: 2px;
+            background: $white;
+            box-shadow: 0px 0px 48px 0px rgba(0, 0, 0, 0.09);
+            padding: 24px;
+            position: absolute;
+            bottom: -125px;
+            margin: 0 32px;
+            @media #{$md} {
+                margin: 0;
+                position: relative;
+                margin-top: 20px;
+                bottom: 0;
+              }
+            @media #{$xs} {
+                margin: 0;
+                position: relative;
+                margin-top: 20px;
+                bottom: 0;
+              }
+            a{
+                font-family: $font2;
+                font-size: $heading4_size - 2;
+                line-height: 28px;
+                font-weight: $semi_bold;
+                display: inline-block;
+                margin-bottom: 12px;
+                color: $bg5;
+                position: relative;
+                z-index: 1;
+                transition: all .4s ease-in-out;
+                &:hover{
+                    color: $bg6;
+                    transition: all .4s ease-in-out;
+                }
+            }
+            p{
+                font-family: $font2;
+                font-size: $small_font_size;
+                line-height: 26px;
+                font-weight: $regular;
+                color: $color12;
+            }
+            a.learnmore{
+                font-family: $font2;
+                font-size: $small_font_size;
+                font-weight: $semi_bold;
+                color: $bg5;
+                margin-top: 24px;
+                margin-bottom: 0;
+                transition: all .4s ease-in-out;
+                &:hover{
+                    color: $bg6;
+                    transition: all .4s ease-in-out;
+                }
+            }
+        }
+    }
+
+    @media #{$xs} {
+        .welcome5-btn{
+            margin-top: -100px;
+            position: relative;
+        }
+      }
+.div{
+    .welcome5-btn{
+        margin-top: 0;
+    }
+}
+}
+//  homepage7 //
+.case-study7-section-area{
+    position: relative;
+    background: $bg23;
+    @media #{$xs} {
+        padding: 50px 0 50px;
+    }
+    @media #{$md} {
+        padding: 50px 0 50px;
+    }
+    .case-study-header{
+        margin-bottom: 60px;
+        span{
+            color: $color15;
+            font-family: $font2;
+            font-size: $small_font_size;
+            font-style: normal;
+            font-weight: $medium;
+            line-height: 16px; 
+            padding: 8px 12px;
+            display: inline-block;
+            border-radius: 4px;
+            background: $bg17;
+            margin-bottom: 20px;
+        }
+        h2{
+            color: $color14;
+            font-family: $font2;
+            font-size: $heading2_size + 2;
+            font-style: normal;
+            font-weight: $semi_bold;
+            line-height: 54px;
+            .defence{
+                font-family: $font2;
+                font-size: $heading2_size + 2;
+                font-style: normal;
+                font-weight: $semi_bold;
+                line-height: 56px;
+                background: none;
+                padding: 0;
+                margin-bottom: 0;         
+                color: $color15;
+                @media #{$xs} {
+                    font-size: $heading3_size;
+                    line-height: 42px;
+                  }
+              }
+              @media #{$xs} {
+                font-size: $heading3_size;
+                line-height: 42px;
+              }
+        }
+    }
+    .casestudy-carousel-area{
+        overflow: inherit;
+        .case7-study-area{
+            position: relative;
+            overflow: hidden;
+            .case-study7-boxarea{
+                position: relative;
+                &:hover::after{
+                    height: 100%;
+                    transition: all .4s ease-in-out;
+                    width: 100%;
+                    border-radius: 4px;    
+                }
+                &::after{
+                    position: absolute;
+                    content: "";
+                    height: 0;
+                    width: 100%;
+                    transition: all .4s ease-in-out;
+                    left: 0;
+                    top: 0;
+                    opacity: 0.7;
+                    background:$color14;
+                }
+                &:hover{
+                    .polygon-author{
+                        visibility: visible;
+                        opacity: 1;
+                        top: 30%;
+                        transition: all .6s ease-in-out;
+                    }
+                }
+                .case-study-casousel-img{
+                    img{
+                        height: 100%;
+                        width: 100%;
+                        object-fit: cover;
+                        transition: all .4s ease-in-out;
+                        border-radius: 4px;
+                    }
+                }
+                .case-study-carousel-content{
+                    a{
+                        color: $color14;
+                        font-family: $font2;
+                        font-size: $small_font_size + 4;
+                        font-style: normal;
+                        font-weight: $semi_bold;
+                        line-height: 20px;
+                        background: $white;
+                        padding: 20px;    
+                        border-radius: 4px;
+                        display: block; 
+                        position: absolute;
+                        width:90%; 
+                        bottom: 30px;
+                        left: 20px;   
+                        z-index: 1;  
+                    }
+                }
+                .polygon-author{
+                    height: 140px;
+                    width: 140px;
+                    display: inline-block;
+                    text-align: center;
+                    position: absolute;
+                    left: 32%;
+                    top: 34%;
+                    z-index: 2;
+                    transition: all .6s ease-in-out;
+                    visibility: hidden;
+                    opacity: 0;
+                   .polygon-arrow{
+                    position: absolute;
+                    top: 20px;
+                    left: 15px;
+                    right: 15px;
+                    span{
+                      a{
+                        height: 44px;
+                        width: 44px;
+                        transition: all .4s ease-in-out;
+                        display: inline-block;
+                        line-height: 44px;
+                        text-align: center;
+                        border-radius: 50%;
+                        background: $color15;
+                        color: $white;
+                        svg{
+                          transform: rotate(-45deg);
+                        }
+                      }
+                    }
+                    a{
+                      color: $color14;
+                      text-align: center;
+                      font-family: $font2;
+                      font-size: $small_font_size;
+                      font-style: normal;
+                      font-weight: $semi_bold;
+                      line-height: 16px;
+                      display: block;
+                      margin-top: 12px;
+                    }
+                   }
+                  }
+            }
+        }
+        .owl-nav{
+            position: absolute;
+            top: -130px;
+            right: 0;
+            button{
+                background: $bg24;
+                height: 60px;
+                width: 60px;
+                line-height: 60px;
+                color: $color15;
+                font-size: $heading3_size;
+                border-radius: 4px ;
+                margin: 0 16px 0 0;
+                transition: all .4s ease-in-out;
+                &:hover{
+                    background: $color15;
+                    color: $white;
+                    transition: all .4s ease-in-out;
+                }
+            }
+            button.active{
+                background: $color15;
+                color: $white;
+                transition: all .4s ease-in-out;
+            }
+            @media #{$xs} {
+                position: relative;
+                bottom: 0;
+                justify-content: center;
+                top: 0;
+                margin-top: 30px;
+                text-align: center;
+            }
+            @media #{$md} {
+                position: relative;
+                bottom: 0;
+                justify-content: center;
+                top: 0;
+                margin-top: 30px;
+                text-align: center;
+            }
+        }
+    }
+    .casestudy-carousel-area.owl-carousel .owl-stage-outer{
+        overflow: inherit;
+    }  
+}
+
+/* ============= CASE STUDY CSS AREA ENDS=============== */

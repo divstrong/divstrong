@@ -1,0 +1,290 @@
+/* ============= TYPHOGRAPHY CSS AREA =============== */
+
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800&family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Vidaloka&display=swap');
+
+*{
+     margin: 0;
+     padding: 0;
+     box-sizing: border-box;
+}
+
+a, a:hover{
+     text-decoration: none;
+}
+
+body{
+     font-size: $body_font_size;
+     font-weight: $regular;
+     line-height: $body_font_size + 8;
+
+}
+body,html{
+overflow-x: hidden;
+}
+
+h1, 
+h2, 
+h3, 
+h4, 
+h5, 
+h6{
+     font-family: $font2;
+     font-weight: $bold;
+}
+input{
+  background: none;
+  border: none;
+  outline: none;
+}
+
+img{
+     max-width: 100%;
+     max-height: 100%;
+     transition: all .4s ease-in-out;
+}
+
+.sp1{
+     padding: 100px 0 100px;
+}
+.sp2{
+     padding: 100px 0;
+}
+.sp3{
+     padding: 100px 0 70px;
+}
+.sp4{
+     padding: 60px 0 60px;
+}
+.sp5{
+  padding: 80px 0 80px;
+}
+.sp6{
+  padding: 100px 0 100px;
+}
+
+
+.space10{
+     height: 10px;
+}
+.space20{
+     height: 20px;
+}
+.space24{
+  height: 24px;
+}
+.space30{
+     height: 30px;
+}
+.space40{
+     height: 40px;
+}
+.space50{
+     height: 50px;
+}
+.space60{
+     height: 60px;
+}
+.space70{
+     height: 70px;
+}
+.space80{
+     height: 80px;
+}
+.space90{
+     height: 90px;
+}
+.space100{
+     height: 100px;
+}
+.space160{
+  height: 160px;
+}
+.marginsp1{
+     margin: 0 16px;
+}
+
+// animation //
+@keyframes animation-1 {
+     0% {
+       
+       transform:translateY(0) ;
+     }
+ 
+     100% {
+     
+       transform: translateY(10px);
+     }
+   }
+ 
+   @keyframes animation-3 {
+     0% {
+       
+       transform:rotate(0) ;
+     }
+ 
+     100% {
+     
+       transform: rotate(1000deg);
+     }
+   }
+   @keyframes animation-6 {
+     0% {
+       
+       transform:rotate(0) ;
+     }
+ 
+     100% {
+     
+       transform: rotate(-1000deg);
+     }
+   }
+   @keyframes animation-7 {
+     0% {
+       
+       transform:rotate(0) ;
+     }
+ 
+     100% {
+     
+       transform: rotate(-1000deg);
+     }
+   }
+ 
+   @keyframes animation-2 {
+     0% {
+       transform: translateY(0);
+     }
+ 
+     100% {
+       transform: translateY(10px);
+     }
+   }
+ 
+   @keyframes animation-4 {
+     0% {
+       transform: scale(1);
+       transform: translateY(10px);
+     }
+ 
+     100% {
+       transform: scale(1);
+ 
+     }
+   }
+ 
+   @keyframes animation-5 {
+     0% {
+       transform: scale(1);
+       margin-left: 0;
+     }
+ 
+     100% {
+       transform: scale(1);
+       margin-left: 100px;
+     }
+   }
+   @keyframes animation-5 {
+    0% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(1.1);
+    }
+  }
+ 
+   .aniamtion-key-1 {
+     position: relative;
+     animation-name: animation-1;
+     animation-duration: 2s;
+     animation-iteration-count: infinite;
+     animation-direction: alternate;
+   }
+   .aniamtion-key-2 {
+     position: relative;
+     animation-name: animation-2;
+     animation-duration: 2s;
+     animation-iteration-count: infinite;
+     animation-direction: alternate;
+   }
+   .keyframe3 {
+    position: relative;
+    animation-name: animation-3;
+    animation-duration: 200s;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-timing-function: cubic-bezier(0.59, 0.59, 1, 1)
+   }
+   .keyframe4 {
+    position: relative;
+    animation-name: animation-6;
+    animation-duration: 200s;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-timing-function: cubic-bezier(0.59, 0.59, 1, 1)
+   }
+   .keyframe5 {
+    position: relative;
+    animation-name: animation-7;
+    animation-duration: 40s;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-timing-function: cubic-bezier(0.59, 0.59, 1, 1)
+   }
+   .aniamtion-key-3 {
+     position: relative;
+     animation-name: animation-4;
+     animation-duration: 2s;
+     animation-iteration-count: infinite;
+     animation-direction: alternate;
+ }
+ .aniamtion-key-4 {
+   position: relative;
+   animation-name: animation-5;
+   animation-duration: 2s;
+   animation-iteration-count: infinite;
+   animation-direction: alternate;
+ }
+ .aniamtion-key-5 {
+  position: relative;
+  animation-name: animation-5;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+//  animation //
+@keyframes ticker {
+  0% {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    visibility: visible;
+  }
+  100% {
+    -webkit-transform: translate3d(-100%, 0, 0);
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+@keyframes ticker1 {
+  0% {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    visibility: visible;
+  }
+  100% {
+    -webkit-transform: translate3d(100%, 0, 0);
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+@keyframes pulse-border {
+  0% {
+    transform: translateX(-50%) translateY(-50%) translateZ(0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(-50%) translateY(-50%) translateZ(0) scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* ============= TYPHOGRAPHY CSS AREA ENDS =============== */

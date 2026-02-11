@@ -11,6 +11,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -34,7 +35,7 @@ class ServiceLibraryResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make()
+                Section::make()
                     ->columns(2)
                     ->schema([
                         Forms\Components\Select::make('category')

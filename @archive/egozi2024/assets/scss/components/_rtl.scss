@@ -1,0 +1,505 @@
+/* ============= RTL CSS AREA =============== */
+
+
+// rtl scss //
+.rtl-homege-area{
+    direction: rtl;
+    .consulting2:before{
+        left: 0;
+        right: 50%;
+    }
+    .se-pre-con.preloader4{
+        background: $color4;
+        img{
+            filter: brightness(0) invert(1);
+            margin-right: 14px;
+            margin-top: 12px;
+        }
+        .Preloader-icon {
+          background: $color4;
+        }
+        .Preloader-icon:before, .Preloader-icon:after{
+            background: linear-gradient(90deg, $color9, $color8, $bg6,$bg6, $white, $white, 
+            $white, $white,$bg6, $color8);
+            animation: steam 20s linear infinite;
+            background-size: 400%;
+            width: calc(100% + 4px);
+            height: calc(100% + 4px);
+            z-index: -1;
+            animation: steam 20s linear infinite;
+            border-radius: 50%;
+            content: '';
+            position: absolute;
+            left: -2px;
+            top: -2px;
+        }
+        @keyframes steam {
+            0% {
+                background-position: 0 0;
+            }
+            50% {
+                background-position: 400% 0;
+            }
+            100% {
+                background-position: 0 0;
+            }
+        }
+    }
+
+    // header //
+    .header-area{
+        .main-menu-ex.homepage2{
+          ul{
+            li{
+              a{
+                transition: all .4s ease-in-out;
+                &:hover{
+                  color:$color4 ;
+                  transition: all .4s ease-in-out;
+                }
+            }
+            }
+            
+          }
+          ul{
+            li{
+              ul{
+                li{
+                  a{
+                      display:inline-block;
+                      width: 100%;
+                      position: relative;
+                      z-index: 1;
+                      transition: all .4s ease-in-out;
+                      &:hover{
+                          color: $color4;
+                          transition: all .4s ease-in-out;
+                          padding-right: 25px;
+                      }
+  
+                      &:after{
+                          position: absolute;
+                          content: "";
+                          right: 0;
+                          top: 50%;
+                          height: 2px;
+                          width: 10px;
+                          transition: all 0.4s ease-in-out;
+                          z-index: -1;
+                          border-radius: 5px;
+                      }
+                      &:hover:after{
+                          background: $color4;
+                          height: 2px;
+                          width: 10px;
+                          transition: all 0.4s ease-in-out;
+                          right: 10px;
+
+          
+                      }
+                  }
+                }
+              }
+            }
+          }
+        }
+        .header-elements {
+            ul {
+                li {
+                    ul.dropdown-padding{
+                        right: 0;
+                    }
+                }
+            }
+        }
+      }
+      .welcome2-section-area {
+        .welcome-header2-images {
+            .elementors16 {
+                img{
+                    right: 0;
+                    rotate: 130deg;
+                  }
+            }
+        }
+      } 
+      .welcome2-section-area {
+        .welcome-header2-images {
+            .elementors15 {
+                img {
+                    left: 0;
+                    right: -35px;
+                    top: -90px;
+                }
+            }
+        }
+      } 
+    .welcome2-section-area {
+        .welcome-header2-images {
+            .elementors17 {
+                img {
+                    right: -29px;
+                    rotate: -101deg;
+                }
+            }
+        } 
+    }
+    
+    .welcome2-section-area {
+        .welcome-header2-images {
+            .elementors18 {
+                img {
+                    left: 20px;
+                    bottom: -55px;
+                    right: 0;
+                }
+            }
+        }
+    }
+    .welcome2-section-area {
+        .welcome-header2-text {
+            h1 {
+                span {
+                    img {
+                        right: -17px;
+                    }
+                } 
+            } 
+        } 
+    }
+
+    .about-section-area {
+        .about2-textarea {
+            padding: 0 50px 0 0;
+            @media #{$xs} {
+                padding: 0 !important;
+            }
+            @media #{$md} {
+                padding: 0 !important;
+            }
+        }
+    }
+    .about-section-area {
+        .about2-textarea {
+            .about-list{
+                @media #{$xs} {
+                    display: block;
+                    align-items: center;
+                    justify-content: inherit;
+                    ul{
+                        margin: 0 0 0 20px;
+                    }
+                }
+                @media #{$md} {
+                    display: flex;
+                    align-items: center;
+                    justify-content: inherit;
+                    ul{
+                        margin: 0 0 0 20px;
+                    }
+                }
+            }
+        }
+    } 
+    .about-section-area {
+        .about2-textarea {
+            .about-list {
+                li {
+                    img {
+                        margin: 0 0 0 6px;
+                    }
+                } 
+            }
+        }
+    } 
+    .service2-section-area{
+        @media #{$xs} {
+            padding: 50px 0 50px;
+        }
+        @media #{$md} {
+            padding: 50px 0 50px;
+        }
+    }
+    .service2-section-area {
+        .arrow-service {
+            &::after{
+            left: 0;
+            right: 350px;
+            @media #{$xs} {
+              right: inherit;
+              left: 0;
+            }
+          }
+        }
+    } 
+
+    .service2-section-area {
+        .arrow-service {
+            span {
+                left: 0;
+                right: 360px;
+                top: 5px;
+                rotate: -90deg;
+                @media #{$xs} {
+                        right: 151px;
+                }
+                @media #{$md} {
+                    right: inherit;
+                    left: 0;
+                    z-index: 2;
+            }
+          }
+        }
+    }
+
+
+    .service2-section-area {
+        .arrow-service {
+            background: none;
+            @media #{$xs} {
+                position: absolute;
+                right: 141px;
+            }
+            @media #{$md} {
+                position: absolute;
+                right: inherit;
+                left: 0;
+            }
+        }
+    }
+    .service2-section-area {
+        .service2-author-box {
+            a.learn-more {
+                svg {
+                    margin-right: 4px;
+                }
+            }
+        }
+    }
+    .service2-section-area {
+        .service2-header-text {
+            h1 {
+                img {
+                    right: -25px;
+                }
+            } 
+        }
+    }
+
+    .work2-section-area {
+        .work2-header-text {
+            h1 {
+                img {
+                    right: 110px;
+                }
+            } 
+        } 
+    } 
+    .work2-section-area {
+        .tabs-author-area {
+            .tabs-author-images2 {
+                right: 330px; 
+                @media #{$xs} {
+                    right: inherit;
+                    margin-top: -60px;
+                    margin-bottom: 50px;
+                }
+            }
+        } 
+    } 
+    .work2-section-area {
+        .collapse-navtabs button {
+            &::after{
+                right: -90px;
+            }
+        }
+    } 
+    .team2-section-area{
+        @media #{$xs} {
+            padding: 50px 0 50px;
+        }
+        @media #{$md} {
+            padding: 50px 0 50px;
+        }
+    }
+    .team2-section-area {
+        .team1-header {
+            h1 {
+                img {
+                    right: 78px;
+                }
+            } 
+        } 
+    } 
+    .team2-section-area {
+        .team2-parent-boxarea {
+            .team2-social-links {
+                right: 230px;
+                @media #{$xs} {
+                    right: inherit;
+                    left: 20px;
+                }
+                @media #{$md} {
+                    right: inherit;
+                    left: 20px;
+                }
+            }
+        } 
+    } 
+    .testimonial2-section-area {
+        .testimonial2-header {
+            h1 {
+                img {
+                    right: -30px;
+                }
+            } 
+        } 
+    } 
+    .testimonial2-section-area {
+        .testimonial-carousel-box {
+            .testimonial-mans-infoarea {
+                .testimonial-man-info {
+                    .img-text {
+                        margin-right: 16px;
+                    }
+                }
+            }
+        }
+    }
+     
+    .blog1-section-area.blog2-section {
+        .blog-header {
+            h1 {
+                img {
+                    right: 100px;
+                }
+            }
+        }
+    } 
+    
+    .blog1-section-area.blog2-section {
+        .blog-boxarea {
+            .blog-all-textarea {
+                .blog-text-area {
+                    .blog-name-area {
+                        img {
+                            margin: 0 0 0 8px;
+                        }
+                    }
+                }
+            }
+        } 
+    } 
+    .blog1-section-area.blog2-section{
+        @media #{$md} {
+            padding: 50px 0 50px;
+        }
+    }
+    .footer2-section-area {
+        .footer-contact-area form {
+            .footer-btn {
+                left: 0;
+                right: inherit;
+            }
+        }
+    }
+    
+    
+    .footer2-section-area {
+        .get-links-area {
+            ul {
+                li {
+                    img {
+                        margin: 0 0 0 12px;
+                    }
+                }
+            }
+        }
+    } 
+    .cta2-section-area {
+        .cta2-section-hedaer {
+            button.cta-btn2 {
+                span {
+                    margin-right: 6px;
+                }
+            }
+        }
+    } 
+    .tabs-author-area{
+        padding: 0;
+        img{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+    span.submenu-button:before {
+        left: 0;
+        right: inherit;
+    }
+    
+    span.submenu-button:after {
+        left: 8px;
+        right: inherit;
+    }
+    .mobile-sidebar.sidebar2 {
+        .allmobilesection {
+            .contact-info-single {
+                img {
+                    margin: 0 0 0 12px;
+                }
+            }
+        }
+    }
+
+    .menu-close{
+        right: inherit;
+        left: 30px;
+    }
+    .about2-textarea{
+
+        @media #{$xs} {
+            padding: 0 ;
+        }
+    }
+    #status h1{
+        left: 52%;
+        position: relative;
+    }
+    .team2-section-area {
+        .team2-parent-boxarea {
+            .team2-textarea{
+                @media #{$xs} {
+                 width: 100%;
+                 left: 0;
+                }
+                @media #{$md} {
+                 width: 100%;
+                 left: 0;
+                }
+             }
+        }
+    }
+
+    .work2-section-area {
+        .collapse-navtabs {
+            button{
+                @media #{$xs} {
+                    margin-left: 0;
+                }
+                @media #{$md} {
+                    margin-left: 0;
+                }
+            }
+        }
+    }
+    .tabs-author-area {
+        .tabs-author-images1{
+            @media #{$xs} {
+                margin-bottom: 50px;
+            }
+        }
+    }
+}
+
+/* ============= RTL CSS AREA ENDS=============== */

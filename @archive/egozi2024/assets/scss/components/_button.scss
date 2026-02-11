@@ -1,0 +1,654 @@
+/* ============= BUTTON CSS AREA =============== */
+
+// button area //
+.tax-services{
+    display: inline-block;
+    font-family: $font4;
+    font-size: $base_font_size;
+    line-height: 16px;
+    font-weight: $semi_bold;
+    color: $white;
+    padding: 16px 20px;
+    position: relative;
+    background: $color2;
+    z-index: 1;
+    border-radius: 30px;
+    transition: all .4s ease-in-out;
+    margin-top: 32px;
+    &:hover{
+        transform: translateY(-5px);
+        color: $white;
+    }
+    &:after{
+        position: absolute;
+        content: "";
+        top: 6px;
+        left: 0;
+        background: $color20;
+        height: 36px;
+        width: 36px;
+        z-index: -1;
+        left: 8px;
+        border-radius: 50px;
+        transition: all .4s ease-in-out;
+    }
+    &:hover:after{
+        height: 36px;
+        width: 92%;
+        transition: all .4s ease-in-out;
+    }
+   }
+   .tax-services1{
+    display: inline-block;
+    font-family: $font4;
+    font-size: 16px;
+    font-weight: $semi_bold;
+    color: $color2;
+    z-index: 1;
+    transition: all .4s ease-in-out;
+    margin-top: 32px;
+    margin-left: 20px;
+    position: relative;
+    &:hover{
+        color: $color2;
+    }
+    &:after{
+        position: absolute;
+        content: "";
+        top: -10px;
+        background: $bg20;
+        height: 48px;
+        width: 48px;
+        z-index: -1;
+        left: -13px;
+        border-radius: 50px;
+        transition: all .4s ease-in-out;
+    }
+    &:hover:after{
+        height: 48px;
+        width:105px;
+        border-radius: 50px;
+        transition: all .4s ease-in-out;
+    }
+   }
+   a.welconme-btn2{
+    font-family: $font4;
+    line-height: 16px;
+    font-weight: $semi_bold;
+    color: $white;
+    padding: 10px 16px;
+    display: inline-block;
+    background: $color4;
+    border-radius: 5px;
+    font-size: $small_font_size;
+    position: relative;
+    z-index: 1;
+    transition: all .4s ease-in-out;
+    margin-top: 32px;
+    &:hover{
+        transform: translateY(-5px);
+    }
+    span{
+        margin-bottom: 0 !important;
+        background: $button_bg !important;
+        height: 32px;
+        width: 32px;
+        line-height: 32px;
+        color: $white;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+        border-radius: 50% !important;
+        margin-left: 6px;
+        display: inline-block;
+        svg{
+            color: $white;
+        }
+    }
+    &:after{
+        position: absolute;
+        content: "";
+        height: 0;
+        width: 100%;
+        left: 0;
+        bottom: 0;
+        z-index: -1;
+        transition: all .4s ease-in-out;
+        border-radius: 100% 100% 5px 5px;
+    }
+    &:hover::after{
+        background:$color5;
+        transition: all .4s ease-in-out;
+        border-radius: 5px;
+        height: 100%;
+    }
+   }
+  button.cta-btn2 {
+    font-family: $font4;
+    line-height: 16px;
+    font-weight: $semi_bold;
+    padding: 10px 16px;
+    display: inline-block;
+    background: $white;
+    border-radius: 5px;
+    font-size: $small_font_size;
+    position: relative;
+    z-index: 1;
+    transition: all .4s ease-in-out;
+    &:hover{
+        transform: translateY(-5px);
+    }
+    span{
+        margin-bottom: 0 !important;
+        background: $button_bg !important;
+        height: 32px;
+        width: 32px;
+        line-height: 32px;
+        color: $white;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+        border-radius: 50% !important;
+        margin-left: 6px;
+        display: inline-block;
+        svg{
+            color: $white;
+        }
+    }
+    &:after{
+        position: absolute;
+        content: "";
+        height: 0;
+        width: 100%;
+        left: 0;
+        bottom: 0;
+        z-index: -1;
+        transition: all .4s ease-in-out;
+        border-radius: 100% 100% 5px 5px;
+    }
+    &:hover::after{
+        background: $bg21;
+        transition: all .4s ease-in-out;
+        border-radius: 5px;
+        height: 100%;
+    }
+   }
+
+//    button 3 //
+.casebtn1{
+    font-family: $font2;
+    font-size: $small_font_size;
+    font-weight: $bold;
+    color: $white;
+    background: $color8;
+    padding: 14px 24px;
+    display: inline-block;
+    border-radius: 4px;
+    margin-top: 32px;
+    position: relative;
+    z-index: 1;
+    transition: all .4s ease-in-out;
+    svg{
+        margin-left: 4px;
+    }
+    &::after{
+        position: absolute;
+        content: "";
+        height: 0;
+        width: 100%;
+        left: 0;
+        bottom: 0;
+        transition: all .4s ease-in-out;
+        background: $bg22;
+        border-radius: 100% 100% 5px 5px;
+        z-index: -1;
+    }
+    &:hover:after{
+        width: 100%;
+        height: 100%;
+        transition: all .4s ease-in-out;
+        border-radius: 4px;
+
+    }
+    &:hover{
+        transform: translateY(-5px);
+        color: $white;
+    }
+}
+.casebtn2{
+    font-family: $font2;
+    font-size: $small_font_size;
+    font-weight: $bold;
+    color: $color6;
+    border: 1px solid $color6;
+    padding: 14px 24px;
+    display: inline-block;
+    border-radius: 4px;
+    margin-top: 32px;
+    position: relative;
+    z-index: 1;
+    transition: all .4s ease-in-out;
+    margin-left: 16px;
+    @media #{$xs} {
+        margin-left: 0;
+    }
+    svg{
+        margin-left: 4px;
+    }
+    &::after{
+        position: absolute;
+        content: "";
+        height: 0;
+        width: 100%;
+        left: 0;
+        bottom: 0;
+        transition: all .4s ease-in-out;
+        background: $bg22;
+        border-radius: 100% 100% 5px 5px;
+        z-index: -1;
+    }
+    &:hover:after{
+        width: 100%;
+        height: 100%;
+        transition: all .4s ease-in-out;
+        border-radius: 4px;
+
+    }
+    &:hover{
+        transform: translateY(-5px);
+        color: $white;
+        border: 1px solid $bg22;
+    }
+}
+button.contactbtn1{
+    border: none;
+    background: $color8;
+    outline: none;
+    padding: 14px 24px;
+    color: $white;
+    font-family: $font2;
+    font-weight: $bold;
+    font-size: $small_font_size;
+    margin-top: 32px;
+    text-align: right;
+    justify-content: right;
+    border-radius: 4px;
+    position: relative;
+    z-index: 1;
+    transition: all .4s ease-in-out;
+    svg{
+        margin-left: 4px;
+    }
+    &::after{
+        position: absolute;
+        content: "";
+        height: 0;
+        width: 100%;
+        left: 0;
+        bottom: 0;
+        transition: all .4s ease-in-out;
+        background: $bg22;
+        border-radius: 100% 100% 5px 5px;
+        z-index: -1;
+    }
+    &:hover:after{
+        width: 100%;
+        height: 100%;
+        transition: all .4s ease-in-out;
+        border-radius: 4px;
+
+    }
+    &:hover{
+        transform: translateY(-5px);
+        color: $white;
+    }
+}
+a.cta3-btn1{
+    border: none;
+    background: $white;
+    outline: none;
+    padding: 14px 24px;
+    color: $color8;
+    font-family: $font2;
+    font-weight: $bold;
+    font-size: $small_font_size;
+    margin-top: 32px;
+    text-align: right;
+    justify-content: right;
+    border-radius: 4px;
+    position: relative;
+    z-index: 1;
+    transition: all .4s ease-in-out;
+    display: inline-block;
+    svg{
+        margin-left: 4px;
+    }
+    &::after{
+        position: absolute;
+        content: "";
+        height: 0;
+        width: 100%;
+        left: 0;
+        bottom: 0;
+        transition: all .4s ease-in-out;
+        background: $color6;
+        border-radius: 100% 100% 5px 5px;
+        z-index: -1;
+    }
+    &:hover:after{
+        width: 100%;
+        height: 100%;
+        transition: all .4s ease-in-out;
+        border-radius: 4px;
+
+    }
+    &:hover{
+        transform: translateY(-5px);
+        color: $white;
+    }
+}
+
+a.cta3-btn2{
+    border: none;
+    background: $color6;
+    outline: none;
+    padding: 14px 24px;
+    color: $white;
+    font-family: $font2;
+    font-weight: $bold;
+    font-size: $small_font_size;
+    margin-top: 32px;
+    text-align: right;
+    justify-content: right;
+    border-radius: 4px;
+    position: relative;
+    z-index: 1;
+    transition: all .4s ease-in-out;
+    display: inline-block;
+    margin-left: 16px;
+    svg{
+        margin-left: 4px;
+    }
+    &::after{
+        position: absolute;
+        content: "";
+        height: 0;
+        width: 100%;
+        left: 0;
+        bottom: 0;
+        transition: all .4s ease-in-out;
+        background: $white;
+        border-radius: 100% 100% 5px 5px;
+        z-index: -1;
+    }
+    &:hover:after{
+        width: 100%;
+        height: 100%;
+        transition: all .4s ease-in-out;
+        border-radius: 4px;
+
+    }
+    &:hover{
+        transform: translateY(-5px);
+        color: $color8;
+    }
+}
+
+// button4 //
+.welcome-btn4{
+    font-size: $small_font_size;
+    font-family: $font2;
+    color: $white;
+    font-weight: $bold;
+    background: $color10;
+    display: inline-block;
+    padding: 14px 24px;
+    margin-top: 32px;
+    border-radius: 30px;
+    transition: all .4s ease-in-out;
+    svg{
+        margin-left: 4px;
+    }
+    &:hover{
+        background: $color9;
+        color: $white;
+        transition: all .4s ease-in-out;
+        transform: translateY(-5px);
+    }
+}
+.welcome-btn5{
+    font-size: $small_font_size;
+    font-family: $font2;
+    color: $color10;
+    font-weight: $bold;
+    display: inline-block;
+    padding: 14px 24px;
+    margin-top: 32px;
+    border-radius: 30px;
+    transition: all .4s ease-in-out;
+    margin-top: 32px;
+    border: 1px solid $color10;
+    margin-left: 16px;
+
+    &:hover{
+        background: $color10;
+        color:$white;
+        transition: all .4s ease-in-out;
+        transform: translatey(-5px);
+    }
+}
+
+// homepage5 //
+.welcome5-btn{
+    font-family: $font2;
+    font-size: $small_font_size;
+    color: $bg5;
+    background: $bg6;
+    display: inline-block;
+    padding: 14px 20px;
+    font-weight: $semi-bold;
+    margin-top: 32px;
+    transition: all .4s ease-in-out;
+	cursor: pointer;
+	overflow: hidden;
+    position: relative;
+    z-index: 1;
+    border-radius: 4px;
+    svg{
+        margin-left: 4px;
+    }&:after{
+        position: absolute;
+        content: "";
+        height: 100%;
+        width: 0;
+        right: 0;
+        top: 0;
+        background: $white;
+        opacity: 0.1;
+        transition: all .4s ease-in-out;
+        z-index: -1;
+    }
+    &:hover::after{
+        height: 100%;
+        width: 100%;
+        transition: all .4s ease-in-out;
+        left: 0;
+        right: auto;
+    }
+
+    &:hover{
+		color: $bg5;
+        transition: all .4s ease-in-out;
+        transform: translateY(-5px);
+    }
+}
+// homepage6 //
+    a.welcome6-btn{
+        color: $white;
+        font-family: $font2;
+        font-size: $small_font_size;
+        font-style: normal;
+        font-weight: $semi_bold;
+        line-height: 16px; 
+        display: inline-block;
+        transition: all .4s ease-in-out;
+        border-radius: 4px;
+        background: var(--Main-Color, $color15);
+        padding: 18px 24px;
+        position: relative;
+        z-index: 1;
+        margin-top: 32px;
+        svg{
+            margin-left: 4px;
+            transform: rotate(-45deg);
+        }
+        &::after{
+            position: absolute;
+            content: "";
+            height: 100%;
+            width: 0;
+            left: 0;
+            top: 0;
+            transition: all .4s ease-in-out;
+            z-index: -1;
+            background: $white;
+            border-radius: 4px 0 0 4px;
+        }
+        &::before{
+            position: absolute;
+            content: "";
+            height: 100%;
+            width: 0;
+            right: 0;
+            top: 0;
+            transition: all .4s ease-in-out;
+            z-index: -1;
+            background: $white;
+            border-radius: 0 4px 4px 0;
+        }
+        &:hover{
+            color: $color15;
+            transition: all .4s ease-in-out;
+            &::after{
+                width: 50%;
+                transition: all .4s ease-in-out;
+            }
+            &::before{
+                width: 50%;
+                transition: all .4s ease-in-out;
+            }
+        }
+    }
+    a.welcome7-btn{
+        color: $color15;
+        font-family: $font2;
+        font-size: $small_font_size;
+        font-style: normal;
+        font-weight: $semi_bold;
+        line-height: 16px;
+        transition: all .4s ease-in-out;
+        padding: 16px 24px;
+        border: 1px solid $color15;
+        border-radius: 4px; 
+        margin-left: 16px; 
+        display: inline-block;
+        position: relative;
+        z-index: 1;
+        svg{
+            margin-left: 4px;
+            transform: rotate(-45deg);
+        }
+        &::after{
+            position: absolute;
+            content: "";
+            height: 100%;
+            width: 0;
+            left: 0;
+            top: 0;
+            transition: all .4s ease-in-out;
+            z-index: -1;
+            background: $color15;
+            border-radius: 4px 0 0 4px;
+        }
+        &::before{
+            position: absolute;
+            content: "";
+            height: 100%;
+            width: 0;
+            right: 0;
+            top: 0;
+            transition: all .4s ease-in-out;
+            z-index: -1;
+            background: $color15;
+            border-radius: 0 4px 4px 0;
+        }
+        &:hover{
+            color: $white;
+            transition: all .4s ease-in-out;
+            &::after{
+                width: 50%;
+                transition: all .4s ease-in-out;
+            }
+            &::before{
+                width: 50%;
+                transition: all .4s ease-in-out;
+            }
+        }
+    }
+
+    a.about7-btn{
+        color: $white;
+        font-family: $font2;
+        font-size: $small_font_size;
+        font-style: normal;
+        font-weight: $semi_bold;
+        line-height: 16px;
+        transition: all .4s ease-in-out;
+        padding: 18px 24px;
+        background: $color15;
+        border-radius: 4px;
+        position: relative;
+        z-index: 1;
+        margin-top: 32px;  
+        display: inline-block;  
+        svg{
+            margin-left: 4px;
+            transform: rotate(-45deg);
+        }
+        &::after{
+            position: absolute;
+            content: "";
+            height: 100%;
+            width: 0;
+            left: 0;
+            top: 0;
+            transition: all .4s ease-in-out;
+            background: $color14;
+            z-index: -1;
+            border-radius: 4px 0 0 4px; 
+        } 
+        &::before{
+            position: absolute;
+            content: "";
+            height: 100%;
+            width: 0;
+            right: 0;
+            top: 0;
+            transition: all .4s ease-in-out;
+            background: $color14;
+            z-index: -1;
+            border-radius: 0 4px 4px 0;
+        } 
+        &:hover::after{
+            width: 50%;
+            transition: all .4s ease-in-out;
+            border-radius: 4px 0 0 4px;
+        }
+        &:hover::before{
+            width: 50%;
+            transition: all .4s ease-in-out;
+            border-radius: 0 4px 4px 0;
+        }
+    }
+
+/* ============= BUTTON CSS AREA ENDS=============== */

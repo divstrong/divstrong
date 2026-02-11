@@ -1,0 +1,601 @@
+/* ============= CTA CSS AREA =============== */
+
+.cta1-section-area{
+    background: $color2;
+    position: relative;
+    h2{
+        font-family:$font1;
+        font-size: $heading2_size - 2;
+        line-height: 40px;
+        color: $heighlight_color;
+        font-weight: $regular;
+        margin-bottom: 20px;
+        @media #{$xs} {
+           font-size: $heading3_size;
+        }
+        @media #{$md} {
+            font-size: $heading3_size;
+         }
+    }
+    p{
+        font-family: $font4;
+        font-size: $small_font_size;
+        line-height: 26px;
+        font-weight: $medium;
+        color: $white;
+
+    }
+    .cta-images{
+        position: absolute;
+        top: 0;
+        cursor: pointer;
+        @media #{$xs} {
+            position: relative;
+            top: 80px;
+
+        }
+        @media #{$md} {
+            position: relative;
+        }
+        img{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .consultation{
+              color: $color1;
+               font-family: $font4;
+                font-size: $small_font_size;
+                font-style: normal;
+                font-weight: $semi-bold;
+                line-height: 16px;
+                padding: 16px 24px;
+                background: $white;
+                display: inline-block;
+                transition: all .4s ease-in-out;
+                border-radius: 180px;
+                position: absolute;
+                right: 48px;
+                z-index: 2;
+                bottom: 175px;
+                &::after{
+                    position: absolute;
+                    content: "";
+                    height: 36px;
+                    width: 36px;
+                    line-height: 36px;
+                    transition: all .4s ease-in-out;
+                    background: $bg28;
+                    top: 6px;
+                    left: 6px;
+                    border-radius: 74px;
+                    z-index: -1;
+                }
+                &:hover::after{
+                    transition: all .4s ease-in-out;
+                    border-radius: 74px;
+                    width: 95%;
+                    height: 36px;
+                }
+        }
+    }
+     
+}
+
+// homepage2 //
+.cta2-section-area{
+    position: relative;
+    .cta2-section-hedaer{
+        border-radius: 5px;
+        background: $bg29; 
+        padding: 60px 40px; 
+        position: relative;
+        top: -130px;
+        z-index: 2;
+        @media #{$xs} {
+            top: 0;
+            margin-top: 50px;
+            margin-bottom: 30px;
+        }
+        @media #{$md} {
+            top: 0;
+            margin-top: 50px;
+            margin-bottom: 30px;
+        }
+        input{
+            width: 100%;
+            border: none;
+            outline: none;
+            padding: 18px 16px;
+            background: $bg21;
+            border-radius: 4px;
+            transition: all .4s ease-in-out;
+            color: $white;
+            font-size: $small_font_size;
+            font-family: $font4;
+            @media #{$xs} {
+                margin-bottom: 20px;
+            }
+            @media #{$md} {
+                margin-bottom: 20px;
+            }
+            &::placeholder{
+                font-family: $font4;
+                font-size: $small_font_size;
+                color: $white;
+                font-weight: $medium;
+                opacity: 0.7;
+
+            }
+        }
+        .nice-select.country-area {
+            width: 100%;
+            background: $bg21;
+            border: none;
+            height: 65px;
+            line-height: 30px;
+            padding: 18px 16px;
+
+            ul.list{
+                width: 100%;
+                li{
+                    font-family: $font4;
+                    font-weight: $medium;
+                    font-size: $small_font_size;
+                }
+            }
+        }
+        .nice-select:after{
+            height: 8px;
+            width: 8px;
+        }
+        .nice-select.country-area span {
+            color: $white;
+            font-family: $font4;
+            font-size: 16px;
+            font-style: normal;
+            font-weight: 500;
+            line-height: 16px;
+            opacity: 0.7;
+        }
+        button.cta-btn2{
+            font-family: $font4;
+            font-weight: $bold;
+            font-size: $small_font_size;
+            color: $color4;
+            width: 100%;
+            padding: 16px 16px;
+            border: none;
+            border-radius: 5px;
+            font-family: $font4;
+            text-align: center;
+            &:hover{
+                color: $white;
+                transition: all .4s ease-in-out;
+            }
+            span{
+                height: 32px;
+                width: 32px;
+                background: $bg30;
+                line-height: 32px;
+                font-weight: $semi_bold;
+                color: $color4;
+                text-align: center;
+                display: inline-block;
+                border-radius: 50%;
+                margin-left: 6px;
+            }
+        }
+    }
+    .cta2-header{
+        @media #{$xs} {
+            margin-bottom: 20px;
+        }
+        @media #{$md} {
+            margin-bottom: 20px;
+        }
+        h2{
+            font-family: $font1;
+            font-size: $heading2_size - 2;
+            line-height: 50px;
+            font-weight: $regular;
+            color: $heighlight_color;
+            margin-bottom: 20px;
+            @media #{$xs} {
+                font-size: $heading3_size;
+                line-height: 42px;
+            }
+        }
+        p{
+            font-family:$font4;
+            font-size: $small_font_size;
+            line-height: 26px;
+            font-weight: $medium;
+            color: $white;
+        }
+    }
+}
+
+// homepage3 //
+.ca3-scetion-area{
+    background: $color8;
+    .cta3-header{
+        h2{
+            font-family: $font3;
+            font-size: $heading2_size - 2;
+            line-height: 50px;
+            font-weight: $medium;
+            color: $white;
+            margin-bottom: 18px;
+            @media #{$xs} {
+                font-size: $heading3_size;
+                line-height: 42px;
+            }
+        }
+        p{
+            font-family: $font2;
+            font-size: $small_font_size;
+            line-height: 26px;
+            font-weight: $regular;
+            color: $heighlight_color;
+         }
+    }
+}
+// homepage4 //
+.cta4-scetion-area{
+    background: $color10;
+    .cta3-header{
+        h2{
+            font-family: $font3;
+            font-size: $heading2_size - 2;
+            line-height: 50px;
+            font-weight: $medium;
+            color: $white;
+            margin-bottom: 18px;
+            @media #{$xs} {
+                font-size: $heading3_size;
+                line-height: 42px;
+            }
+        }
+        p{
+            font-family: $font2;
+            font-size: $small_font_size;
+            line-height: 26px;
+            font-weight: $regular;
+            color: $heighlight_color;
+         }
+         .cta3-btn1{
+            color: $color10;
+            border-radius: 80px;
+            &:hover{
+                background: $color9;
+                color: $white;
+            }
+            &:after{
+                display: none;
+            }
+         }
+         .cta3-btn2{
+            color: $white;
+            border-radius: 80px;
+            &:hover{
+                background: $white;
+                color: $color10;
+            }
+            &:after{
+                display: none;
+            }
+            @media #{$xs} {
+                margin-left: 0;
+            }
+         }
+    }
+}
+
+// homepage5 //
+.cta5-section-area{
+    position: relative;
+    z-index: 1;
+    &::after{
+        position: absolute;
+        content: "";
+        height: 100%;
+        width: 100%;
+        background: $bg5;
+        opacity: 0.9;
+        top: 0;
+        left: 0;
+        z-index: -1;
+    }
+    .cta5-header-area{
+        h2{
+            font-family: $font2;
+            font-size: $heading2_size + 2;
+            line-height: 54px;
+            font-weight: $semi_bold;
+            color: $white;
+            position: relative;
+            @media #{$xs} {
+                font-size: $heading3_size;
+                line-height: 42px;
+            }
+            img{
+                position: absolute;
+                top: -15px;
+                @media #{$xss} {
+                   right: 0;
+                }
+            }
+        }
+    }
+    .cta-contact-area{
+        .cta5-author-area{
+            display: flex;
+            align-items: center;
+            background: $bg31;
+            padding: 24px;
+            border-radius: 4px;
+            @media #{$xs} {
+               margin-top: 30px;
+            }
+            @media #{$md} {
+                margin-top: 30px;
+            }
+            .cta5-icons{
+                background: $white;
+                height: 60px;
+                width: 60px;
+                line-height: 60px;
+                text-align: center;
+                border-radius: 50%;
+
+            }
+            .cta5-content{
+                margin-left: 16px;
+                p{
+                    font-family: $font2;
+                    font-size: $small_font_size;
+                    font-weight: $regular;
+                    color: $white;
+                    opacity: 0.8;
+                    margin-bottom: 8px;
+                }
+                a{
+                    font-family: $font2;
+                    font-size: $small_font_size + 4;
+                    color: $white;
+                    font-weight: $semi_bold;
+                    display: inline-block;
+
+                }
+            }
+        }
+    }
+}
+
+// homepage6 //
+.cta6-section-area{
+    position: relative;
+    z-index: 1;
+    &::after{
+        position: absolute;
+        content: "";
+        height: 100%;
+        width: 100%;
+        opacity: 0.95;
+        background: $bg32;
+        top: 0;
+        left: 0;
+        z-index: -1;
+    }
+    .cta6-header-area{
+        h2{
+            color: $white;
+            font-family: $font5;
+            font-size: $heading2_size + 2;
+            font-style: normal;
+            font-weight: $regular;
+            line-height: 44px;
+            margin-bottom: 16px;
+            @media #{$xs} {
+                font-size: $heading3_size;
+                line-height: 42px;
+            }
+        }
+        p{
+            color: $white;
+            font-family: $font2;
+            font-size: $small_font_size;
+            font-style: normal;
+            font-weight: $regular;
+            line-height: 26px;                
+        }
+        .welcome6-btn{
+            margin-top: 24px;
+        }
+        .welcome7-btn{
+            margin-top: 24px;
+        }
+    }
+    .cta-contact-area{
+        .cta5-author-area{
+            display: flex;
+            align-items: center;
+            border-radius: 2px;
+            background: $bg33;
+            padding: 24px;
+            border-radius: 4px;
+            @media #{$xs} {
+               margin-top: 30px;
+            }
+            @media #{$md} {
+                margin-top: 30px;
+            }
+            .cta5-icons{
+                background: $white;
+                height: 60px;
+                width: 60px;
+                line-height: 60px;
+                text-align: center;
+                border-radius: 50%;
+
+            }
+            .cta5-content{
+                margin-left: 16px;
+                p{
+                    font-family: $font2;
+                    font-size: $small_font_size;
+                    font-weight: $regular;
+                    color: $white;
+                    opacity: 0.8;
+                    margin-bottom: 8px;
+                }
+                a{
+                    font-family: $font2;
+                    font-size: $small_font_size + 4;
+                    color: $white;
+                    font-weight: $semi_bold;
+                    display: inline-block;
+
+                }
+            }
+        }
+    }
+}
+
+
+// homepage7 //
+.cta7-section-area{
+    background: $color15;
+    .cta2-section-hedaer{
+        .cta2-header{
+            h2{
+                color: $heighlight_color;
+                font-family: $font2;
+                font-size: $heading2_size + 2;
+                font-style: normal;
+                font-weight: $semi-bold;
+                line-height: 44px; 
+                margin-bottom: 14px;            
+                .defence{
+                    font-family: $font2;
+                    font-size: $heading2_size + 2;
+                    font-style: normal;
+                    font-weight: $semi_bold;
+                    line-height: 56px;
+                    background: none;
+                    padding: 0;
+                    margin-bottom: 0;         
+                    color: $color14;
+                    position: relative;
+                    @media #{$xs} {
+                        font-size: $heading3_size;
+                        line-height: 42px;
+                      }
+                  }
+                  @media #{$xs} {
+                    font-size: $heading3_size;
+                    line-height: 42px;
+                  }
+            }
+            p{
+                color: $white;
+                font-family: $font2;
+                font-size: $small_font_size;
+                font-style: normal;
+                font-weight: $regular;
+                line-height: 26px;
+                opacity: 0.9;
+                @media #{$xs} {
+                    margin-bottom: 30px;
+                }
+                @media #{$md} {
+                    margin-bottom: 30px;
+                }
+            }
+        }
+        .cta-contact-area{
+          .cta-input{
+            input{
+                background: $bg34;
+                width: 100%;
+                font-family: $font2;
+                font-size: $small_font_size;
+                padding: 20px 16px;
+                margin-top: 20px;
+                height: 56px;
+                color: $white;
+                &::placeholder{
+                    color: $white;
+                    font-family: $font2;
+                    font-size: $small_font_size;
+                    font-style: normal;
+                    font-weight: $regular;
+                    line-height: 16px;
+                    opacity: 0.7;
+                }
+            }
+            button.cta-btn2{
+                outline: none;
+                border: none;
+                color: $color15;
+                font-family: $font2;
+                font-size: $small_font_size;
+                font-style: normal;
+                font-weight: $semi-bold;
+                line-height: 16px;
+                width: 100%;
+                padding: 18px 24px; 
+                position: relative;
+                z-index: 1;
+                margin-top: 20px;
+                transition: all .4s ease-in-out;
+                &::after{
+                    position: absolute;
+                    content: "";
+                    height: 100%;
+                    width: 0;
+                    left: 0;
+                    top: 0;
+                    background: $color14;
+                    transition: all .4s ease-in-out;
+                    z-index: -1;
+                    border-radius: 4px 0 0 4px;
+                }
+                &::before{
+                    position: absolute;
+                    content: "";
+                    height: 100%;
+                    width: 0;
+                    right: 0;
+                    top: 0;
+                    background: $color14;
+                    transition: all .4s ease-in-out;
+                    z-index: -1;
+                    border-radius: 0 4px 4px 0;
+                }
+                &:hover::after{
+                    width: 50%;
+                    transition: all .4s ease-in-out;
+                }
+                &:hover::before{
+                    width: 50%;
+                    transition: all .4s ease-in-out;
+                }
+                &:hover{
+                    color: $white;
+                    transition: all .4s ease-in-out;
+                    transform: translateY(0px);
+                }
+                svg{
+                    margin-left: 6px;
+                    transform: rotate(-45deg);
+                }             
+            }
+
+          }  
+        }
+    }
+}
+
+/* ============= CTA CSS AREA ENDS =============== */

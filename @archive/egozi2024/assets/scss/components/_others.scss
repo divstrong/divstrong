@@ -1,0 +1,492 @@
+/* ============= OTHERS CSS AREA =============== */
+
+.others-section-area{
+    position: relative;
+    z-index: 1;
+    top: -100px;
+    left: -100px;
+    .others-content-area{
+        display: flex;
+        align-items: center;
+        position: absolute;
+        left: 14%;
+        right: 14%;
+        top: -50px;
+        @media #{$xs} {
+            position: relative;
+            left: 0;
+            right: 0;
+            display: block;
+            text-align: center;
+         }
+         @media #{$md} {
+           position: relative;
+           left: -7%;
+           right: 0; 
+        }
+        img{
+            @media #{$xs} {
+                height: 400px;
+                width: 400px;
+                object-fit: contain;
+                margin-bottom: 30px;
+             }
+        }
+        .others-img1{
+            position: relative;
+            left: 335px;
+            z-index: 5;
+            transition: all .4s ease-in-out;
+            @media #{$xs} {
+               left: 100px;
+               text-align: center;
+               margin-bottom: 16px;
+             }
+            img{
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 300px;
+                @media #{$md} {
+                    height: 100%;
+                    width: 500px;   
+                }
+                @media #{$xs} {
+                    height: 400px;
+                    width: 400px;
+                    object-fit: contain;
+                 }
+                &:hover{
+                    transform: scale(1.1);
+                    transition: all .4s ease-in-out;
+                    overflow: hidden;
+                }
+            }
+            &:hover{
+                .others-arrow{
+                    visibility: visible;
+                    transition: all .4s ease-in-out;
+                    width: 200px;
+                    z-index: 1;
+                    opacity: 1;
+                    left: 200px;
+                    a{
+                        right: -30px;
+                        transition: all .4s ease-in-out;
+                        @media #{$xs} {
+                            right: 10px;
+                         }
+                    }
+                }
+            }
+            .others-arrow{
+                visibility: hidden;
+                opacity: 0;
+                transition: all .4s ease-in-out;
+                z-index: -1;
+                a{
+                    height: 60px;
+                    width: 60px;
+                    line-height: 60px;
+                    text-align: center;
+                    background: $color8;
+                    color: $white;
+                    display: inline-block;
+                    border-radius: 4px;
+                    position: absolute;
+                    top: 45%;
+                    right: 0;
+                    transition: all .4s ease-in-out;
+                }
+                
+            }
+        }
+        .others-img2{
+            position: relative;
+            left: 250px;
+            z-index: 4;
+            @media #{$xs} {
+                left:100px;
+                margin-bottom: 16px;
+             }
+            img{
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 300px;
+                @media #{$md} {
+                    height: 100%;
+                    width: 500px;   
+                }
+                @media #{$xs} {
+                    height: 400px;
+                    width: 400px;
+                    object-fit: contain;
+                 }
+                &:hover{
+                    transform: scale(1.1);
+                    transition: all .4s ease-in-out;
+                    overflow: hidden;
+                    z-index: 4;
+                }
+            }
+            &:hover{
+                .others-arrow{
+                    visibility: visible;
+                    transition: all .4s ease-in-out;
+                    width: 200px;
+                    z-index: 1;
+                    opacity: 1;
+                    left: 200px;
+                    a{
+                        right: -30px;
+                        transition: all .4s ease-in-out;
+                        @media #{$xs} {
+                            right: 10px;
+                         }
+                    }
+                }
+            }
+            .others-arrow{
+                visibility: hidden;
+                opacity: 0;
+                transition: all .4s ease-in-out;
+                z-index: -1;
+                a{
+                    height: 60px;
+                    width: 60px;
+                    line-height: 60px;
+                    text-align: center;
+                    background: $color8;
+                    color: $white;
+                    display: inline-block;
+                    border-radius: 4px;
+                    position: absolute;
+                    top: 45%;
+                    right: 0;
+                    transition: all .4s ease-in-out;
+                }
+                
+            }
+        }
+        .others-img3{
+            position: relative;
+            left: 190px;
+            z-index: 3;
+            @media #{$xs} {
+                text-align: center;
+                left: 100px;
+                margin-bottom: 16px;
+             }
+            img{
+                width: 100%;
+                height: 100%;
+                object-fit: cover; 
+                border-radius: 300px;
+                @media #{$md} {
+                    height: 100%;
+                    width: 500px;   
+                }
+                @media #{$xs} {
+                    height: 400px;
+                    width: 400px;
+                    object-fit: contain;
+                 }
+                &:hover{
+                    transform: scale(1.1);
+                    transition: all .4s ease-in-out;
+                    overflow: hidden;
+                    z-index: 4;
+                }
+            }
+            &:hover{
+                .others-arrow{
+                    visibility: visible;
+                    transition: all .4s ease-in-out;
+                    width: 200px;
+                    z-index: 1;
+                    opacity: 1;
+                    left: 200px;
+                    a{
+                        right: -30px;
+                        transition: all .4s ease-in-out;
+                        @media #{$xs} {
+                            right: 10px;
+                         }
+                    }
+                }
+            }
+            .others-arrow{
+                visibility: hidden;
+                opacity: 0;
+                transition: all .4s ease-in-out;
+                z-index: -1;
+                a{
+                    height: 60px;
+                    width: 60px;
+                    line-height: 60px;
+                    text-align: center;
+                    background: $color8;
+                    color: $white;
+                    display: inline-block;
+                    border-radius: 4px;
+                    position: absolute;
+                    top: 45%;
+                    right: 0;
+                    transition: all .4s ease-in-out;
+                }
+                
+            }
+        }
+        .others-img4{
+            position: relative;
+            left: 100px;
+            z-index: 2;
+            @media #{$xs} {
+                margin-bottom: 16px;
+             }
+            img{
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 300px;
+                @media #{$md} {
+                    height: 100%;
+                    width: 500px;   
+                }
+                @media #{$xs} {
+                    height: 400px;
+                    width: 400px;
+                    object-fit: contain;
+                 }
+                &:hover{
+                    transform: scale(1.1);
+                    transition: all .4s ease-in-out;
+                    overflow: hidden;
+                    z-index: 4;
+                }
+            }
+            &:hover{
+                .others-arrow{
+                    visibility: visible;
+                    transition: all .4s ease-in-out;
+                    width: 200px;
+                    z-index: 1;
+                    opacity: 1;
+                    left: 200px;
+                    a{
+                        right: -30px;
+                        transition: all .4s ease-in-out;
+                        @media #{$xs} {
+                            right: 10px;
+                         }
+                    }
+                }
+            }
+            .others-arrow{
+                visibility: hidden;
+                opacity: 0;
+                transition: all .4s ease-in-out;
+                z-index: -1;
+                a{
+                    height: 60px;
+                    width: 60px;
+                    line-height: 60px;
+                    text-align: center;
+                    background: $color8;
+                    color: $white;
+                    display: inline-block;
+                    border-radius: 4px;
+                    position: absolute;
+                    top: 45%;
+                    right: 0;
+                    transition: all .4s ease-in-out;
+                }
+                
+            }
+        }
+
+        .others-img5{
+            position: relative;
+            z-index: 1;
+            @media #{$xs} {
+                text-align: center;
+                left: 100px;
+                margin-bottom: 16px;
+             }
+            img{
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                position: relative;
+                border-radius: 300px;
+                @media #{$md} {
+                    height: 100%;
+                    width: 500px;   
+                }
+                @media #{$xs} {
+                    height: 400px;
+                    width: 400px;
+                    object-fit: contain;
+                    margin-bottom: 0 !important;
+                 }
+                &:hover{
+                    transform: scale(1.1);
+                    transition: all .4s ease-in-out;
+                    overflow: hidden;
+                }
+            }
+            &:hover{
+                .others-arrow{
+                    visibility: visible;
+                    transition: all .4s ease-in-out;
+                    width: 200px;
+                    z-index: 4;
+                    opacity: 1;
+                    left: 200px;
+                    a{
+                        right: -30px;
+                        transition: all .4s ease-in-out;
+                        @media #{$xs} {
+                            right: 10px;
+                         }
+                    }
+                }
+            }
+            .others-arrow{
+                visibility: hidden;
+                opacity: 0;
+                transition: all .4s ease-in-out;
+                z-index: 2;
+                a{
+                    height: 60px;
+                    width: 60px;
+                    line-height: 60px;
+                    text-align: center;
+                    background: $color8;
+                    color: $white;
+                    display: inline-block;
+                    border-radius: 4px;
+                    position: absolute;
+                    top: 45%;
+                    right: 0;
+                    transition: all .4s ease-in-out;
+                }
+                
+            }
+        }
+    }
+
+}
+
+// homepage4 //
+.others2-section-area{
+    background: $bg36;
+    .others4-boxarea{
+        position: relative;
+
+        img{
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+            @media #{$xs} {
+                margin-bottom: 20px;
+               }
+        }
+        .others-img1{
+            border-radius:4px;
+        }
+        .polygon3{
+            img{
+                height: 85px;
+                width: 85px;
+                object-fit: cover;
+            }
+            position: absolute;
+            top: -42px;
+            left: -45px;
+            z-index: 1;
+        }
+        .polygon4{
+            img{
+                height: 85px;
+                width: 85px;
+                object-fit: cover;
+            }
+            position: absolute;
+            top: -15px;
+            right: -39px;
+            z-index: 1;
+        }
+    }
+}
+
+img.elementors-service1 {
+    position: absolute;
+    bottom: 0;
+    right: 54%;
+    bottom: 0;
+}
+
+img.elementors-service2 {
+    position: absolute;
+    bottom: 0;
+    right: 42%;
+    bottom: 0;
+}
+
+// homepage6 //
+.others6-section-area{
+    padding: 70px 0 70px;
+    background: $bg32;
+    @media #{$xs} {
+        padding: 40px 0 40px;
+    }
+    @media #{$md} {
+        padding: 40px 0 40px;
+    }
+    .text-headlines {
+        display: inline-flex;
+        white-space: nowrap;
+        animation: 180s ticker linear infinite;
+        margin-top: -25px;
+      }
+      .text-headlines__item {
+        font-weight: $regular;
+        font-family: $font5;
+        font-size: 56px;
+        color: $white;
+        -webkit-text-fill-color: transparent;
+        -webkit-text-stroke-width: 1px;
+        -webkit-text-stroke-color: $white;
+        position: relative;
+        line-height: 56px;
+        opacity: 0.5;
+        transition: all .4s ease-in-out;
+        &:hover{
+            color: $white;
+            -webkit-text-fill-color: $white;
+            -webkit-text-stroke-width: $white;
+            -webkit-text-stroke-color: $white;
+            transition: all .4s ease-in-out;
+            opacity:10;
+        }
+        img{
+            position: relative;
+            left: 10px;
+        }
+      }
+      .text-headlines__item::after {
+        content: "";
+        min-width: 79px;
+        min-height: 80px;
+        display: inline-block;
+        margin: 0 15px;
+      }
+      .text-headlines:hover {
+        animation-play-state: paused;
+      }
+}
+
+/* ============= OTHERS CSS AREA ENDS =============== */

@@ -1,0 +1,1414 @@
+/* ============= SIDEBAR CSS AREA =============== */
+
+.mobile-sidebar.sidebar1{
+    max-height: 100%;
+    overflow-y: scroll;
+    .allmobilesection{
+            .tax-services{
+                display: inline-block;
+                font-family: $font4;
+                font-size: $base_font_size;
+                line-height: 16px;
+                font-weight: $semi_bold;
+                color: $white;
+                padding: 16px 20px;
+                position: relative;
+                background: $color2;
+                z-index: 1;
+                border-radius: 30px;
+                transition: all .4s ease-in-out;
+                width: 100%;
+                text-align: center;
+                &:hover{
+                    transform: translateY(-5px);
+                    color: $white;
+                }
+                &:after{
+                    position: absolute;
+                    content: "";
+                    top: 6px;
+                    left: 0;
+                    background: $color20;
+                    height: 36px;
+                    width: 36px;
+                    z-index: -1;
+                    left: 8px;
+                    border-radius: 50px;
+                    transition: all .4s ease-in-out;
+                }
+                &:hover:after{
+                    height: 36px;
+                    width: 92%;
+                    transition: all .4s ease-in-out;
+                }
+               }
+               h3{
+                font-family: $font1;
+                font-size: $heading4_size;
+                line-height: 34px;
+                color: $color1;
+                margin-bottom: 20px;
+                font-weight: $medium;
+                margin-top: 20px;
+               }
+               a{
+                font-size: 16px;
+                font-weight: $medium;
+                color: $color1;
+                font-family: $font4;
+                display: inline-block;
+               }
+               .contact-info-single{
+                display: flex;
+                img{
+                    margin: 0  12px 0 0;
+                }
+               }
+               .social-links-mobile-menu{
+                ul{
+                    li{
+                        display: inline-block;
+                        a{
+                            height: 36px;
+                            width: 36px;
+                            text-align: center;
+                            display: inline-block;
+                            line-height: 16px;
+                            color: $color1;
+                            border: 1px solid $color20;
+                            border-radius: 50%;
+                            transition: all .4s ease-in-out;
+                            &:hover{
+                                background: $color20;
+                                transition: all .4s ease-in-out;
+                                color: $white;
+                            }
+                        }
+                    }
+                }
+               }
+    }
+}
+
+// homepage2 //
+    .mobile-sidebar.sidebar2{
+        max-height: 100%;
+        overflow-y: scroll;
+        background: $section_bg1;
+        .allmobilesection{
+            a.welconme-btn2{
+                font-family: $font4;
+                line-height: 16px;
+                font-weight: $semi_bold;
+                color: $white;
+                padding: 10px 16px;
+                display: inline-block;
+                background: $color4;
+                border-radius: 5px;
+                font-size: $small_font_size;
+                position: relative;
+                z-index: 1;
+                transition: all .4s ease-in-out;
+                margin-top: 32px;
+                width: 100%;
+                text-align: center;
+                &:hover{
+                    transform: translateY(-5px);
+                }
+                span{
+                    margin-bottom: 0 !important;
+                    background: $button_bg !important;
+                    height: 32px;
+                    width: 32px;
+                    line-height: 32px;
+                    color: $white;
+                    text-align: center;
+                    position: relative;
+                    z-index: 2;
+                    border-radius: 50% !important;
+                    margin-left: 6px;
+                    display: inline-block;
+                    svg{
+                        color: $white;
+                    }
+                }
+                &:after{
+                    position: absolute;
+                    content: "";
+                    height: 0;
+                    width: 100%;
+                    left: 0;
+                    bottom: 0;
+                    z-index: -1;
+                    transition: all .4s ease-in-out;
+                    border-radius: 100% 100% 5px 5px;
+                }
+                &:hover::after{
+                    background:$color5;
+                    transition: all .4s ease-in-out;
+                    border-radius: 5px;
+                    height: 100%;
+                }
+               }
+                   h3{
+                    font-family: $font1;
+                    font-size: $heading4_size;
+                    line-height: 34px;
+                    color: $color1;
+                    margin-bottom: 20px;
+                    font-weight: $medium;
+                    margin-top: 20px;
+                   }
+                   a{
+                    font-size: 16px;
+                    font-weight: $medium;
+                    color: $color1;
+                    font-family: $font4;
+                    display: inline-block;
+                   }
+                   .contact-info-single{
+                    display: flex;
+                    img{
+                        margin: 0  12px 0 0;
+                    }
+                   }
+                   .social-links-mobile-menu1{
+                    ul{
+                        li{
+                            display: inline-block;
+                            a{
+                                height: 36px;
+                                width: 36px;
+                                text-align: center;
+                                display: inline-block;
+                                line-height: 16px;
+                                color: $color1;
+                                border: 1px solid $color4;
+                                border-radius: 50%;
+                                transition: all .4s ease-in-out;
+                                &:hover{
+                                    background: $color4;
+                                    transition: all .4s ease-in-out;
+                                    color: $white;
+                                }
+                            }
+                        }
+                    }
+                   }
+        }
+    }
+
+
+    // homepage3 //
+
+    .mobile-sidebar.sidebar3{
+        max-height: 100%;
+        overflow-y: scroll;
+        background: $section_bg4;
+        .mobile-nav li a{
+            font-family: $font2;
+            font-weight: $medium;
+        }
+        .allmobilesection{
+            .casebtn1{
+                font-family: $font2;
+                font-size: $small_font_size;
+                font-weight: $bold;
+                color: $white;
+                background: $color8;
+                padding: 14px 24px;
+                display: inline-block;
+                border-radius: 4px;
+                margin-top: 32px;
+                position: relative;
+                z-index: 1;
+                transition: all .4s ease-in-out;
+                width: 100%;
+                text-align: center;
+                svg{
+                    margin-left: 4px;
+                }
+                &::after{
+                    position: absolute;
+                    content: "";
+                    height: 0;
+                    width: 100%;
+                    left: 0;
+                    bottom: 0;
+                    transition: all .4s ease-in-out;
+                    background: $color6;
+                    border-radius: 100% 100% 5px 5px;
+                    z-index: -1;
+                }
+                &:hover:after{
+                    width: 100%;
+                    height: 100%;
+                    transition: all .4s ease-in-out;
+                    border-radius: 4px;
+            
+                }
+                &:hover{
+                    transform: translateY(-5px);
+                    color: $white;
+                }
+            }
+                   h3{
+                    font-family: $font3;
+                    font-size: $heading4_size;
+                    line-height: 34px;
+                    color: $color1;
+                    margin-bottom: 20px;
+                    font-weight: $medium;
+                    margin-top: 20px;
+                   }
+                   a{
+                    font-size: 16px;
+                    font-weight: $medium;
+                    color: $color1;
+                    font-family: $font2;
+                    display: inline-block;
+                   }
+                   .contact-info-single{
+                    display: flex;
+                    img{
+                        margin: 0  12px 0 0;
+                    }
+                   }
+                   .social-links-mobile-menu2{
+                    ul{
+                        li{
+                            display: inline-block;
+                            a{
+                                height: 36px;
+                                width: 36px;
+                                text-align: center;
+                                display: inline-block;
+                                line-height: 16px;
+                                color: $color8;
+                                border: 1px solid $color8;
+                                border-radius: 50%;
+                                transition: all .4s ease-in-out;
+                                &:hover{
+                                    background: $color8;
+                                    transition: all .4s ease-in-out;
+                                    color: $color1;
+                                }
+                            }
+                        }
+                    }
+                   }
+        }
+    }
+
+
+     // homepage4 //
+
+     .mobile-sidebar.sidebar4{
+        max-height: 100%;
+        overflow-y: scroll;
+        background: $bg36;
+        .mobile-nav li a{
+            font-family: $font2 !important;
+            font-weight: $medium;
+        }
+        .sidebar-menu{
+            li{
+                a{
+                    font-family: $font2 !important;
+                }
+            }
+        }
+        .allmobilesection{
+            .welcome-btn4{
+                font-size: $small_font_size;
+                font-family: $font2;
+                color: $white;
+                font-weight: $bold;
+                background: $color10;
+                display: inline-block;
+                padding: 14px 24px;
+                margin-top: 32px;
+                border-radius: 30px;
+                transition: all .4s ease-in-out;
+                width: 100%;
+                text-align: center;
+                &:hover{
+                    background: $color9;
+                    color: $white;
+                    transition: all .4s ease-in-out;
+                    transform: translateY(-5px);
+                }
+            }
+                   h3{
+                    font-family: $font3;
+                    font-size: $heading4_size;
+                    line-height: 34px;
+                    color: $color1;
+                    margin-bottom: 20px;
+                    font-weight: $medium;
+                    margin-top: 20px;
+                   }
+                   a{
+                    font-size: 16px;
+                    font-weight: $medium;
+                    color: $color1;
+                    font-family: $font2;
+                    display: inline-block;
+                   }
+                   .contact-info-single{
+                    display: flex;
+                    img{
+                        margin: 0  12px 0 0;
+                    }
+                   }
+                   .social-links-mobile-menu3{
+                    ul{
+                        li{
+                            display: inline-block;
+                            a{
+                                height: 36px;
+                                width: 36px;
+                                text-align: center;
+                                display: inline-block;
+                                line-height: 16px;
+                                color: $color10;
+                                border: 1px solid $color10;
+                                border-radius: 50%;
+                                transition: all .4s ease-in-out;
+                                &:hover{
+                                    background: $color10;
+                                    transition: all .4s ease-in-out;
+                                    color: $white;
+                                }
+                            }
+                        }
+                    }
+                   }
+        }
+    }
+
+
+         // homepage5 //
+         .mobile-header.mobile-homepage5{
+            .mobile-nav-icon {
+                color: $white;
+            }
+         }
+
+         .mobile-sidebar.sidebar5{
+            max-height: 100%;
+            overflow-y: scroll;
+            background: $bg5;
+            .mobile-nav li a{
+                font-family: $font2;
+                font-weight: $medium;
+                color: $white;
+
+            }
+            .menu-close{
+                svg{
+                    color: $white;
+                }
+            }
+            span.submenu-button:before {
+                background: $white;
+            }
+            
+            span.submenu-button:after {
+                background: $white;
+            }
+            .allmobilesection{
+                .welcome5-btn{
+                    font-family: $font2;
+                    font-size: $small_font_size;
+                    color: $bg5;
+                    background: $bg6;
+                    display: inline-block;
+                    padding: 14px 20px;
+                    font-weight: $bold;
+                    margin-top: 32px;
+                    transition: all .4s ease-in-out;
+                    cursor: pointer;
+                    overflow: hidden;
+                    position: relative;
+                    z-index: 1;
+                    width: 100%;
+                    text-align: center;
+                    svg{
+                        margin-left: 4px;
+                    }&:after{
+                        position: absolute;
+                        content: "";
+                        height: 100%;
+                        width: 0;
+                        right: 0;
+                        top: 0;
+                        background: $white;
+                        opacity: 0.1;
+                        transition: all .4s ease-in-out;
+                        z-index: -1;
+                    }
+                    &:hover::after{
+                        height: 100%;
+                        width: 100%;
+                        transition: all .4s ease-in-out;
+                        left: 0;
+                        right: auto;
+                    }
+                
+                    &:hover{
+                        color: $bg5;
+                        transition: all .4s ease-in-out;
+                        transform: translateY(-5px);
+                    }
+                }
+                       h3{
+                        font-family: $font3;
+                        font-size: $heading4_size;
+                        line-height: 34px;
+                        color: $white;
+                        margin-bottom: 20px;
+                        font-weight: $medium;
+                        margin-top: 20px;
+                       }
+                       a{
+                        font-size: 16px;
+                        font-weight: $medium;
+                        color: $white;
+                        font-family: $font2;
+                        display: inline-block;
+                       }
+                       .contact-info-single{
+                        display: flex;
+                        img{
+                            margin: 0  12px 0 0;
+                            filter: brightness(0) invert(1);
+                        }
+                       }
+                       .social-links-mobile-menu5{
+                        ul{
+                            li{
+                                display: inline-block;
+                                a{
+                                    height: 36px;
+                                    width: 36px;
+                                    text-align: center;
+                                    display: inline-block;
+                                    line-height: 16px;
+                                    color: $bg6;
+                                    border: 1px solid $bg6;
+                                    border-radius: 50%;
+                                    transition: all .4s ease-in-out;
+                                    &:hover{
+                                        background: $bg6;
+                                        transition: all .4s ease-in-out;
+                                        color: $bg5;
+                                    }
+                                }
+                            }
+                        }
+                       }
+            }
+        }
+
+
+// sidebar-menu //
+.slide-bar.slide-bar2{
+    background: $section_bg1;
+    .sidebar-info.sidebar-info2{
+        .sidebar-content{
+            p{
+                font-family: $font2;
+                font-weight: $regular;
+            }
+        }
+        .sidebar-menu.list-unstyled{
+            a{
+                color: $color4;
+                display: inline-block;
+            }
+        }
+        .sidebar-contact-header{
+            h3{
+                font-family: $font1;
+                font-weight: $medium;
+                margin-top: 24px;
+                margin-bottom: 20px;
+            }
+            a{
+                font-family: $font4;
+                font-weight: $medium;
+            }
+        }
+        .theme-btnarea{
+                a.welconme-btn2{
+                    font-family: $font4;
+                    line-height: 16px;
+                    font-weight: $semi_bold;
+                    color: $white;
+                    padding: 10px 16px;
+                    display: inline-block;
+                    background: $color4;
+                    border-radius: 5px;
+                    font-size: $small_font_size;
+                    position: relative;
+                    z-index: 1;
+                    transition: all .4s ease-in-out;
+                    margin-top: 32px;
+                    &:hover{
+                        transform: translateY(-5px);
+                    }
+                    span{
+                        margin-bottom: 0 !important;
+                        background: $button_bg !important;
+                        height: 32px;
+                        width: 32px;
+                        line-height: 32px;
+                        color: $white;
+                        text-align: center;
+                        position: relative;
+                        z-index: 2;
+                        border-radius: 50% !important;
+                        margin-left: 6px;
+                        display: inline-block;
+                        svg{
+                            color: $white;
+                        }
+                    }
+                    &:after{
+                        position: absolute;
+                        content: "";
+                        height: 0;
+                        width: 100%;
+                        left: 0;
+                        bottom: 0;
+                        z-index: -1;
+                        transition: all .4s ease-in-out;
+                        border-radius: 100% 100% 5px 5px;
+                    }
+                    &:hover::after{
+                        background:$color5;
+                        transition: all .4s ease-in-out;
+                        border-radius: 5px;
+                        height: 100%;
+                    }
+                   }
+        }
+        .social-links{
+
+                li{
+                    border: 1px solid $color4;
+                    color: $color4;
+                    cursor: pointer;
+                    &:hover{
+                        color: $white;
+                        background: $color4;
+                        a{
+                            color: $white;
+                        }
+                    }
+                    a{
+                        color: $color4;
+                    }
+                }
+        }
+        h3{
+            font-family: $font1;
+            margin-top: 20px;
+        }
+    }
+}
+
+   
+
+// sidebar-menu //
+.slide-bar.slide-bar3{
+    background: $section_bg4;
+    .sidebar-info.sidebar-info3{
+        .sidebar-content{
+            p{
+                font-family: $font2;
+                font-weight: $regular;
+            }
+        }
+        .sidebar-menu.list-unstyled{
+            a{
+                color: $color8;
+                display: inline-block;
+                font-family: $font2;
+                font-size: $heading4_size;
+            }
+        }
+        .sidebar-contact-header{
+            h3{
+                font-family: $font3;
+                font-weight: $medium;
+                margin-top: 20px;
+            }
+            a{
+                font-family: $font2;
+                font-weight: $regular
+            }
+        }
+        .theme-btnarea{
+            .casebtn1{
+                font-family: $font2;
+                font-size: $small_font_size;
+                font-weight: $bold;
+                color: $white;
+                background: $color8;
+                padding: 14px 24px;
+                display: inline-block;
+                border-radius: 4px;
+                margin-top: 32px;
+                position: relative;
+                z-index: 1;
+                transition: all .4s ease-in-out;
+                svg{
+                    margin-left: 4px;
+                }
+                &::after{
+                    position: absolute;
+                    content: "";
+                    height: 100%;
+                    width: 0;
+                    left: 0;
+                    top: 0;
+                    transition: all .4s ease-in-out;
+                    background: $color6;
+                    z-index: -1;
+                }
+                &:hover:after{
+                    width: 100%;
+                    height: 100%;
+                    transition: all .4s ease-in-out;
+                    border-radius: 4px;
+            
+                }
+                &:hover{
+                    transform: translateY(-5px);
+                    color: $white;
+                }
+            }
+        }
+        .social-links{
+                li{
+                    border: 1px solid $color8;
+                    color: $color8;
+                    cursor: pointer;
+                    &:hover{
+                        color: $white;
+                        background: $color8;
+                        a{
+                            color: $white;
+                        }
+                    }
+                    a{
+                        color: $color8;
+                    }
+                }
+        }
+    }
+    h3{
+        font-family: $font3;
+        margin-bottom: 24px;
+        margin-top: 20px;
+    }
+}
+
+// sidebar-menu //
+.slide-bar.slide-bar4{
+    background: $bg36;
+    .sidebar-info.sidebar-info4{
+        .sidebar-content{
+            p{
+                font-family: $font2;
+                font-weight: $regular;
+            }
+        }
+        .sidebar-menu.list-unstyled{
+            a{
+                color: $color10;
+                display: inline-block;
+                font-family: $font2;
+            }
+        }
+        .sidebar-contact-header{
+            h3{
+                font-family: $font3;
+                font-weight: $medium;
+                margin-top: 20px;
+
+            }
+            a{
+                font-family: $font2;
+                font-weight: $regular
+            }
+        }
+        .theme-btnarea{
+            .welcome-btn4{
+                font-size: $small_font_size;
+                font-family: $font2;
+                color: $white;
+                font-weight: $bold;
+                background: $color10;
+                display: inline-block;
+                padding: 14px 24px;
+                margin-top: 32px;
+                border-radius: 30px;
+                transition: all .4s ease-in-out;
+                &:hover{
+                    background: $color9;
+                    color: $white;
+                    transition: all .4s ease-in-out;
+                    transform: translateY(-5px);
+                }
+                &::after{
+                    display: none;
+                }
+            }
+            
+        }
+        .social-links{
+                li{
+                    border: 1px solid $color10;
+                    color: $color10;
+                    cursor: pointer;
+                    &:hover{
+                        color: $white;
+                        background: $color10;
+                        a{
+                            color: $white;
+                        }
+                    }
+                    a{
+                        color: $color10;
+                    }
+                }
+        }
+        h3{
+            font-family: $font3;
+            margin-bottom: 24px;
+            margin-top: 20px;
+            font-weight: $medium;
+        }
+    }
+}
+
+// sidebar-menu //
+.slide-bar.slide-bar5{
+    background: $bg5;
+    .close-mobile-menu{
+        a{
+            color: $white;
+            &:after{
+                background: $white;
+            }
+            &::before{
+                background: $white;
+            }
+        }
+    }
+}
+.sidebar-info.sidebar-info5{
+    .phone-side{
+        img{
+            filter: brightness(0) invert(1);
+        }
+    }
+    .sidebar-content{
+        p{
+            font-family: $font2;
+            font-weight: $regular;
+            color: $white;
+        }
+    }
+    .sidebar-menu.list-unstyled{
+        a{
+            color: $bg6;
+            display: inline-block;
+        }
+    }
+    .sidebar-contact-header{
+        h3{
+            font-family: $font2;
+            font-weight: $medium;
+            color: $white;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        a{
+            font-family: $font2;
+            font-weight: $regular;
+            color: $white;
+        }
+    }
+
+}
+.sidebar-info.sidebar-info5{
+    .theme-btnarea{
+        .welcome5-btn{
+            font-family: $font2;
+            font-size: $small_font_size;
+            color: $bg5;
+            background: $bg6;
+            display: inline-block;
+            padding: 14px 20px;
+            font-weight: $bold;
+            margin-top: 32px;
+            transition: all .4s ease-in-out;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+            svg{
+                margin-left: 4px;
+            }&:after{
+                position: absolute;
+                content: "";
+                height: 100%;
+                width: 0;
+                right: 0;
+                top: 0;
+                background: $white;
+                opacity: 0.1;
+                transition: all .4s ease-in-out;
+                z-index: -1;
+            }
+            &:hover::after{
+                height: 100%;
+                width: 100%;
+                transition: all .4s ease-in-out;
+                left: 0;
+                right: auto;
+            }
+        
+            &:hover{
+                color: $bg5;
+                transition: all .4s ease-in-out;
+                transform: translateY(-5px);
+            }
+        }
+        
+    }
+        .social-links{
+                li{
+                    border: 1px solid $bg6;
+                    color: $bg6;
+                    cursor: pointer;
+                    &:hover{
+                        color: $white;
+                        background: $bg6;
+                        a{
+                            color: $white;
+                        }
+                    }
+                    a{
+                        color: $bg6;
+                    }
+                }
+        }
+    h3.sidebar-heading{
+        color: $white;
+        font-family: $font2;
+        font-size: $heading4_size + 6;
+        margin-top: 20px;
+    }
+    .social-links.homeage5{
+        li{
+            border: 1px solid $bg6;
+            color: $bg6;
+            cursor: pointer;
+            &:hover{
+                a{
+                    color: $bg6;
+                }
+            }
+            a{
+                color: $bg6;
+                &:hover{
+                    color: $bg6;
+                }
+            }
+        }
+    }
+}
+.sidebar-info.sidebar-info5 ul.social-links li a {
+    color: $bg6;
+}
+
+.sidebar-info.sidebar-info5 ul.social-links li {
+    border: 1px solid $bg6;
+}
+
+.sidebar-info.sidebar-info5 ul.social-links li:hover {
+    background: $bg6;
+    transition: all .4s ease-in-out;
+}
+
+.sidebar-info.sidebar-info5 ul.social-links li:hover a {
+    color: $bg5;
+    transition: all .4s ease-in-out;
+}
+// sidebar-menu //
+.slide-bar.slide-bar6{
+    background: $color14;
+    .close-mobile-menu{
+        a{
+            color: $white;
+            &:after{
+                background: $white;
+            }
+            &::before{
+                background: $white;
+            }
+        }
+    }
+}
+.sidebar-info.sidebar-info6{
+    .sidebar-logo{
+        a{
+            img{
+                filter: brightness(0) invert(1);
+            }
+        }
+    }
+    .phone-side{
+        img{
+            filter: brightness(0) invert(1);
+        }
+    }
+    .sidebar-content{
+        p{
+            font-family: $font2;
+            font-weight: $regular;
+            color: $white;
+        }
+    }
+    .sidebar-menu.list-unstyled{
+        a{
+            color: $white;
+            display: inline-block;
+            transition: all .4s ease-in-out;
+            font-family: $font2 !important;
+            &:hover{
+                color: $color15;
+                transition: all .4s ease-in-out;
+            }
+        }
+    }
+    .sidebar-contact-header{
+        h3{
+            font-family: $font2;
+            font-weight: $medium;
+            color: $white;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        a{
+            font-family: $font2;
+            font-weight: $regular;
+            color: $white;
+        }
+    }
+    .social-links{
+        li{
+            border: 1px solid $white;
+            color: $white;
+            cursor: pointer;
+            &:hover{
+                color: $white;
+                background: $color15;
+                border: 1px solid $color15;
+                a{
+                    color: $white;
+                }
+            }
+            a{
+                color: $white;
+            }
+        }
+}
+h3{
+    font-family: $font2;
+    font-weight: $medium;
+    color: $white;
+    margin-top: 20px;
+}
+
+}
+.sidebar-info.sidebar-info6{
+    .theme-btnarea{
+        .welcome5-btn{
+            font-family: $font2;
+            font-size: $small_font_size;
+            color: $color15;
+            background: $white;
+            display: inline-block;
+            padding: 18px 24px;
+            font-weight: $bold;
+            margin-top: 32px;
+            transition: all .4s ease-in-out;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+            svg{
+                margin-left: 4px;
+            }
+            &:after{
+                position: absolute;
+                content: "";
+                height: 100%;
+                width: 0;
+                right: 0;
+                top: 0;
+                background: $color15 !important;
+                opacity: 0.1;
+                transition: all .4s ease-in-out;
+                z-index: -1;
+            }
+            &:hover::after{
+                height: 100%;
+                width: 100%;
+                transition: all .4s ease-in-out;
+                left: 0;
+                right: auto;
+            }
+        
+            &:hover{
+                color: $white;
+                transition: all .4s ease-in-out;
+                transform: translateY(-5px);
+                background: $color15;
+            }
+        }
+        
+    }
+    .sidebar-links{
+        .social-links{
+                li{
+                    border: 1px solid $bg6;
+                    color: $white;
+                    cursor: pointer;
+                    &:hover{
+                        color: $white;
+                        background: $bg6;
+                        a{
+                            color: $white;
+                        }
+                    }
+                    a{
+                        color: $bg6;
+                    }
+                }
+        }
+    }
+    h3.sidebar-heading{
+        color: $white;
+        font-family: $font2;
+        font-size: $heading4_size + 6;
+    }
+}
+
+.sidebar-info.sidebar-info5 ul.social-links li a {
+    color: $color15;
+}
+
+.sidebar-info.sidebar-info5 ul.social-links li {
+    border: 1px solid $color15;
+}
+
+.sidebar-info.sidebar-info5 ul.social-links li:hover {
+    background: $white;
+    transition: all .4s ease-in-out;
+}
+
+.sidebar-info.sidebar-info5 ul.social-links li:hover a {
+    color: $color15;
+    transition: all .4s ease-in-out;
+}
+
+
+
+         // homepage6 //
+
+         .mobile-header.mobile-homepage6{
+            .mobile-nav-icon {
+                color: $white;
+            }
+         }
+
+         .mobile-sidebar.sidebar6{
+            max-height: 100%;
+            overflow-y: scroll;
+            background: $bg42;
+            .mobile-nav li a{
+                font-family: $font2;
+                font-weight: $medium;
+                color: $white;
+
+            }
+            .menu-close{
+                svg{
+                    color: $white;
+                }
+            }
+            span.submenu-button:before {
+                background: $white;
+            }
+            
+            span.submenu-button:after {
+                background: $white;
+            }
+            .allmobilesection{
+                .welcome5-btn{
+                    font-family: $font2;
+                    font-size: $small_font_size;
+                    color: $color15;
+                    background: $white;
+                    display: inline-block;
+                    padding: 14px 20px;
+                    font-weight: $bold;
+                    margin-top: 32px;
+                    transition: all .4s ease-in-out;
+                    cursor: pointer;
+                    overflow: hidden;
+                    position: relative;
+                    z-index: 1;
+                    width: 100%;
+                    text-align: center;
+                    svg{
+                        margin-left: 4px;
+                    }&:after{
+                        position: absolute;
+                        content: "";
+                        height: 100%;
+                        width: 0;
+                        right: 0;
+                        top: 0;
+                        background: $color15;
+                        opacity: 0.1;
+                        transition: all .4s ease-in-out;
+                        z-index: -1;
+                    }
+                    &:hover::after{
+                        height: 100%;
+                        width: 100%;
+                        transition: all .4s ease-in-out;
+                        left: 0;
+                        right: auto;
+                    }
+                
+                    &:hover{
+                        color: $white;
+                        transition: all .4s ease-in-out;
+                        transform: translateY(-5px);
+                        background: $color15;
+                    }
+                }
+                       h3{
+                        font-family: $font5;
+                        font-size: $heading4_size;
+                        line-height: 34px;
+                        color: $white;
+                        margin-bottom: 20px;
+                        font-weight: $regular;
+                        margin-top: 20px;
+                       }
+                       a{
+                        font-size: 16px;
+                        font-weight: $medium;
+                        color: $white;
+                        font-family: $font2;
+                        display: inline-block;
+                       }
+                       .contact-info-single{
+                        display: flex;
+                        img{
+                            margin: 0  12px 0 0;
+                            filter: brightness(0) invert(1);
+                        }
+                       }
+                       .social-links-mobile-menu5{
+                        ul{
+                            li{
+                                display: inline-block;
+                                a{
+                                    height: 36px;
+                                    width: 36px;
+                                    text-align: center;
+                                    display: inline-block;
+                                    line-height: 16px;
+                                    color: $color15;
+                                    border: 1px solid $color15;
+                                    border-radius: 50%;
+                                    transition: all .4s ease-in-out;
+                                    &:hover{
+                                        background: $color15;
+                                        transition: all .4s ease-in-out;
+                                        color: $white;
+                                    }
+                                }
+                            }
+                        }
+                       }
+            }
+        }
+
+               // homepage6 //
+
+               .mobile-header.mobile-homepage7{
+                .mobile-nav-icon {
+                    color: $white;
+                }
+             }
+    
+             .mobile-sidebar.sidebar6{
+                max-height: 100%;
+                overflow-y: scroll;
+                background: $color14;
+                .mobile-nav li a{
+                    font-family: $font2;
+                    font-weight: $medium;
+                    color: $white;
+    
+                }
+                .menu-close{
+                    svg{
+                        color: $white;
+                    }
+                }
+                span.submenu-button:before {
+                    background: $white;
+                }
+                
+                span.submenu-button:after {
+                    background: $white;
+                }
+                .allmobilesection{
+                    .welcome5-btn{
+                        font-family: $font2;
+                        font-size: $small_font_size;
+                        color: $color15;
+                        background: $white;
+                        display: inline-block;
+                        padding: 14px 20px;
+                        font-weight: $bold;
+                        margin-top: 32px;
+                        transition: all .4s ease-in-out;
+                        cursor: pointer;
+                        overflow: hidden;
+                        position: relative;
+                        z-index: 1;
+                        width: 100%;
+                        text-align: center;
+                        svg{
+                            margin-left: 4px;
+                        }&:after{
+                            position: absolute;
+                            content: "";
+                            height: 100%;
+                            width: 0;
+                            right: 0;
+                            top: 0;
+                            background: $color15;
+                            opacity: 0.1;
+                            transition: all .4s ease-in-out;
+                            z-index: -1;
+                        }
+                        &:hover::after{
+                            height: 100%;
+                            width: 100%;
+                            transition: all .4s ease-in-out;
+                            left: 0;
+                            right: auto;
+                        }
+                    
+                        &:hover{
+                            color: $white;
+                            transition: all .4s ease-in-out;
+                            transform: translateY(-5px);
+                            background: $color15;
+                        }
+                    }
+                           h3{
+                            font-family: $font2;
+                            font-size: $heading4_size;
+                            line-height: 34px;
+                            color: $white;
+                            margin-bottom: 20px;
+                            font-weight: $regular;
+                            margin-top: 20px;
+                           }
+                           a{
+                            font-size: 16px;
+                            font-weight: $medium;
+                            color: $white;
+                            font-family: $font2;
+                            display: inline-block;
+                           }
+                           .contact-info-single{
+                            display: flex;
+                            img{
+                                margin: 0  12px 0 0;
+                                filter: brightness(0) invert(1);
+                            }
+                           }
+                           .social-links-mobile-menu5{
+                            ul{
+                                li{
+                                    display: inline-block;
+                                    a{
+                                        height: 36px;
+                                        width: 36px;
+                                        text-align: center;
+                                        display: inline-block;
+                                        line-height: 16px;
+                                        color: $color15;
+                                        border: 1px solid $color15;
+                                        border-radius: 50%;
+                                        transition: all .4s ease-in-out;
+                                        &:hover{
+                                            background: $color15;
+                                            transition: all .4s ease-in-out;
+                                            color: $white;
+                                        }
+                                    }
+                                }
+                            }
+                           }
+                }
+            }
+
+// homepage3 //
+aside.slide-bar.close-side{
+    .sidebar-info{
+        .sidebar-contact-header{
+            h3{
+                font-size: $heading4_size + 6;
+                line-height: 34px;
+                font-family: $font4;
+                margin-top: 24px;
+                margin-bottom: 20px;
+                color: $color22;
+                font-weight: $semi-bold;
+            }
+        }
+        h3{
+            font-family: $font4;
+            margin-top: 20px;
+        }
+    }
+}
+.slide-bar{
+width: 400px;
+}
+
+/* ============= SIDEBAR CSS AREA ENDS =============== */
+    
+
+
+
+
+

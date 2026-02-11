@@ -364,31 +364,23 @@ class ProposalResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('project_title')
-                    ->searchable()
-                    ->sortable()
-                    ->limit(40),
                 Tables\Columns\TextColumn::make('client_name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('client_company')
+                    ->label('Client')
                     ->searchable()
-                    ->toggleable(),
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('client_company')
+                    ->label('Company')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge(),
-                Tables\Columns\TextColumn::make('proposal_date')
+                Tables\Columns\TextColumn::make('valid_until')
+                    ->label('Valid Until')
                     ->date()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('valid_until')
-                    ->date()
-                    ->sortable()
-                    ->toggleable(),
                 Tables\Columns\TextColumn::make('view_count')
                     ->label('Views')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([

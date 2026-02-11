@@ -1,0 +1,670 @@
+.feature-box {
+    text-align: left;
+    margin-right: 0px;
+    margin-left: 0;
+
+    @include xl {
+        margin: 0 -0px 0 0;
+    }
+
+    @include lg {
+        text-align: center;
+        margin-right: 0;
+        margin-top: 50px;
+    }
+}
+
+.feature-counter-wrapp {
+    left: 30px;
+    right: unset;
+}
+
+.feature-counter {
+    .counter-title {
+        @include lg {
+            font-size: 14px;
+            line-height: 24px;
+        }
+    }
+}
+
+.team-card {
+    .team-card-content {
+        left: unset;
+        right: var(--space);
+    }
+}
+
+.request-quote-form {
+    .request-shape {
+        left: unset;
+        right: -25%;
+    }
+}
+
+.teamSlide1 {
+    @media(max-width: 1699px) {
+        margin: 0 -70px 0 0;
+    }
+
+    @media(max-width: 1399px) {
+        margin: 0;
+    }
+}
+
+.team-card {
+    .team-social {
+        .th-social {
+            a {
+                margin: -1px -1px 0 0;
+            }
+        }
+    }
+}
+
+
+
+.checklist {
+    ul {
+        padding-right: 0;
+    }
+}
+
+.brand-title {
+    &:before {
+        margin-left: unset;
+        margin-right: -32.4rem;
+
+        @include xl {
+            margin-right: -15.6rem;
+        }
+
+        @include md {
+            margin-right: -11.6rem;
+        }
+
+        @include sm {
+            margin-right: -7.9rem;
+        }
+    }
+
+    &:after {
+        margin-left: unset;
+        margin-right: 1rem;
+    }
+}
+
+.request-quote-form {
+    &.style2 {
+        margin: 0 0px -35px 40px;
+
+        @include lg {
+            margin-bottom: 40px;
+        }
+    }
+}
+
+@media(max-width: 1399px) {
+    .request-quote-form {
+        &.style2 {
+            margin: 0 0px 40px 0px;
+        }
+    }
+}
+
+.feature-item {
+    &_icon {
+        &:before {
+            left: unset;
+            right: -16px;
+
+            @media(max-width: 1399px) {
+                right: 40%;
+            }
+        }
+    }
+}
+
+.feature-wrap {
+    &.style2 {
+        .feature-item {
+            &_icon {
+                &:before {
+                    @include lg {
+                        left: unset;
+                        right: 40%;
+                    }
+                }
+            }
+        }
+    }
+}
+
+.feature-sec {
+    .title-area {
+        @media(min-width: 1399px) {
+            margin-right: auto;
+            margin-left: 80px;
+        }
+    }
+}
+
+.th-counterup {
+    border-right: none;
+    border-left: 1px dashed $body-color;
+    margin: 0 0 0 50px;
+    padding: 0 0 0 50px;
+
+    @include xl {
+        margin: 0 0 0 25px;
+        padding: 0 0 0 25px;
+    }
+
+    @include lg {
+        border-left: 1px dashed $body-color;
+        border-bottom: 1px dashed $body-color;
+        padding: 50px;
+        margin: 0px;
+
+        &:nth-child(2) {
+            border-left: 1px dashed transparent;
+            margin-left: 0;
+            margin: 0px;
+        }
+
+        &:nth-child(3) {
+            border-bottom: 1px dashed transparent;
+        }
+
+        &:last-child {
+            border-bottom: 1px dashed transparent;
+        }
+    }
+
+    @include md {
+        padding: 30px;
+    }
+
+    @media(max-width: 460px) {
+        border: none;
+
+    }
+
+    &.style3 {
+        text-align: center;
+        border-left: 1px dashed $white-color;
+        border-right: none;
+
+        @include lg {
+            border-left: 1px dashed $white-color;
+            border-right: none;
+            border-bottom: 1px dashed $white-color;
+            padding: 50px 0;
+
+            &:nth-child(2) {
+                border-right: none;
+                border-left: 1px dashed transparent;
+            }
+
+            &:nth-child(3) {
+                border-bottom: 1px dashed transparent;
+            }
+
+            &:last-child {
+                border-bottom: 1px dashed transparent;
+            }
+        }
+
+        @include xs {
+            border: none;
+            padding: 20px 0;
+        }
+
+        .inner {
+            display: block;
+
+            @include lg {
+                max-width: 100%;
+            }
+
+            .icon {
+                background-color: $theme-color;
+                padding: 24px;
+                min-width: 100px;
+                width: 100px;
+                height: 100px;
+                display: block;
+                margin: auto;
+                border-radius: 50%;
+                text-align: center;
+                margin-bottom: 15px;
+
+            }
+
+            .content {
+                .counter {
+                    justify-content: center;
+                }
+            }
+        }
+    }
+
+
+    &:last-child {
+        border-left: 1px dashed transparent;
+        margin-left: 0;
+        padding-left: 0;
+    }
+}
+
+.feature-item {
+    &_icon {
+        // &:before {
+        //     left: unset;
+        //     right: -16px;
+        // }
+    }
+}
+
+.feature-content {
+    .feature-item {
+        &_icon {
+            &:before {
+                @include md {
+                    left: unset;
+                    right: 40%;
+                }
+            }
+        }
+    }
+}
+
+.testi-grid {
+    margin-left: unset;
+    margin-right: 40px;
+
+    &_img {
+        margin-left: unset;
+        margin-right: -90px;
+
+        @include sm {
+            margin-right: -60px;
+        }
+    }
+
+    &_profile {
+        margin-left: unset;
+        margin-right: 50px;
+    }
+}
+
+
+.video-box1 {
+    margin: 0 100px 0 -50%;
+
+    @include xxl {
+        margin: 0 30px 0 0;
+    }
+
+    @include lg {
+        width: 100%;
+        height: 100%;
+        margin: 30px 0 0 0;
+    }
+}
+
+.request-quote-form {
+    &.style2 {}
+
+    textarea.form-control {
+        min-height: 120px;
+        padding: 12px 20px;
+        padding-left: 20px;
+        padding-right: 45px;
+    }
+}
+
+.accordion-card {
+    .accordion-button {
+        padding: 12px 30px 12px 45px;
+
+        &:after {
+            right: unset;
+            left: 30px;
+
+            @media(max-width: 450px) {
+                left: 12px;
+            }
+        }
+    }
+}
+
+.feature-content {
+    margin: 0 -120px -40px -315px;
+    padding: 80px 80px 80px 315px;
+
+    @media(max-width: 1899px) {
+        margin: 0 -120px -40px -215px;
+    }
+
+    @media(max-width: 1740px) {
+        margin: 0 -115px -40px -120px;
+        padding: 80px 80px 80px 115px;
+    }
+
+    @media(max-width: 1599px) {
+        margin: 0 -120px -40px -50px;
+        padding-right: 80px;
+        padding-left: 50px;
+    }
+
+    @media(max-width: 1399px) {
+        margin: 0 0px -40px 0px
+    }
+
+    @include lg {
+        padding: 30px;
+    }
+}
+
+.available-list {
+    li {
+        &.unavailable {
+            &:after {
+                left: 4px;
+                right: auto;
+            }
+        }
+    }
+}
+
+.price-card {
+    &_price {
+        .currency {
+            right: 0px;
+            left: unset;
+        }
+    }
+}
+
+.checklist {
+    ul {
+        text-align: right;
+
+        li {
+            padding-left: 0;
+            padding-right: 28px;
+
+            &:before {
+                left: unset;
+                right: 0;
+            }
+        }
+    }
+}
+
+
+.process-sec {
+    position: relative;
+    overflow: hidden;
+
+    .process-line {
+        align-items: center;
+        position: absolute;
+        top: 44%;
+        left: unset;
+        right: 40%;
+        transform: translate(calc(-50% + 500px), calc(-50% + 25px));
+        margin: 0 -500px;
+
+        @media(min-width: 1922px) {
+            right: 45%;
+        }
+
+        @media(max-width: 1399px) {
+            right: 45%;
+            transform: translate(calc(-20% + 200px), calc(-20% + 10px));
+            max-width: 100%;
+
+            img {
+                width: 85%;
+            }
+
+        }
+
+        @include lg {
+            display: none;
+        }
+    }
+}
+
+.th-video.style1 {
+    padding-right: 0;
+    padding-left: 65px;
+
+    @include lg {
+        padding-left: 0;
+    }
+}
+
+.body-shape7 {
+    left: unset;
+    right: 0px;
+}
+
+.available-list li {
+    padding-left: 0;
+    padding-right: 30px;
+
+    &:after {
+        left: unset;
+        right: 0;
+    }
+}
+
+.price-box_list ul {
+    text-align: right;
+    padding: 0;
+}
+
+.price-box_list li {
+    padding: 4px 38px 4px 15px;
+
+    &:before {
+        left: unset;
+        right: 15px;
+    }
+}
+
+.process-box-wrap:after {
+    right: auto;
+    left: -48px;
+}
+
+.blog-block .blog-btn i {
+    margin-left: 0;
+    margin-right: 5px;
+}
+
+.skill-card {
+    margin-right: 0;
+    margin-left: 25px;
+}
+
+.progress-bar {
+    margin: 0;
+    padding-right: 0;
+    padding-left: 24px;
+}
+
+.widget_shopping_cart .th-btn {
+    margin-right: 0;
+    margin-left: 15px;
+}
+
+.tab-menu1 {
+    .tab-btn {
+        i {
+            margin-left: 0;
+            margin-right: auto;
+        }
+    }
+}
+
+.icon-box.style4 {
+    .slick-arrow {
+        &:first-child i {
+            margin-right: 0;
+            margin-left: 5px;
+        }
+
+        &:last-child i {
+            margin-left: 0;
+            margin-right: 5px;
+        }
+    }
+}
+
+.body-shape6 {
+    position: absolute;
+    left: 0;
+    right: auto !important;
+}
+
+.img-box-1 .shape {
+    right: auto;
+    left: -110px;
+
+    @include xl {
+        left: -30px;
+    }
+}
+
+.cta-shape-wrap::before {
+    right: auto;
+    left: 240px;
+    clip-path: polygon(0 21%, 100% 0%, 100% 100%, 0% 100%);
+
+    @include lg {
+        left: 0;
+        clip-path: polygon(0 0, 100% 0%, 100% 100%, 0% 100%);
+    }
+}
+
+.newsletter-wrap {
+    @include md {
+        gap: 20px;
+    }
+}
+
+.testi-card-2_review {
+    right: auto;
+    left: 0;
+}
+
+.appointment-form select,
+.appointment-form .form-control,
+.appointment-form .form-select,
+.appointment-form textarea,
+.appointment-form .nice-select,
+.appointment-form input {
+    padding: 0px 45px 0px 25px;
+}
+
+.appointment-form .form-group>i {
+    left: unset;
+    right: 30px;
+}
+
+.appointment-form textarea.form-control,
+.appointment-form textarea {
+    padding-top: 16px;
+}
+
+.appointment-form .nice-select:after {
+    left: unset;
+    right: 20px;
+}
+
+.body-shape5 {
+    right: auto !important;
+    left: 0 !important;
+}
+
+.shape2 {
+    left: unset !important;
+    right: 0 !important;
+
+}
+
+.shape5 {
+    left: unset !important;
+    right: 0 !important;
+}
+
+.shape6 {
+    left: 0 !important;
+    right: unset !important;
+}
+
+.accordion-card.style4 .accordion-button {
+    &:after {
+        right: unset;
+        left: 0px;
+    }
+
+    @include xs {
+        padding: 12px 30px 12px 70px;
+    }
+}
+
+.appointment-form-2 .nice-select:after {
+    right: 20px;
+    left: unset;
+}
+
+.appointment-form-2 input,
+.appointment-form-2 select,
+.appointment-form-2 .form-control,
+.appointment-form-2 .form-select {
+    padding: 0 25px 0 25px;
+    padding-right: 45px;
+}
+
+.appointment-form-2 textarea {
+    padding: 12px 45px 12px 20px !important;
+}
+
+.price-card {
+    .available-list li:after {
+        left: unset;
+        right: 0;
+    }
+}
+
+.testi-block-two-area {
+    &:after {
+        right: unset;
+        left: -140px;
+        clip-path: polygon(140px 0px, 100% 0px, calc(100% - 0px) 100%, 0% 100%);
+    }
+
+    .icon-box {
+        right: unset;
+        left: 40px;
+    }
+}
+
+.contact-form select,
+.contact-form .form-control,
+.contact-form .form-select,
+.contact-form textarea,
+.contact-form input {
+    padding-left: 20px;   
+    padding-right: 45px;
+}
+
+.contact-form .form-group i {
+    left: unset;
+    right: 35px;
+}

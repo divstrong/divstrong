@@ -20,7 +20,7 @@ class ProposalStatusChanged extends Mailable
 
     public function envelope(): Envelope
     {
-        $status = ucfirst($this->action);
+        $status = $this->action === 'converted' ? 'Approved' : ucfirst($this->action);
 
         return new Envelope(
             subject: "Proposal {$status}: {$this->proposal->project_title}",

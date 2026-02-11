@@ -11,6 +11,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -34,7 +35,7 @@ class ScopeLibraryResource extends Resource
     {
         return $schema
             ->components([
-                Forms\Components\Section::make()
+                Section::make()
                     ->columns(2)
                     ->schema([
                         Forms\Components\Select::make('category')
@@ -51,9 +52,15 @@ class ScopeLibraryResource extends Resource
                         Forms\Components\TextInput::make('title')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\Textarea::make('description')
-                            ->required()
-                            ->rows(3)
+                        Forms\Components\Repeater::make('bullets')
+                            ->label('Bullet Points')
+                            ->simple(
+                                Forms\Components\TextInput::make('bullet')
+                                    ->required()
+                                    ->placeholder('Bullet point text'),
+                            )
+                            ->defaultItems(1)
+                            ->addActionLabel('Add bullet')
                             ->columnSpanFull(),
                         Forms\Components\TextInput::make('sort_order')
                             ->numeric()
@@ -75,8 +82,9 @@ class ScopeLibraryResource extends Resource
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->limit(60)
+                Tables\Columns\TextColumn::make('bullets')
+                    ->label('Bullets')
+                    ->formatStateUsing(fn ($state) => is_array($state) ? count($state) . ' bullet' . (count($state) !== 1 ? 's' : '') : '—')
                     ->toggleable(),
                 Tables\Columns\ToggleColumn::make('is_active')
                     ->label('Active'),

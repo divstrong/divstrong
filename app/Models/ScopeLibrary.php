@@ -8,11 +8,12 @@ class ScopeLibrary extends Model
 {
     protected $table = 'scope_library';
 
-    protected $fillable = ['category', 'title', 'description', 'sort_order', 'is_active'];
+    protected $fillable = ['category', 'title', 'bullets', 'sort_order', 'is_active'];
 
     protected function casts(): array
     {
         return [
+            'bullets' => 'array',
             'is_active' => 'boolean',
         ];
     }

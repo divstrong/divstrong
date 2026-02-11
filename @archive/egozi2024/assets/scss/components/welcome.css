@@ -1,0 +1,109 @@
+/*
+============================
+Name:
+Version: 1.0.0
+Description:
+Author: Sujon mahamud
+Author URI:
+Location:
+============================
+*/
+.welcome-section-area {
+  background-color: #F6F6EC;
+  padding: 200px 0 200px;
+  position: relative;
+}
+
+.welcome-header-author-area {
+  position: absolute;
+  z-index: 1;
+}
+.welcome-header-author-area .img1 img {
+  width: 200px;
+  height: 200px;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+.welcome-header-author-area .elementors-img1 img {
+  height: 100%;
+  width: 100%;
+  -o-object-fit: contain;
+     object-fit: contain;
+  position: relative;
+  top: -250px;
+  left: -50px;
+}
+.welcome-header-author-area .elementors-img2 img {
+  width: 250px;
+  height: 250px;
+  -o-object-fit: contain;
+     object-fit: contain;
+  position: absolute;
+  top: -25px;
+  left: -25px;
+}
+
+.welcome-header-author-area1 {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: 125px;
+}
+.welcome-header-author-area1 .img1 img {
+  width: 200px;
+  height: 200px;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+.welcome-header-author-area1 .elementors-img1 img {
+  height: 100%;
+  width: 100%;
+  -o-object-fit: contain;
+     object-fit: contain;
+  position: relative;
+  top: -250px;
+  left: -50px;
+}
+.welcome-header-author-area1 .elementors-img2 img {
+  width: 250px;
+  height: 250px;
+  -o-object-fit: contain;
+     object-fit: contain;
+  position: absolute;
+  top: -25px;
+  left: -25px;
+}
+
+.welcome-main-area {
+  position: relative;
+}
+.welcome-main-area span {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 16px;
+  color: #2B495A;
+  border-radius: 2px;
+  background: rgba(43, 73, 90, 0.1);
+  display: inline-block;
+  padding: 10px;
+  margin-bottom: 24px;
+  font-family: "Urbanist", sans-serif;
+}
+.welcome-main-area h1 {
+  font-size: 56px;
+  line-height: 64px;
+  font-weight: 600;
+  font-family: "Frank Ruhl Libre", serif;
+  color: #0B1B23;
+  position: relative;
+}
+.welcome-main-area h1 span {
+  background: none;
+}
+.welcome-main-area p {
+  font-family: "Urbanist", sans-serif;
+  font-size: 16px;
+  line-height: 26px;
+  font-weight: 500;
+  color: #3A3A3F;
+}/*# sourceMappingURL=welcome.css.map */

@@ -13,6 +13,7 @@ enum ProposalStatus: string implements HasLabel, HasColor, HasIcon
     case Viewed = 'viewed';
     case Accepted = 'accepted';
     case Declined = 'declined';
+    case Converted = 'converted';
 
     public function getLabel(): string
     {
@@ -22,6 +23,7 @@ enum ProposalStatus: string implements HasLabel, HasColor, HasIcon
             self::Viewed => 'Viewed',
             self::Accepted => 'Accepted',
             self::Declined => 'Declined',
+            self::Converted => 'Converted',
         };
     }
 
@@ -33,6 +35,7 @@ enum ProposalStatus: string implements HasLabel, HasColor, HasIcon
             self::Viewed => 'warning',
             self::Accepted => 'success',
             self::Declined => 'danger',
+            self::Converted => 'success',
         };
     }
 
@@ -44,6 +47,7 @@ enum ProposalStatus: string implements HasLabel, HasColor, HasIcon
             self::Viewed => 'heroicon-o-eye',
             self::Accepted => 'heroicon-o-check-circle',
             self::Declined => 'heroicon-o-x-circle',
+            self::Converted => 'heroicon-o-check-badge',
         };
     }
 }
