@@ -378,19 +378,25 @@
                     editTitle: '',
                     editDesc: '',
                     editBullets: [],
+                    _bulletUid: 0,
                     dragId: null,
                     deleteId: null,
                     deleteTitle: '',
                     bulletDragIndex: null,
                     bulletDragOverIndex: null,
+                    _makeBullet(text) {
+                        return { id: ++this._bulletUid, text: text || '' };
+                    },
                     startEdit(id, title, description, bullets) {
                         this.editingId = id;
                         this.editTitle = title;
                         this.editDesc = description || '';
-                        this.editBullets = bullets && bullets.length ? [...bullets] : [''];
+                        this.editBullets = bullets && bullets.length
+                            ? bullets.map(b => this._makeBullet(b))
+                            : [this._makeBullet('')];
                     },
                     addBullet() {
-                        this.editBullets.push('');
+                        this.editBullets.push(this._makeBullet(''));
                         this.$nextTick(() => {
                             const inputs = this.$el.querySelectorAll('[data-bullet-input]');
                             if (inputs.length) inputs[inputs.length - 1].focus();
@@ -398,7 +404,7 @@
                     },
                     removeBullet(index) {
                         this.editBullets.splice(index, 1);
-                        if (this.editBullets.length === 0) this.editBullets.push('');
+                        if (this.editBullets.length === 0) this.editBullets.push(this._makeBullet(''));
                     },
                     bulletDragStart(index) {
                         this.bulletDragIndex = index;
@@ -422,9 +428,9 @@
                         this.bulletDragIndex = null;
                         this.bulletDragOverIndex = null;
                     },
-                    saveEdit() {
+                    async saveEdit() {
                         if (this.editingId && this.editTitle.trim()) {
-                            $wire.updateScopeItem(this.editingId, this.editTitle, this.editDesc, this.editBullets);
+                            await $wire.updateScopeItem(this.editingId, this.editTitle, this.editDesc, this.editBullets.map(b => b.text));
                         }
                         this.editingId = null;
                     },
@@ -598,7 +604,7 @@
                                             </div>
                                             <div class="space-y-2 mb-3">
                                                 <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Bullet Points</label>
-                                                <template x-for="(bullet, index) in editBullets" :key="index">
+                                                <template x-for="(bullet, index) in editBullets" :key="bullet.id">
                                                     <div class="flex items-center gap-2"
                                                          draggable="true"
                                                          @dragstart.stop="bulletDragStart(index)"
@@ -610,11 +616,10 @@
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
                                                         </span>
                                                         <span class="w-1.5 h-1.5 rounded-full bg-brand flex-shrink-0"></span>
-                                                        <input type="text" x-model="editBullets[index]"
+                                                        <input type="text" x-model="bullet.text"
                                                                data-bullet-input
                                                                @keydown.enter.prevent="addBullet()"
-                                                               @keydown.backspace="if (editBullets[index] === '' && editBullets.length > 1) { $event.preventDefault(); removeBullet(index); }"
-                                                               @keydown.escape="editingId = null"
+                                                               @keydown.backspace="if (bullet.text === '' && editBullets.length > 1) { $event.preventDefault(); removeBullet(index); }"
                                                                class="flex-1 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-1.5 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none"
                                                                placeholder="Bullet point text">
                                                         <button @click="removeBullet(index)"
@@ -790,7 +795,7 @@
                                 @if($isAdmin)<th class="w-10"></th>@endif
                                 <th class="px-6 py-4">Service</th>
                                 <th class="px-6 py-4 text-center">Qty</th>
-                                <th class="px-6 py-4 text-right">Unit Price</th>
+                                <th class="px-6 py-4 text-center">Rate</th>
                                 <th class="px-6 py-4 text-right">Amount</th>
                                 @if($isAdmin)<th class="w-24"></th>@endif
                             </tr>
@@ -828,7 +833,7 @@
                                     <td class="px-6 py-4 text-center text-gray-500">{{ $item->quantity }}</td>
                                 </template>
                                 <template x-if="editingCostId !== {{ $item->id }}">
-                                    <td class="px-6 py-4 text-right text-gray-500">${{ number_format($item->unit_price, 0) }}</td>
+                                    <td class="px-6 py-4 text-center text-gray-500">${{ number_format($item->unit_price, 0) }}</td>
                                 </template>
                                 <template x-if="editingCostId !== {{ $item->id }}">
                                     <td class="px-6 py-4 text-right text-gray-900 font-semibold">${{ number_format($item->amount, 0) }}</td>
@@ -897,9 +902,10 @@
                                 <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-6 py-5 text-right">
                                     <span class="text-gray-900 font-bold text-lg">Total</span>
                                 </td>
-                                <td class="px-6 py-5 text-right" {{ $isAdmin ? 'colspan=2' : '' }}>
-                                    <span class="text-brand font-bold text-2xl">${{ number_format($proposal->subtotal, 0) }}</span>
+                                <td class="px-6 py-5 text-right">
+                                    <span class="text-gray-900 font-bold text-2xl">${{ number_format($proposal->subtotal, 0) }}</span>
                                 </td>
+                                @if($isAdmin)<td></td>@endif
                             </tr>
                         </tfoot>
                     </table>
@@ -1022,9 +1028,9 @@
                     </div>
                 </div>
 
-                <div class="space-y-3">
-                    @foreach($proposal->milestones as $milestone)
-                    <div class="group/ms flex items-center gap-4 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden divide-y divide-gray-100">
+                    @foreach($proposal->milestones as $index => $milestone)
+                    <div class="group/ms flex items-center gap-4 py-4 px-5 hover:bg-gray-50/50 transition-colors"
                          data-milestone-id="{{ $milestone->id }}"
                          @if($isAdmin)
                          draggable="true"
@@ -1035,8 +1041,8 @@
                          :class="{ 'border border-brand border-dashed': msDragOver === {{ $milestone->id }} }"
                          @endif>
 
-                        {{-- Bullet --}}
-                        <span class="w-2 h-2 bg-brand rounded-full shrink-0"></span>
+                        {{-- Number --}}
+                        <span class="w-7 h-7 bg-brand text-white text-xs font-bold rounded-full flex items-center justify-center shrink-0">{{ $index + 1 }}</span>
 
                         {{-- View mode --}}
                         <div x-show="editingMsId !== {{ $milestone->id }}" class="flex-1 flex items-center gap-2 min-w-0">
@@ -1109,7 +1115,7 @@
             <div class="pl-8">
             {{-- Admin: Editable content --}}
             @if($isAdmin)
-                <div class="mb-8">
+                <div class="mb-8" wire:ignore>
                     <div contenteditable="true"
                          class="prose prose-gray max-w-none text-gray-600 leading-relaxed focus:outline-none border-b-2 border-dashed border-transparent hover:border-gray-200 focus:border-brand transition-colors px-1 py-2 min-h-[80px]"
                          x-data

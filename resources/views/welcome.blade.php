@@ -29,9 +29,9 @@
 
                 {{-- Desktop Nav --}}
                 <div class="hidden md:flex items-center gap-8">
-                    <a href="#about" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">About</a>
+                    <a href="#about" class="text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900 transition-colors">About</a>
                     <div class="relative group">
-                        <button class="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1">
+                        <button class="text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1">
                             Services
                             <svg class="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
@@ -44,8 +44,8 @@
                             </div>
                         </div>
                     </div>
-                    <a href="#work" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Portfolio</a>
-                    <a href="#contact" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Contact</a>
+                    <a href="#work" class="text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900 transition-colors">Portfolio</a>
+                    <a href="#contact" class="text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900 transition-colors">Contact</a>
                 </div>
 
                 {{-- Right side: Client Portal --}}
@@ -65,10 +65,10 @@
             {{-- Mobile Nav --}}
             <div id="mobile-menu" class="hidden md:hidden pb-4 border-t border-gray-100">
                 <div class="pt-4 flex flex-col gap-3">
-                    <a href="#about" class="text-sm font-medium text-gray-600 hover:text-gray-900">About</a>
-                    <a href="#services" class="text-sm font-medium text-gray-600 hover:text-gray-900">Services</a>
-                    <a href="#work" class="text-sm font-medium text-gray-600 hover:text-gray-900">Portfolio</a>
-                    <a href="#contact" class="text-sm font-medium text-gray-600 hover:text-gray-900">Contact</a>
+                    <a href="#about" class="text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900">About</a>
+                    <a href="#services" class="text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900">Services</a>
+                    <a href="#work" class="text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900">Portfolio</a>
+                    <a href="#contact" class="text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900">Contact</a>
                     <a href="{{ url('/admin') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                         Client Portal
@@ -141,9 +141,7 @@
             ['file' => 'hemsworth.png', 'name' => 'Hemsworth Communications'],
             ['file' => 'goldenseed.png', 'name' => 'Golden Seed'],
             ['file' => 'casasrva.png', 'name' => 'Casas RVA'],
-            ['file' => 'fitfoodfresh.png', 'name' => 'Fit Food Fresh'],
-            ['file' => 'cryptofantasy.png', 'name' => 'Crypto Fantasy'],
-            ['file' => 'cousinsmainelobster.png', 'name' => 'Cousins Maine Lobster'],
+            ['file' => 'cousins.jpg', 'name' => 'Cousins Maine Lobster'],
             ['file' => 'captapp.png', 'name' => 'The Capt App'],
             ['file' => 'partnersnapier.png', 'name' => 'Partners and Napier'],
         ];
