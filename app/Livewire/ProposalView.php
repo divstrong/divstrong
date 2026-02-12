@@ -51,7 +51,6 @@ class ProposalView extends Component
     // Share modal
     public string $shareEmail = '';
     public string $shareNotes = '';
-    public bool $shareSent = false;
 
     public function mount(string $uuid): void
     {
@@ -179,8 +178,8 @@ class ProposalView extends Component
             $this->proposal->refresh();
         }
 
-        $this->shareSent = true;
         $this->shareNotes = '';
+        $this->dispatch('proposal-shared');
     }
 
     public function getClientsProperty(): Collection

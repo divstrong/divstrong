@@ -10,6 +10,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/accessibility', fn () => view('accessibility'))->name('accessibility');
+Route::get('/terms', fn () => view('terms'))->name('terms');
+Route::get('/privacy', fn () => view('privacy'))->name('privacy');
+
 Route::post('/appointment', function (Request $request) {
     $validated = $request->validate([
         'name' => 'required|string|max:255',

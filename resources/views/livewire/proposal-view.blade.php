@@ -36,7 +36,7 @@
                     ></a>
                 </template>
             </div>
-            <div class="flex-shrink-0 sm:absolute sm:right-6">
+            <div class="hidden sm:block sm:absolute sm:right-6">
                 @if($converted || $proposal->status === \App\Enums\ProposalStatus::Accepted)
                     <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 text-xs font-semibold rounded-full border border-emerald-200">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -55,7 +55,14 @@
     </nav>
 
     {{-- ========== COVER SECTION ========== --}}
-    <section class="relative min-h-screen flex items-center justify-center px-4 sm:px-6 {{ $hasCover ? 'bg-gray-900' : 'bg-white' }}">
+    <section class="relative min-h-screen flex items-center justify-center px-4 sm:px-6 bg-gray-900">
+        {{-- Background video --}}
+        <div class="absolute inset-0 overflow-hidden">
+            <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover opacity-40">
+                <source src="{{ asset('videos/abstractbg1.mp4') }}" type="video/mp4">
+            </video>
+        </div>
+
         @if($hasCover)
             <div class="absolute inset-0 overflow-hidden">
                 <div class="absolute inset-0 bg-cover bg-center animate-hero-drift"
@@ -95,9 +102,9 @@
         {{-- Admin: Share button --}}
         @if($isAdmin)
             <div class="absolute top-4 right-4 z-20"
-                 x-data="{ showShare: false }"
-                 x-init="$wire.on('proposal-shared', () => { })">
-                <button @click="showShare = true; $wire.set('shareSent', false)"
+                 x-data="{ showShare: false, shareSent: false }"
+                 @proposal-shared.window="shareSent = true">
+                <button @click="showShare = true; shareSent = false"
                         class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/90 border border-gray-200 text-gray-600 hover:bg-white hover:text-gray-900 shadow-sm transition cursor-pointer backdrop-blur-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
                     Share
@@ -132,44 +139,40 @@
 
                         {{-- Modal body --}}
                         <div class="px-6 py-5">
-                            @if($shareSent)
-                                <div class="text-center py-4">
-                                    <div class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                                        <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                    </div>
-                                    <p class="text-gray-900 font-semibold">Proposal sent!</p>
-                                    <p class="text-sm text-gray-500 mt-1">Email delivered to {{ $shareEmail }}</p>
-                                    <button @click="showShare = false"
-                                            class="mt-4 px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
-                                        Close
-                                    </button>
+                            <div x-show="shareSent" x-cloak class="text-center py-4">
+                                <div class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                 </div>
-                            @else
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
-                                        <input type="email" wire:model="shareEmail"
-                                               placeholder="client@example.com"
-                                               class="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition text-sm">
-                                        @error('shareEmail')
-                                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                        @enderror
-                                    </div>
+                                <p class="text-gray-900 font-semibold">Proposal sent!</p>
+                                <p class="text-sm text-gray-500 mt-1">Email delivered to <span x-text="$wire.shareEmail"></span></p>
+                                <button @click="showShare = false"
+                                        class="mt-4 px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
+                                    Close
+                                </button>
+                            </div>
+                            <div x-show="!shareSent" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                                    <input type="email" wire:model="shareEmail"
+                                           placeholder="client@example.com"
+                                           class="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition text-sm">
+                                    @error('shareEmail')
+                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
 
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Note <span class="text-gray-400 font-normal">(optional)</span></label>
-                                        <textarea wire:model="shareNotes"
-                                                  rows="3"
-                                                  placeholder="Add a personal note..."
-                                                  class="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition text-sm resize-none"></textarea>
-                                    </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Note <span class="text-gray-400 font-normal">(optional)</span></label>
+                                    <textarea wire:model="shareNotes"
+                                              rows="3"
+                                              placeholder="Add a personal note..."
+                                              class="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition text-sm resize-none"></textarea>
                                 </div>
-                            @endif
+                            </div>
                         </div>
 
                         {{-- Modal footer --}}
-                        @if(!$shareSent)
-                        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center gap-3 justify-end">
+                        <div x-show="!shareSent" class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center gap-3 justify-end">
                             <button @click="showShare = false"
                                     class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
                                 Cancel
@@ -182,7 +185,6 @@
                                 <span wire:loading wire:target="shareProposal">Sending...</span>
                             </button>
                         </div>
-                        @endif
                     </div>
                 </div>
             </div>
@@ -196,52 +198,52 @@
             @if($isAdmin)
                 <div class="mb-4 inline-block relative">
                     <select wire:model.live="editingClientId"
-                            class="appearance-none bg-transparent border-0 border-b-2 border-dashed border-transparent hover:border-gray-300 focus:border-brand focus:ring-0 {{ $hasCover ? 'text-white' : 'text-gray-900' }} font-bold text-4xl sm:text-5xl lg:text-6xl text-center cursor-pointer pr-10 pl-2 py-1 transition-colors leading-tight">
+                            class="appearance-none bg-transparent border-0 border-b-2 border-dashed border-transparent hover:border-gray-300 focus:border-brand focus:ring-0 text-white font-bold text-4xl sm:text-5xl lg:text-6xl text-center cursor-pointer pr-10 pl-2 py-1 transition-colors leading-tight">
                         <option value="" class="text-gray-900 text-base">Select Client</option>
                         @foreach($this->clients as $client)
                             <option value="{{ $client->id }}" class="text-gray-900 text-base">{{ $client->company ?? $client->name }}</option>
                         @endforeach
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center {{ $hasCover ? 'text-gray-300' : 'text-gray-400' }}">
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center text-gray-300">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                 </div>
             @else
-                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold {{ $hasCover ? 'text-white' : 'text-gray-900' }} mb-4 leading-tight">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
                     {{ $proposal->client_company ?: $proposal->client_name }}
                 </h1>
             @endif
 
         </div>
 
-        {{-- Bottom left: Client name + website --}}
-        <div class="absolute bottom-8 left-8 z-10">
-            <p class="{{ $hasCover ? 'text-white' : 'text-gray-900' }} font-semibold text-sm">{{ $proposal->client_name }}</p>
+        {{-- Bottom left: Client name + website (centered on mobile) --}}
+        <div class="absolute bottom-32 sm:bottom-8 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-8 z-10 text-center sm:text-left">
+            <p class="text-white font-semibold text-sm">{{ $proposal->client_name }}</p>
             @if($proposal->client_domain)
-                <p class="{{ $hasCover ? 'text-white/70' : 'text-gray-400' }} text-sm">{{ $proposal->client_domain }}</p>
+                <p class="text-white/70 text-sm">{{ $proposal->client_domain }}</p>
             @endif
         </div>
 
-        {{-- Logo tab - right edge --}}
-        <div class="absolute bottom-8 right-0 z-10">
-            <a href="https://www.divstrong.com" target="_blank" rel="noopener" class="bg-white rounded-l-lg px-5 py-3 shadow-lg block hover:shadow-xl transition-shadow">
+        {{-- Logo tab - right edge on desktop, centered bottom tab on mobile --}}
+        <div class="absolute bottom-0 sm:bottom-8 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-auto sm:right-0 z-10">
+            <a href="https://www.divstrong.com" target="_blank" rel="noopener" class="bg-white rounded-t-lg sm:rounded-t-none sm:rounded-l-lg px-5 py-3 shadow-lg block hover:shadow-xl transition-shadow">
                 <img src="{{ asset('images/logo.png') }}" alt="DivStrong" class="h-8">
             </a>
         </div>
 
         {{-- Date + Scroll indicator --}}
-        <div class="absolute bottom-12 left-1/2 -translate-x-1/2 z-10 text-center">
-            <div class="mb-6">
+        <div class="absolute bottom-16 sm:bottom-12 left-1/2 -translate-x-1/2 z-10 text-center">
+            <div class="mb-4 sm:mb-6">
                 @if($isAdmin)
                     <input type="date"
                            wire:model.live="editingProposalDate"
-                           class="bg-transparent border-0 border-b-2 border-dashed border-transparent hover:border-gray-300 focus:border-brand focus:ring-0 {{ $hasCover ? 'text-white/80' : 'text-gray-400' }} text-sm cursor-pointer p-0 transition-colors text-center">
+                           class="bg-transparent border-0 border-b-2 border-dashed border-transparent hover:border-gray-300 focus:border-brand focus:ring-0 text-white/80 text-sm cursor-pointer p-0 transition-colors text-center">
                 @else
-                    <p class="{{ $hasCover ? 'text-white/80' : 'text-gray-400' }} text-sm">{{ $proposal->proposal_date->format('m/d/Y') }}</p>
+                    <p class="text-white/80 text-sm">{{ $proposal->proposal_date->format('m/d/Y') }}</p>
                 @endif
             </div>
             <div class="animate-bounce">
-                <svg class="w-6 h-6 mx-auto {{ $hasCover ? 'text-white/40' : 'text-gray-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 mx-auto text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
                 </svg>
             </div>
@@ -253,7 +255,7 @@
     <section id="overview" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
-                <svg class="w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                <svg class="hidden sm:block w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Overview</h2>
             </div>
             <div class="sm:pl-8">
@@ -303,7 +305,7 @@
     <section id="scope" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-12">
-                <svg class="w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                <svg class="hidden sm:block w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Scope of Work</h2>
 
                 {{-- Add Item button --}}
@@ -660,7 +662,7 @@
     <section id="investment" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
-                <svg class="w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                <svg class="hidden sm:block w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Investment</h2>
 
                 @if($isAdmin)
@@ -938,7 +940,7 @@
     <section id="milestones" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
-                <svg class="w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                <svg class="hidden sm:block w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Payment Milestones</h2>
 
                 @if($isAdmin)
@@ -1108,7 +1110,7 @@
     <section id="changes" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
-                <svg class="w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                <svg class="hidden sm:block w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Change Requests</h2>
             </div>
 
@@ -1136,7 +1138,7 @@
     <section id="terms" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
-                <svg class="w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                <svg class="hidden sm:block w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Terms & Conditions</h2>
 
                 @if($isAdmin)

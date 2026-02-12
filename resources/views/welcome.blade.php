@@ -80,27 +80,38 @@
 
     {{-- ==================== HERO SECTION ==================== --}}
     <section class="relative min-h-screen flex items-center pt-20 overflow-hidden">
-        {{-- Background gradient --}}
-        <div class="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100"></div>
-        <div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-brand/5 to-transparent"></div>
+        {{-- Background video --}}
+        <div class="absolute inset-0">
+            <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover opacity-90">
+                <source src="{{ asset('videos/dalibg3.mp4') }}" type="video/mp4">
+            </video>
+        </div>
+        {{-- Dark overlay for text readability --}}
+        <div class="absolute inset-0 bg-black/40"></div>
 
         <div class="relative max-w-7xl mx-auto px-6 lg:px-8 py-20 lg:py-32 w-full">
-            <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div class="items-center">
                 <div>
                     <!-- <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-4">Est. 2009 &mdash; Richmond, VA</p> -->
-                    <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] mb-6">
+                    <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] mb-6 text-white" style="text-shadow: 0 2px 10px rgba(0,0,0,0.4), 0 4px 30px rgba(0,0,0,0.2);">
                         Full Stack,<br>
                         <span class="text-brand">Web 3.0</span><br>
                         App Builds
                     </h1>
-                    <p class="text-lg lg:text-xl text-gray-600 leading-relaxed max-w-lg mb-8">
-                        We plan, design, and develop full-stack applications for B2B/B2C clients worldwide.
+                    <p class="text-lg lg:text-xl text-white/80 leading-relaxed max-w-lg mb-8" style="text-shadow: 0 1px 6px rgba(0,0,0,0.3);">
+                        We plan, design, and develop AI-enabled applications for B2B/B2C clients worldwide.
                     </p>
                     <div class="flex flex-wrap gap-4">
-                        <a href="#contact" class="inline-flex items-center px-8 py-3.5 bg-brand text-white font-semibold rounded-lg hover:bg-gray-900 transition-colors shadow-lg shadow-brand/25">
+                        <a href="#contact" class="inline-flex items-center gap-2 px-8 py-3.5 bg-brand border-2 border-brand text-white font-semibold rounded-lg hover:bg-black hover:border-black transition-colors shadow-lg shadow-black/25">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 0 1 1.037-.443 48.282 48.282 0 0 0 5.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                            </svg>
                             Get in Touch
                         </a>
-                        <a href="#work" class="inline-flex items-center px-8 py-3.5 border-2 border-gray-200 text-gray-700 font-semibold rounded-lg hover:border-gray-900 hover:text-gray-900 transition-colors">
+                        <a href="#work" class="inline-flex items-center gap-2 px-8 py-3.5 border-2 border-white/30 text-white font-semibold rounded-lg hover:border-white hover:bg-white/10 transition-colors shadow-lg shadow-black/25">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0V12a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 12V5.25" />
+                            </svg>
                             View Our Work
                         </a>
                     </div>
@@ -117,53 +128,59 @@
                     </div> -->
                 </div>
 
-                {{-- Hero visual --}}
+                {{-- Hero visual (hidden — bg video replaces this)
                 <div class="relative hidden lg:block">
                     <div class="relative aspect-square rounded-3xl overflow-hidden shadow-2xl">
-                        <img src="{{ asset('images/creativity.png') }}" alt="Creative digital solutions" class="w-full h-full object-cover">
+                        <img src="{{ asset('images/dali2.png') }}" alt="Creative digital solutions" class="w-full h-full object-cover">
                     </div>
                 </div>
+                --}}
             </div>
         </div>
+
+        {{-- ========== CLIENT LOGOS (bottom of hero) ========== --}}
+        @php
+            $clients = [
+                ['file' => 'pepsico.png', 'name' => 'PepsiCo', 'url' => 'https://www.pepsico.com'],
+                ['file' => 'performancepickleball.png', 'name' => 'Performance Pickleball', 'url' => 'https://www.performancepickleball.com'],
+                ['file' => 'freshmovemedia.png', 'name' => 'Fresh Move Media', 'url' => 'https://www.freshmovemedia.com'],
+                ['file' => 'impromptu.png', 'name' => 'Impromptu', 'url' => 'https://www.impromptuapp.com'],
+                ['file' => 'boden.png', 'name' => 'Boden Agency', 'url' => 'https://www.bodenagency.com'],
+                ['file' => 'cottonnatural.png', 'name' => 'Cotton Natural', 'url' => 'https://www.cottonnatural.com'],
+                ['file' => 'tsipromotionals.png', 'name' => 'TSI Promotionals', 'url' => 'https://www.tsipromotionals.com'],
+                ['file' => 'sls.png', 'name' => 'Secured Link Society', 'url' => 'https://www.securedlinksociety.com'],
+                ['file' => 'hemsworth.png', 'name' => 'Hemsworth Communications', 'url' => 'https://www.hemsworthcommunications.com'],
+                ['file' => 'goldenseed.png', 'name' => 'Golden Seed', 'url' => 'https://www.goldenseed.com'],
+                ['file' => 'casasrva.png', 'name' => 'Casas RVA', 'url' => 'https://www.casasrva.com'],
+                ['file' => 'cousins.jpg', 'name' => 'Cousins Maine Lobster', 'url' => 'https://www.cousinsmainelobster.com'],
+                ['file' => 'captapp.png', 'name' => 'The Capt App', 'url' => 'https://www.thecaptapp.com'],
+                ['file' => 'partnersnapier.png', 'name' => 'Partners and Napier', 'url' => 'https://www.partnersandnapier.com'],
+            ];
+        @endphp
     </section>
 
-    {{-- ==================== CLIENT LOGOS ==================== --}}
-    @php
-        $clients = [
-            ['file' => 'pepsico.png', 'name' => 'PepsiCo'],
-            ['file' => 'performancepickleball.png', 'name' => 'Performance Pickleball'],
-            ['file' => 'freshmovemedia.png', 'name' => 'Fresh Move Media'],
-            ['file' => 'impromptu.png', 'name' => 'Impromptu'],
-            ['file' => 'boden.png', 'name' => 'Boden Agency'],
-            ['file' => 'cottonnatural.png', 'name' => 'Cotton Natural'],
-            ['file' => 'tsipromotionals.png', 'name' => 'TSI Promotionals'],
-            ['file' => 'sls.png', 'name' => 'Secured Link Society'],
-            ['file' => 'hemsworth.png', 'name' => 'Hemsworth Communications'],
-            ['file' => 'goldenseed.png', 'name' => 'Golden Seed'],
-            ['file' => 'casasrva.png', 'name' => 'Casas RVA'],
-            ['file' => 'cousins.jpg', 'name' => 'Cousins Maine Lobster'],
-            ['file' => 'captapp.png', 'name' => 'The Capt App'],
-            ['file' => 'partnersnapier.png', 'name' => 'Partners and Napier'],
-        ];
-    @endphp
-    <section class="py-16 lg:py-20 bg-gray-50 border-y border-gray-100 overflow-hidden">
-        <p class="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-10">Our Clients</p>
+    {{-- Client logo bar --}}
+    <div class="bg-gray-100 py-8 overflow-hidden">
         <div class="logo-carousel relative">
             <div class="logo-carousel-track">
                 @foreach($clients as $client)
                     <div class="logo-carousel-item">
-                        <img src="{{ asset('images/logo/' . $client['file']) }}" alt="{{ $client['name'] }}" class="max-h-20 max-w-[200px] object-contain">
+                        <a href="{{ $client['url'] }}" target="_blank" rel="noopener" class="bg-white rounded-xl border border-gray-200 shadow-sm px-6 py-4 block hover:shadow-md hover:border-gray-300 transition-all">
+                            <img src="{{ asset('images/logo/' . $client['file']) }}" alt="{{ $client['name'] }}" class="max-h-16 max-w-[180px] object-contain">
+                        </a>
                     </div>
                 @endforeach
                 {{-- Duplicate for seamless loop --}}
                 @foreach($clients as $client)
                     <div class="logo-carousel-item">
-                        <img src="{{ asset('images/logo/' . $client['file']) }}" alt="{{ $client['name'] }}" class="max-h-20 max-w-[200px] object-contain">
+                        <a href="{{ $client['url'] }}" target="_blank" rel="noopener" class="bg-white rounded-xl border border-gray-200 shadow-sm px-6 py-4 block hover:shadow-md hover:border-gray-300 transition-all">
+                            <img src="{{ asset('images/logo/' . $client['file']) }}" alt="{{ $client['name'] }}" class="max-h-16 max-w-[180px] object-contain">
+                        </a>
                     </div>
                 @endforeach
             </div>
         </div>
-    </section>
+    </div>
 
     {{-- ==================== SERVICES ==================== --}}
     <section id="services" class="py-24 lg:py-32">
@@ -309,7 +326,10 @@
             <p class="text-lg text-gray-400 mb-10 max-w-2xl mx-auto">
                 -- Almost Every Client
             </p>
-            <a href="#contact" class="inline-flex items-center px-10 py-4 bg-brand text-white font-semibold text-lg rounded-lg hover:bg-gray-900 transition-colors shadow-lg shadow-brand/25">
+            <a href="#contact" class="inline-flex items-center gap-2 px-10 py-4 bg-brand text-white font-semibold text-lg rounded-lg hover:bg-black transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                </svg>
                 Start a Project
             </a>
         </div>
@@ -462,7 +482,10 @@
                                     <textarea id="description" name="description" rows="4" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all resize-none" placeholder="Brief description of what you're looking to build or discuss..."></textarea>
                                 </div>
                                 <p x-show="error" x-text="error" class="text-red-600 text-sm"></p>
-                                <button type="submit" :disabled="submitting" class="w-full px-8 py-3.5 bg-brand text-white font-semibold rounded-lg hover:bg-gray-900 transition-colors shadow-lg shadow-brand/25 disabled:opacity-50">
+                                <button type="submit" :disabled="submitting" class="w-full inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-brand text-white font-semibold rounded-lg hover:bg-gray-900 transition-colors shadow-lg shadow-brand/25 disabled:opacity-50 cursor-pointer">
+                                    <svg x-show="!submitting" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
+                                    </svg>
                                     <span x-show="!submitting">Request Appointment</span>
                                     <span x-show="submitting">Sending...</span>
                                 </button>
@@ -510,9 +533,9 @@
                 <div>
                     <h4 class="text-sm font-semibold uppercase tracking-wider text-white mb-4">Legal</h4>
                     <ul class="space-y-3">
-                        <li><a href="#" class="text-sm text-gray-300 hover:text-white transition-colors">Accessibility</a></li>
-                        <li><a href="#" class="text-sm text-gray-300 hover:text-white transition-colors">Terms</a></li>
-                        <li><a href="#" class="text-sm text-gray-300 hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="{{ route('accessibility') }}" class="text-sm text-gray-300 hover:text-white transition-colors">Accessibility</a></li>
+                        <li><a href="{{ route('terms') }}" class="text-sm text-gray-300 hover:text-white transition-colors">Terms</a></li>
+                        <li><a href="{{ route('privacy') }}" class="text-sm text-gray-300 hover:text-white transition-colors">Privacy Policy</a></li>
                         <li><a href="#" class="text-sm text-gray-300 hover:text-white transition-colors">Sitemap</a></li>
                     </ul>
                 </div>
@@ -528,7 +551,7 @@
             </div>
 
             <div class="border-t border-neutral-700 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                <p class="text-sm text-gray-300">&copy; {{ date('Y') }} divStrong. All rights reserved.</p>
+                <p class="text-sm text-gray-300">&copy; 2009-{{ date('Y') }} divStrong. All rights reserved.</p>
                 <a href="https://www.linkedin.com/company/divstrong" target="_blank" rel="noopener" class="text-gray-300 hover:text-white transition-colors">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
                 </a>
