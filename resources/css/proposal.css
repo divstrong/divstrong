@@ -16,6 +16,15 @@ html {
     scroll-behavior: smooth;
 }
 
+/* Hide scrollbar for horizontally scrollable nav */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
 canvas {
     touch-action: none;
 }

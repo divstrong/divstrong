@@ -22,32 +22,32 @@
          class="fixed top-0 left-0 right-0 z-50 transition-all duration-500"
          :class="scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100 translate-y-0' : '-translate-y-full'"
     >
-        <div class="max-w-6xl mx-auto px-6 flex items-center justify-center h-14 relative">
-            <a href="https://www.divstrong.com" target="_blank" rel="noopener" class="absolute left-6 flex-shrink-0">
+        <div class="max-w-6xl mx-auto px-3 sm:px-6 flex items-center h-14 gap-2 sm:gap-0 sm:justify-center relative">
+            <a href="https://www.divstrong.com" target="_blank" rel="noopener" class="hidden sm:block absolute left-6 flex-shrink-0">
                 <img src="{{ asset('images/logo.png') }}" alt="DivStrong" class="h-6">
             </a>
-            <div class="flex items-center gap-1">
+            <div class="flex items-center gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide flex-1 sm:flex-none sm:justify-center">
                 <template x-for="id in sections" :key="id">
                     <a :href="'#' + id"
-                       class="px-3 py-1.5 text-xs font-medium rounded-full transition-colors duration-200"
+                       class="px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-medium rounded-full transition-colors duration-200 whitespace-nowrap flex-shrink-0"
                        :class="active === id ? 'bg-brand text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'"
                        x-text="labels[id]"
                        @click.prevent="document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })"
                     ></a>
                 </template>
             </div>
-            <div class="absolute right-6">
+            <div class="flex-shrink-0 sm:absolute sm:right-6">
                 @if($converted || $proposal->status === \App\Enums\ProposalStatus::Accepted)
                     <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 text-xs font-semibold rounded-full border border-emerald-200">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                        Approved
+                        <span class="hidden sm:inline">Approved</span>
                     </span>
                 @else
                     <a href="#approval"
                        @click.prevent="document.getElementById('approval')?.scrollIntoView({ behavior: 'smooth' })"
-                       class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-brand hover:bg-gray-900 text-white text-xs font-semibold rounded-full transition-colors cursor-pointer shadow-sm">
+                       class="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 bg-brand hover:bg-gray-900 text-white text-xs font-semibold rounded-full transition-colors cursor-pointer shadow-sm whitespace-nowrap">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                        Approve
+                        <span class="hidden sm:inline">Approve</span>
                     </a>
                 @endif
             </div>
@@ -55,7 +55,7 @@
     </nav>
 
     {{-- ========== COVER SECTION ========== --}}
-    <section class="relative min-h-screen flex items-center justify-center px-6 {{ $hasCover ? 'bg-gray-900' : 'bg-white' }}">
+    <section class="relative min-h-screen flex items-center justify-center px-4 sm:px-6 {{ $hasCover ? 'bg-gray-900' : 'bg-white' }}">
         @if($hasCover)
             <div class="absolute inset-0 overflow-hidden">
                 <div class="absolute inset-0 bg-cover bg-center animate-hero-drift"
@@ -112,9 +112,9 @@
                      x-transition:leave-start="opacity-100"
                      x-transition:leave-end="opacity-0"
                      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                     @click.self="showShare = false"
                      @keydown.escape.window="showShare = false">
-                    <div @click.outside="showShare = false"
-                         x-transition:enter="transition ease-out duration-200"
+                    <div x-transition:enter="transition ease-out duration-200"
                          x-transition:enter-start="opacity-0 scale-95"
                          x-transition:enter-end="opacity-100 scale-100"
                          class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
@@ -250,13 +250,13 @@
 
     {{-- ========== OVERVIEW SECTION ========== --}}
     @if($proposal->introduction || $isAdmin)
-    <section id="overview" class="py-20 px-6 bg-gray-50 scroll-mt-16">
+    <section id="overview" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
                 <svg class="w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Overview</h2>
             </div>
-            <div class="pl-8">
+            <div class="sm:pl-8">
             @if($isAdmin)
                 <div x-data="{
                         editing: false,
@@ -300,7 +300,7 @@
 
     {{-- ========== SCOPE OF WORK SECTION ========== --}}
     @if($proposal->scopeItems->count() || $isAdmin)
-    <section id="scope" class="py-20 px-6 bg-white scroll-mt-16">
+    <section id="scope" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-12">
                 <svg class="w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
@@ -371,7 +371,7 @@
                 @endif
             </div>
 
-            <div class="pl-8">
+            <div class="sm:pl-8">
             {{-- Scope items grouped by category --}}
             <div x-data="{
                     editingId: null,
@@ -657,7 +657,7 @@
 
     {{-- ========== COST / INVESTMENT SECTION ========== --}}
     @if($proposal->costItems->count() || $isAdmin)
-    <section id="investment" class="py-20 px-6 bg-gray-50 scroll-mt-16">
+    <section id="investment" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
                 <svg class="w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
@@ -672,7 +672,7 @@
                 @endif
             </div>
 
-            <div class="pl-8">
+            <div class="sm:pl-8">
             {{-- Cost notes - centered, larger font --}}
             @if($proposal->cost_notes || $isAdmin)
                 @if($isAdmin)
@@ -793,10 +793,10 @@
                         <thead>
                             <tr class="bg-gray-50 text-left text-gray-500 text-xs uppercase tracking-wider">
                                 @if($isAdmin)<th class="w-10"></th>@endif
-                                <th class="px-6 py-4">Service</th>
-                                <th class="px-6 py-4 text-center">Qty</th>
-                                <th class="px-6 py-4 text-center">Rate</th>
-                                <th class="px-6 py-4 text-right">Amount</th>
+                                <th class="px-3 sm:px-6 py-4">Service</th>
+                                <th class="px-2 sm:px-6 py-4 text-center">Qty</th>
+                                <th class="px-2 sm:px-6 py-4 text-center">Rate</th>
+                                <th class="px-3 sm:px-6 py-4 text-right">Amount</th>
                                 @if($isAdmin)<th class="w-24"></th>@endif
                             </tr>
                         </thead>
@@ -824,19 +824,19 @@
 
                                 {{-- View mode --}}
                                 <template x-if="editingCostId !== {{ $item->id }}">
-                                    <td class="px-6 py-4 text-gray-900 {{ $isAdmin ? 'cursor-pointer' : '' }}"
+                                    <td class="px-3 sm:px-6 py-4 text-gray-900 {{ $isAdmin ? 'cursor-pointer' : '' }}"
                                         @if($isAdmin) @click="startCostEdit({{ $item->id }}, @js($item->description), {{ $item->quantity }}, {{ $item->unit_price }})" @endif>
                                         {{ $item->description }}
                                     </td>
                                 </template>
                                 <template x-if="editingCostId !== {{ $item->id }}">
-                                    <td class="px-6 py-4 text-center text-gray-500">{{ $item->quantity }}</td>
+                                    <td class="px-2 sm:px-6 py-4 text-center text-gray-500">{{ $item->quantity }}</td>
                                 </template>
                                 <template x-if="editingCostId !== {{ $item->id }}">
-                                    <td class="px-6 py-4 text-center text-gray-500">${{ number_format($item->unit_price, 0) }}</td>
+                                    <td class="px-2 sm:px-6 py-4 text-center text-gray-500">${{ number_format($item->unit_price, 0) }}</td>
                                 </template>
                                 <template x-if="editingCostId !== {{ $item->id }}">
-                                    <td class="px-6 py-4 text-right text-gray-900 font-semibold">${{ number_format($item->amount, 0) }}</td>
+                                    <td class="px-3 sm:px-6 py-4 text-right text-gray-900 font-semibold">${{ number_format($item->amount, 0) }}</td>
                                 </template>
 
                                 {{-- Edit mode --}}
@@ -899,11 +899,11 @@
                         </tbody>
                         <tfoot>
                             <tr class="bg-gray-50 border-t-2 border-gray-200">
-                                <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-6 py-5 text-right">
+                                <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-3 sm:px-6 py-5 text-right">
                                     <span class="text-gray-900 font-bold text-lg">Total</span>
                                 </td>
-                                <td class="px-6 py-5 text-right">
-                                    <span class="text-gray-900 font-bold text-2xl">${{ number_format($proposal->subtotal, 0) }}</span>
+                                <td class="px-3 sm:px-6 py-5 text-right">
+                                    <span class="text-gray-900 font-bold text-xl sm:text-2xl">${{ number_format($proposal->subtotal, 0) }}</span>
                                 </td>
                                 @if($isAdmin)<td></td>@endif
                             </tr>
@@ -935,7 +935,7 @@
 
     {{-- ========== MILESTONES SECTION ========== --}}
     @if($proposal->milestones->count() || $isAdmin)
-    <section id="milestones" class="py-20 px-6 bg-white scroll-mt-16">
+    <section id="milestones" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
                 <svg class="w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
@@ -950,7 +950,7 @@
                 @endif
             </div>
 
-            <div class="pl-8">
+            <div class="sm:pl-8">
             <p class="text-gray-500 mb-8 leading-relaxed">Milestone payments will become due throughout the life of the project as various milestones are reached as follows:</p>
 
             <div x-data="{
@@ -1105,14 +1105,14 @@
     @endif
 
     {{-- ========== CHANGE REQUESTS SECTION ========== --}}
-    <section id="changes" class="py-20 px-6 bg-gray-50 scroll-mt-16">
+    <section id="changes" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
                 <svg class="w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Change Requests</h2>
             </div>
 
-            <div class="pl-8">
+            <div class="sm:pl-8">
             {{-- Admin: Editable content --}}
             @if($isAdmin)
                 <div class="mb-8" wire:ignore>
@@ -1133,7 +1133,7 @@
     </section>
 
     {{-- ========== TERMS & CONDITIONS SECTION ========== --}}
-    <section id="terms" class="py-20 px-6 bg-white scroll-mt-16">
+    <section id="terms" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
                 <svg class="w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
@@ -1148,7 +1148,7 @@
                 @endif
             </div>
 
-            <div class="pl-8">
+            <div class="sm:pl-8">
             <div x-data="{
                     editingTermId: null,
                     editTermContent: '',
@@ -1358,7 +1358,7 @@
     </section>
 
     {{-- ========== APPROVAL SECTION ========== --}}
-    <section id="approval" class="py-20 px-6 bg-gray-50 scroll-mt-16">
+    <section id="approval" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
         <div class="max-w-2xl mx-auto">
             @if($converted)
                 {{-- CONVERTED STATE --}}
