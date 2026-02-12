@@ -91,7 +91,7 @@
                         App Builds
                     </h1>
                     <p class="text-lg lg:text-xl text-gray-600 leading-relaxed max-w-lg mb-8">
-                        We plan, design, and develop full-stack applications for B2B/B2C businesses <em>en todo el mundo</em>.
+                        We plan, design, and develop full-stack applications for B2B/B2C businesses worldwide.
                     </p>
                     <div class="flex flex-wrap gap-4">
                         <a href="#contact" class="inline-flex items-center px-8 py-3.5 bg-brand text-white font-semibold rounded-lg hover:bg-gray-900 transition-colors shadow-lg shadow-brand/25">
@@ -103,7 +103,7 @@
                     </div>
 
                     {{-- Team flags --}}
-                    <div class="mt-12 flex items-center gap-6">
+                    <!-- <div class="mt-12 flex items-center gap-6">
                         <span class="text-xs font-medium text-gray-400 uppercase tracking-wider">Distributed Team</span>
                         <div class="flex items-center gap-3 text-2xl">
                             <span title="USA">&#127482;&#127480;</span>
@@ -111,19 +111,13 @@
                             <span title="Ukraine">&#127482;&#127462;</span>
                             <span title="Ireland">&#127470;&#127466;</span>
                         </div>
-                    </div>
+                    </div> -->
                 </div>
 
                 {{-- Hero visual --}}
                 <div class="relative hidden lg:block">
-                    <div class="relative aspect-square rounded-3xl bg-gradient-to-br from-gray-900 to-gray-700 overflow-hidden shadow-2xl">
-                        <div class="absolute inset-0 bg-gradient-to-br from-brand/20 to-transparent"></div>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="text-center text-white/80">
-                                <svg class="w-20 h-20 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
-                                <p class="text-sm opacity-50">Hero image placeholder</p>
-                            </div>
-                        </div>
+                    <div class="relative aspect-square rounded-3xl overflow-hidden shadow-2xl">
+                        <img src="{{ asset('images/creativity.png') }}" alt="Creative digital solutions" class="w-full h-full object-cover">
                     </div>
                 </div>
             </div>
@@ -131,13 +125,39 @@
     </section>
 
     {{-- ==================== CLIENT LOGOS ==================== --}}
-    <section class="py-16 lg:py-20 bg-gray-50 border-y border-gray-100">
-        <div class="max-w-7xl mx-auto px-6 lg:px-8">
-            <p class="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-10">Trusted by brands worldwide</p>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-8 items-center justify-items-center">
-                @foreach(['PepsiCo', 'Performance Pickleball', 'Fresh Move Media', 'Impromptu', 'Boden Agency', 'Cotton Natural', 'TSI Promotionals', 'Secured Link Society', 'Hemsworth Communications', 'Golden Seed', 'Casas RVA', 'Fit Food Fresh', 'Crypto Fantasy', 'Cousins Maine Lobster', 'The Capt App', 'Partners and Napier'] as $client)
-                    <div class="flex items-center justify-center h-12 opacity-40 hover:opacity-70 transition-opacity">
-                        <span class="text-xs font-semibold text-gray-500 text-center leading-tight">{{ $client }}</span>
+    @php
+        $clients = [
+            ['file' => 'pepsico.png', 'name' => 'PepsiCo'],
+            ['file' => 'performancepickleball.png', 'name' => 'Performance Pickleball'],
+            ['file' => 'freshmovemedia.png', 'name' => 'Fresh Move Media'],
+            ['file' => 'impromptu.png', 'name' => 'Impromptu'],
+            ['file' => 'boden.png', 'name' => 'Boden Agency'],
+            ['file' => 'cottonnatural.png', 'name' => 'Cotton Natural'],
+            ['file' => 'tsipromotionals.png', 'name' => 'TSI Promotionals'],
+            ['file' => 'sls.png', 'name' => 'Secured Link Society'],
+            ['file' => 'hemsworth.png', 'name' => 'Hemsworth Communications'],
+            ['file' => 'goldenseed.png', 'name' => 'Golden Seed'],
+            ['file' => 'casasrva.png', 'name' => 'Casas RVA'],
+            ['file' => 'fitfoodfresh.png', 'name' => 'Fit Food Fresh'],
+            ['file' => 'cryptofantasy.png', 'name' => 'Crypto Fantasy'],
+            ['file' => 'cousinsmainelobster.png', 'name' => 'Cousins Maine Lobster'],
+            ['file' => 'captapp.png', 'name' => 'The Capt App'],
+            ['file' => 'partnersnapier.png', 'name' => 'Partners and Napier'],
+        ];
+    @endphp
+    <section class="py-16 lg:py-20 bg-gray-50 border-y border-gray-100 overflow-hidden">
+        <p class="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-10">Our Clients</p>
+        <div class="logo-carousel relative">
+            <div class="logo-carousel-track">
+                @foreach($clients as $client)
+                    <div class="logo-carousel-item">
+                        <img src="{{ asset('images/logo/' . $client['file']) }}" alt="{{ $client['name'] }}" class="max-h-20 max-w-[200px] object-contain">
+                    </div>
+                @endforeach
+                {{-- Duplicate for seamless loop --}}
+                @foreach($clients as $client)
+                    <div class="logo-carousel-item">
+                        <img src="{{ asset('images/logo/' . $client['file']) }}" alt="{{ $client['name'] }}" class="max-h-20 max-w-[200px] object-contain">
                     </div>
                 @endforeach
             </div>
@@ -149,8 +169,8 @@
         <div class="max-w-7xl mx-auto px-6 lg:px-8">
             <div class="text-center max-w-2xl mx-auto mb-16">
                 <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-3">What We Do</p>
-                <h2 class="text-4xl lg:text-5xl font-extrabold tracking-tight mb-4">End-to-End Digital Solutions</h2>
-                <p class="text-lg text-gray-500">From strategy to launch and beyond, we handle every stage of your digital product lifecycle.</p>
+                <h2 class="text-4xl lg:text-5xl font-extrabold tracking-tight mb-4">Custom Digital Solutions</h2>
+                <p class="text-lg text-gray-500">From strategy to launch and beyond, we handle every stage of your digital product's lifecycle.</p>
             </div>
 
             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -194,29 +214,29 @@
     </section>
 
     {{-- ==================== ABOUT ==================== --}}
-    <section id="about" class="py-24 lg:py-32 bg-gray-900 text-white">
+    <section id="about" class="py-24 lg:py-32 bg-neutral-900 text-white">
         <div class="max-w-7xl mx-auto px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-16 items-center">
                 <div>
-                    <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-3">About divStrong</p>
-                    <h2 class="text-4xl lg:text-5xl font-extrabold tracking-tight mb-6">Building Digital Products Since 2009</h2>
+                    <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-3">About Us</p>
+                    <h2 class="text-4xl lg:text-5xl font-extrabold tracking-tight mb-6">Building APIs & MVPs Since 2009</h2>
                     <p class="text-lg text-gray-400 leading-relaxed mb-6">
-                        Our distributed team of strategists, designers, developers, and testers create custom, full-stack solutions for companies seeking to innovate, automate, and ultimately enhance their digital ecosystem.
+                        Our AI-enabled team of strategists, designers, developers, and testers create custom, full-stack solutions for companies seeking to innovate, automate, and ultimately enhance their digital ecosystem.
                     </p>
                     <p class="text-lg text-gray-400 leading-relaxed mb-8">
-                        Based in Richmond, VA with team members across the USA, Canada, Ukraine, and Ireland, we bring global perspectives to every project we tackle.
+                        We create 
                     </p>
                     <div class="grid grid-cols-3 gap-8">
                         <div>
-                            <p class="text-3xl font-extrabold text-brand">15+</p>
+                            <p class="text-3xl font-extrabold text-brand">17+</p>
                             <p class="text-sm text-gray-500 mt-1">Years in Business</p>
                         </div>
                         <div>
-                            <p class="text-3xl font-extrabold text-brand">4</p>
-                            <p class="text-sm text-gray-500 mt-1">Countries</p>
+                            <p class="text-3xl font-extrabold text-brand">500+</p>
+                            <p class="text-sm text-gray-500 mt-1">Clients</p>
                         </div>
                         <div>
-                            <p class="text-3xl font-extrabold text-brand">100+</p>
+                            <p class="text-3xl font-extrabold text-brand">1000+</p>
                             <p class="text-sm text-gray-500 mt-1">Projects Delivered</p>
                         </div>
                     </div>
@@ -224,13 +244,8 @@
 
                 {{-- About visual --}}
                 <div class="relative">
-                    <div class="aspect-[4/3] rounded-2xl bg-gradient-to-br from-gray-800 to-gray-700 overflow-hidden">
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="text-center text-white/50">
-                                <svg class="w-16 h-16 mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                <p class="text-sm opacity-50">Team photo placeholder</p>
-                            </div>
-                        </div>
+                    <div class="aspect-[4/3] rounded-2xl overflow-hidden">
+                        <img src="{{ asset('images/team2.png') }}" alt="divStrong team" class="w-full h-full object-cover">
                     </div>
                 </div>
             </div>
@@ -249,9 +264,9 @@
             <div class="grid md:grid-cols-2 gap-8">
                 @foreach([
                     ['name' => 'Performance Pickleball', 'desc' => 'E-commerce platform for premium pickleball equipment and gear.'],
-                    ['name' => 'Cotton Natural', 'desc' => 'Brand identity and web presence for a natural cotton products company.'],
-                    ['name' => 'Casas RVA', 'desc' => 'Real estate platform connecting buyers with Richmond-area properties.'],
-                    ['name' => 'Impromptu', 'desc' => 'Social events platform designed to bring people together spontaneously.'],
+                    ['name' => 'PromoSoft', 'desc' => 'Brand identity and web presence for a natural cotton products company.'],
+                    ['name' => 'Secured Link Society', 'desc' => 'Real estate platform connecting buyers with Richmond-area properties.'],
+                    ['name' => 'Strokin', 'desc' => 'Social events platform designed to bring people together spontaneously.'],
                 ] as $project)
                     <div class="group relative rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
                         {{-- Project image placeholder --}}
@@ -274,13 +289,16 @@
     </section>
 
     {{-- ==================== VALUE PROPOSITION / CTA ==================== --}}
-    <section class="py-24 lg:py-32 bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800">
-        <div class="max-w-4xl mx-auto px-6 lg:px-8 text-center">
+    <section class="relative py-24 lg:py-32 bg-neutral-900 overflow-hidden">
+        <div class="absolute inset-0">
+            <img src="{{ asset('images/church-hill.png') }}" alt="" class="w-full h-full object-cover grayscale opacity-15">
+        </div>
+        <div class="relative max-w-4xl mx-auto px-6 lg:px-8 text-center">
             <h2 class="text-3xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight mb-6">
-                Helping clients enhance their B2B/B2C offerings with full-stack, open-source cloud solutions that are scalable, sexy, and well supported.
+                "We should have gone the custom route sooner!"
             </h2>
             <p class="text-lg text-gray-400 mb-10 max-w-2xl mx-auto">
-                Ready to build something great? Let's talk about your next project.
+                -- Nearly Every Client
             </p>
             <a href="#contact" class="inline-flex items-center px-10 py-4 bg-brand text-white font-semibold text-lg rounded-lg hover:bg-gray-900 transition-colors shadow-lg shadow-brand/25">
                 Start a Project
@@ -332,24 +350,79 @@
                     </div>
                 </div>
 
-                {{-- Contact form placeholder --}}
-                <div class="bg-gray-50 rounded-2xl p-8 lg:p-10">
-                    <h3 class="text-xl font-bold mb-6">Send Us a Message</h3>
+                {{-- Contact form --}}
+                <div class="bg-gray-50 rounded-2xl p-8 lg:p-10" x-data="{
+                    selectedDate: '',
+                    selectedTime: '',
+                    isWeekday(dateStr) {
+                        const d = new Date(dateStr + 'T12:00:00');
+                        const day = d.getDay();
+                        return day !== 0 && day !== 6;
+                    },
+                    get minDate() {
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        return tomorrow.toISOString().split('T')[0];
+                    },
+                    validateDate() {
+                        if (this.selectedDate && !this.isWeekday(this.selectedDate)) {
+                            this.selectedDate = '';
+                            alert('Please select a weekday (Monday\u2013Friday).');
+                        }
+                    },
+                    get timeSlots() {
+                        const slots = [];
+                        for (let h = 10; h <= 16; h++) {
+                            const hour12 = h > 12 ? h - 12 : h;
+                            const ampm = h >= 12 ? 'PM' : 'AM';
+                            const val = (h < 10 ? '0' : '') + h + ':00';
+                            slots.push({ value: val, label: hour12 + ':00 ' + ampm + ' EST' });
+                            if (h < 16) {
+                                const val30 = (h < 10 ? '0' : '') + h + ':30';
+                                slots.push({ value: val30, label: hour12 + ':30 ' + ampm + ' EST' });
+                            }
+                        }
+                        return slots;
+                    }
+                }">
+                    <h3 class="text-xl font-bold mb-6">Request an Appointment</h3>
                     <form class="space-y-5">
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                            <input type="text" id="name" name="name" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all" placeholder="Your name">
+                            <input type="text" id="name" name="name" required class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all" placeholder="Your name">
                         </div>
                         <div>
                             <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input type="email" id="email" name="email" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all" placeholder="you@company.com">
+                            <input type="email" id="email" name="email" required class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all" placeholder="you@company.com">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Preferred Date</label>
+                                <input type="date" id="date" name="date" required
+                                       x-model="selectedDate"
+                                       :min="minDate"
+                                       @change="validateDate()"
+                                       class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all">
+                                <p class="text-xs text-gray-400 mt-1">Mon&ndash;Fri only</p>
+                            </div>
+                            <div>
+                                <label for="time" class="block text-sm font-medium text-gray-700 mb-1">Preferred Time</label>
+                                <select id="time" name="time" required x-model="selectedTime"
+                                        class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all bg-white">
+                                    <option value="">Select a time</option>
+                                    <template x-for="slot in timeSlots" :key="slot.value">
+                                        <option :value="slot.value" x-text="slot.label"></option>
+                                    </template>
+                                </select>
+                                <p class="text-xs text-gray-400 mt-1">10 AM&ndash;4 PM EST</p>
+                            </div>
                         </div>
                         <div>
-                            <label for="message" class="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                            <textarea id="message" name="message" rows="4" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all resize-none" placeholder="Tell us about your project..."></textarea>
+                            <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Tell Us About Your Project</label>
+                            <textarea id="description" name="description" rows="4" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all resize-none" placeholder="Brief description of what you're looking to build or discuss..."></textarea>
                         </div>
                         <button type="submit" class="w-full px-8 py-3.5 bg-brand text-white font-semibold rounded-lg hover:bg-gray-900 transition-colors shadow-lg shadow-brand/25">
-                            Send Message
+                            Request Appointment
                         </button>
                     </form>
                 </div>
@@ -358,7 +431,7 @@
     </section>
 
     {{-- ==================== FOOTER ==================== --}}
-    <footer class="bg-gray-900 text-white py-16">
+    <footer class="bg-neutral-900 text-white py-16">
         <div class="max-w-7xl mx-auto px-6 lg:px-8">
             <div class="grid md:grid-cols-4 gap-10 mb-12">
                 {{-- Brand --}}
@@ -417,9 +490,33 @@
         </div>
     </footer>
 
-    {{-- Smooth scrolling --}}
     <style>
         html { scroll-behavior: smooth; }
+
+        .logo-carousel {
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+        .logo-carousel-track {
+            display: flex;
+            align-items: center;
+            width: max-content;
+            animation: logo-scroll 80s linear infinite;
+        }
+        .logo-carousel-track:hover {
+            animation-play-state: paused;
+        }
+        .logo-carousel-item {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 2.5rem;
+        }
+        @keyframes logo-scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
     </style>
 </body>
 </html>
