@@ -224,7 +224,7 @@
 
         {{-- Logo tab - right edge --}}
         <div class="absolute bottom-8 right-0 z-10">
-            <a href="https://www.divstrong.com" target="_blank" rel="noopener" class="bg-white rounded-l-xl px-5 py-3 shadow-lg block hover:shadow-xl transition-shadow">
+            <a href="https://www.divstrong.com" target="_blank" rel="noopener" class="bg-white rounded-l-lg px-5 py-3 shadow-lg block hover:shadow-xl transition-shadow">
                 <img src="{{ asset('images/logo.png') }}" alt="DivStrong" class="h-8">
             </a>
         </div>
@@ -342,8 +342,11 @@
                                                                class="mt-0.5 rounded border-gray-300 text-brand focus:ring-brand/20">
                                                         <div>
                                                             <p class="text-sm font-medium text-gray-900">{{ $libItem->title }}</p>
+                                                            @if($libItem->description)
+                                                                <p class="text-xs text-gray-400 mt-0.5">{{ Str::limit($libItem->description, 80) }}</p>
+                                                            @endif
                                                             @if($libItem->bullets && count($libItem->bullets))
-                                                                <p class="text-xs text-gray-400 mt-0.5">{{ count($libItem->bullets) }} bullet{{ count($libItem->bullets) !== 1 ? 's' : '' }}: {{ Str::limit($libItem->bullets[0], 60) }}</p>
+                                                                <p class="text-xs text-gray-400 mt-0.5">{{ count($libItem->bullets) }} bullet{{ count($libItem->bullets) !== 1 ? 's' : '' }}</p>
                                                             @endif
                                                         </div>
                                                     </label>
@@ -373,13 +376,17 @@
             <div x-data="{
                     editingId: null,
                     editTitle: '',
+                    editDesc: '',
                     editBullets: [],
                     dragId: null,
                     deleteId: null,
                     deleteTitle: '',
-                    startEdit(id, title, bullets) {
+                    bulletDragIndex: null,
+                    bulletDragOverIndex: null,
+                    startEdit(id, title, description, bullets) {
                         this.editingId = id;
                         this.editTitle = title;
+                        this.editDesc = description || '';
                         this.editBullets = bullets && bullets.length ? [...bullets] : [''];
                     },
                     addBullet() {
@@ -393,9 +400,31 @@
                         this.editBullets.splice(index, 1);
                         if (this.editBullets.length === 0) this.editBullets.push('');
                     },
+                    bulletDragStart(index) {
+                        this.bulletDragIndex = index;
+                    },
+                    bulletDragOver(index) {
+                        if (this.bulletDragIndex === null) return;
+                        this.bulletDragOverIndex = index;
+                    },
+                    bulletDrop(index) {
+                        if (this.bulletDragIndex === null || this.bulletDragIndex === index) {
+                            this.bulletDragIndex = null;
+                            this.bulletDragOverIndex = null;
+                            return;
+                        }
+                        const item = this.editBullets.splice(this.bulletDragIndex, 1)[0];
+                        this.editBullets.splice(index, 0, item);
+                        this.bulletDragIndex = null;
+                        this.bulletDragOverIndex = null;
+                    },
+                    bulletDragEnd() {
+                        this.bulletDragIndex = null;
+                        this.bulletDragOverIndex = null;
+                    },
                     saveEdit() {
                         if (this.editingId && this.editTitle.trim()) {
-                            $wire.updateScopeItem(this.editingId, this.editTitle, this.editBullets);
+                            $wire.updateScopeItem(this.editingId, this.editTitle, this.editDesc, this.editBullets);
                         }
                         this.editingId = null;
                     },
@@ -508,10 +537,13 @@
                                     <div x-show="editingId !== {{ $item->id }}">
                                         <div class="flex items-start justify-between gap-4">
                                             <div class="flex-1 {{ $isAdmin ? 'cursor-pointer' : '' }}"
-                                                 @if($isAdmin) @click="startEdit({{ $item->id }}, @js($item->title), @js($item->bullets ?? []))" @endif>
+                                                 @if($isAdmin) @click="startEdit({{ $item->id }}, @js($item->title), @js($item->description ?? ''), @js($item->bullets ?? []))" @endif>
                                                 <h4 class="font-semibold text-gray-900 text-base">{{ $item->title }}</h4>
+                                                @if($item->description)
+                                                    <p class="text-gray-500 mt-1.5 text-sm leading-relaxed">{{ $item->description }}</p>
+                                                @endif
                                                 @if($item->bullets && count($item->bullets))
-                                                    <ul class="mt-2 space-y-1.5">
+                                                    <ul class="mt-2 space-y-1.5 ml-4">
                                                         @foreach($item->bullets as $bullet)
                                                             <li class="flex items-start gap-2 text-gray-500 text-sm leading-relaxed">
                                                                 <span class="w-1.5 h-1.5 rounded-full bg-gray-900 mt-1.5 flex-shrink-0"></span>
@@ -534,7 +566,7 @@
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                                                     </button>
                                                     {{-- Edit --}}
-                                                    <button @click="startEdit({{ $item->id }}, @js($item->title), @js($item->bullets ?? []))"
+                                                    <button @click="startEdit({{ $item->id }}, @js($item->title), @js($item->description ?? ''), @js($item->bullets ?? []))"
                                                             title="Edit"
                                                             class="p-1.5 text-gray-300 hover:text-brand transition-colors cursor-pointer">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -556,10 +588,27 @@
                                                    @keydown.escape="editingId = null"
                                                    class="w-full text-base font-semibold text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none mb-3"
                                                    placeholder="Item title">
+                                            <div class="mb-3">
+                                                <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Description</label>
+                                                <textarea x-model="editDesc"
+                                                          @keydown.escape="editingId = null"
+                                                          rows="2"
+                                                          class="w-full text-sm text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-1.5 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none mt-1 resize-y"
+                                                          placeholder="Brief description (optional)"></textarea>
+                                            </div>
                                             <div class="space-y-2 mb-3">
                                                 <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Bullet Points</label>
                                                 <template x-for="(bullet, index) in editBullets" :key="index">
-                                                    <div class="flex items-center gap-2">
+                                                    <div class="flex items-center gap-2"
+                                                         draggable="true"
+                                                         @dragstart.stop="bulletDragStart(index)"
+                                                         @dragover.prevent.stop="bulletDragOver(index)"
+                                                         @drop.prevent.stop="bulletDrop(index)"
+                                                         @dragend="bulletDragEnd()"
+                                                         :class="{ 'opacity-50': bulletDragIndex === index, 'border-t-2 border-brand': bulletDragOverIndex === index && bulletDragIndex !== null && bulletDragIndex !== index }">
+                                                        <span class="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 flex-shrink-0" title="Drag to reorder">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                                                        </span>
                                                         <span class="w-1.5 h-1.5 rounded-full bg-brand flex-shrink-0"></span>
                                                         <input type="text" x-model="editBullets[index]"
                                                                data-bullet-input

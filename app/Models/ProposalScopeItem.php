@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProposalScopeItem extends Model
 {
-    protected $fillable = ['proposal_id', 'category', 'title', 'bullets', 'sort_order'];
+    protected $fillable = ['proposal_id', 'category', 'title', 'description', 'bullets', 'sort_order'];
 
     protected function casts(): array
     {

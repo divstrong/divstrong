@@ -214,6 +214,7 @@ class ProposalView extends Component
             $this->proposal->scopeItems()->create([
                 'category' => $item->category,
                 'title' => $item->title,
+                'description' => $item->description,
                 'bullets' => $item->bullets,
                 'sort_order' => $maxSort,
             ]);
@@ -222,7 +223,7 @@ class ProposalView extends Component
         $this->proposal->load('scopeItems');
     }
 
-    public function updateScopeItem(int $id, string $title, array $bullets = []): void
+    public function updateScopeItem(int $id, string $title, string $description = '', array $bullets = []): void
     {
         if (! $this->isAdmin) return;
 
@@ -232,6 +233,7 @@ class ProposalView extends Component
             $bullets = array_values(array_filter($bullets, fn ($b) => trim($b) !== ''));
             $item->update([
                 'title' => $title,
+                'description' => $description ?: null,
                 'bullets' => $bullets ?: null,
             ]);
             $this->proposal->load('scopeItems');
@@ -247,6 +249,7 @@ class ProposalView extends Component
             $this->proposal->scopeItems()->create([
                 'category' => $item->category,
                 'title' => $item->title,
+                'description' => $item->description,
                 'bullets' => $item->bullets,
                 'sort_order' => $item->sort_order + 1,
             ]);

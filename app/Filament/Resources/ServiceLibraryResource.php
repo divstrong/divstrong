@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ServiceLibraryResource\Pages;
+use App\Models\Category;
 use App\Models\ServiceLibrary;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
@@ -39,14 +40,7 @@ class ServiceLibraryResource extends Resource
                     ->columns(2)
                     ->schema([
                         Forms\Components\Select::make('category')
-                            ->options([
-                                'Design' => 'Design',
-                                'Development' => 'Development',
-                                'SEO' => 'SEO',
-                                'Hosting' => 'Hosting',
-                                'Content' => 'Content',
-                                'Maintenance' => 'Maintenance',
-                            ])
+                            ->options(fn () => Category::orderedOptions())
                             ->required()
                             ->searchable(),
                         Forms\Components\TextInput::make('name')
@@ -100,14 +94,7 @@ class ServiceLibraryResource extends Resource
             ->defaultSort('category')
             ->filters([
                 Tables\Filters\SelectFilter::make('category')
-                    ->options([
-                        'Design' => 'Design',
-                        'Development' => 'Development',
-                        'SEO' => 'SEO',
-                        'Hosting' => 'Hosting',
-                        'Content' => 'Content',
-                        'Maintenance' => 'Maintenance',
-                    ]),
+                    ->options(fn () => Category::orderedOptions()),
             ])
             ->actions([
                 EditAction::make(),

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ScopeLibraryResource\Pages;
+use App\Models\Category;
 use App\Models\ScopeLibrary;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
@@ -39,19 +40,16 @@ class ScopeLibraryResource extends Resource
                     ->columns(2)
                     ->schema([
                         Forms\Components\Select::make('category')
-                            ->options([
-                                'Design' => 'Design',
-                                'Development' => 'Development',
-                                'SEO' => 'SEO',
-                                'Hosting' => 'Hosting',
-                                'Content' => 'Content',
-                                'Maintenance' => 'Maintenance',
-                            ])
+                            ->options(fn () => Category::orderedOptions())
                             ->required()
                             ->searchable(),
                         Forms\Components\TextInput::make('title')
                             ->required()
                             ->maxLength(255),
+                        Forms\Components\Textarea::make('description')
+                            ->placeholder('Brief description (optional)')
+                            ->rows(2)
+                            ->columnSpanFull(),
                         Forms\Components\Repeater::make('bullets')
                             ->label('Bullet Points')
                             ->simple(
@@ -82,6 +80,9 @@ class ScopeLibraryResource extends Resource
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('description')
+                    ->limit(50)
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('bullets')
                     ->label('Bullets')
                     ->formatStateUsing(fn ($state) => is_array($state) ? count($state) . ' bullet' . (count($state) !== 1 ? 's' : '') : '—')
@@ -95,14 +96,7 @@ class ScopeLibraryResource extends Resource
             ->defaultSort('category')
             ->filters([
                 Tables\Filters\SelectFilter::make('category')
-                    ->options([
-                        'Design' => 'Design',
-                        'Development' => 'Development',
-                        'SEO' => 'SEO',
-                        'Hosting' => 'Hosting',
-                        'Content' => 'Content',
-                        'Maintenance' => 'Maintenance',
-                    ]),
+                    ->options(fn () => Category::orderedOptions()),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Active'),
             ])
