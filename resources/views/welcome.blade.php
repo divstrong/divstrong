@@ -12,6 +12,9 @@
 
     <!-- Styles / Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-white text-gray-900 antialiased">
 
@@ -84,14 +87,14 @@
         <div class="relative max-w-7xl mx-auto px-6 lg:px-8 py-20 lg:py-32 w-full">
             <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
                 <div>
-                    <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-4">Est. 2009 &mdash; Richmond, VA</p>
+                    <!-- <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-4">Est. 2009 &mdash; Richmond, VA</p> -->
                     <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] mb-6">
                         Full Stack,<br>
                         <span class="text-brand">Web 3.0</span><br>
                         App Builds
                     </h1>
                     <p class="text-lg lg:text-xl text-gray-600 leading-relaxed max-w-lg mb-8">
-                        We plan, design, and develop full-stack applications for B2B/B2C businesses worldwide.
+                        We plan, design, and develop full-stack applications for B2B/B2C clients worldwide.
                     </p>
                     <div class="flex flex-wrap gap-4">
                         <a href="#contact" class="inline-flex items-center px-8 py-3.5 bg-brand text-white font-semibold rounded-lg hover:bg-gray-900 transition-colors shadow-lg shadow-brand/25">
@@ -214,8 +217,11 @@
     </section>
 
     {{-- ==================== ABOUT ==================== --}}
-    <section id="about" class="py-24 lg:py-32 bg-neutral-900 text-white">
-        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <section id="about" class="relative py-24 lg:py-32 bg-neutral-900 text-white overflow-hidden">
+        <div class="absolute inset-0">
+            <img src="{{ asset('images/church-hill.png') }}" alt="" class="w-full h-full object-cover grayscale opacity-10">
+        </div>
+        <div class="relative max-w-7xl mx-auto px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-16 items-center">
                 <div>
                     <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-3">About Us</p>
@@ -263,26 +269,31 @@
 
             <div class="grid md:grid-cols-2 gap-8">
                 @foreach([
-                    ['name' => 'Performance Pickleball', 'desc' => 'E-commerce platform for premium pickleball equipment and gear.'],
-                    ['name' => 'PromoSoft', 'desc' => 'Brand identity and web presence for a natural cotton products company.'],
-                    ['name' => 'Secured Link Society', 'desc' => 'Real estate platform connecting buyers with Richmond-area properties.'],
-                    ['name' => 'Strokin', 'desc' => 'Social events platform designed to bring people together spontaneously.'],
+                    ['name' => 'Performance Pickleball', 'desc' => 'E-commerce platform for premium pickleball equipment and gear.', 'image' => 'pickleball.png', 'url' => 'https://www.ppbrva.com'],
+                    ['name' => 'PromoSoft', 'desc' => 'Brand identity and web presence for a natural cotton products company.', 'image' => 'thepromosoft.png', 'url' => 'https://www.thepromosoft.com'],
+                    ['name' => 'Secured Link Society', 'desc' => 'Real estate platform connecting buyers with Richmond-area properties.', 'image' => 'sls.png', 'url' => 'https://www.securedlinksociety.us'],
+                    ['name' => 'Strokin', 'desc' => 'Social events platform designed to bring people together spontaneously.', 'image' => 'strokin.png', 'url' => 'https://strokin.app'],
                 ] as $project)
-                    <div class="group relative rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
-                        {{-- Project image placeholder --}}
-                        <div class="aspect-[16/10] bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-gray-200 group-hover:to-gray-300 transition-colors duration-300">
-                            <div class="w-full h-full flex items-center justify-center">
-                                <div class="text-center text-gray-400">
-                                    <svg class="w-12 h-12 mx-auto mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                    <p class="text-xs opacity-50">Project screenshot</p>
+                    <a href="{{ $project['url'] ?? '#' }}" target="{{ $project['url'] ? '_blank' : '_self' }}" rel="{{ $project['url'] ? 'noopener' : '' }}" class="group relative rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 block">
+                        @if($project['image'])
+                            <div class="aspect-[16/10] overflow-hidden">
+                                <img src="{{ asset('images/' . $project['image']) }}" alt="{{ $project['name'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            </div>
+                        @else
+                            <div class="aspect-[16/10] bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-gray-200 group-hover:to-gray-300 transition-colors duration-300">
+                                <div class="w-full h-full flex items-center justify-center">
+                                    <div class="text-center text-gray-400">
+                                        <svg class="w-12 h-12 mx-auto mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        <p class="text-xs opacity-50">Project screenshot</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        @endif
                         <div class="p-6">
                             <h3 class="text-lg font-bold mb-1 group-hover:text-brand transition-colors">{{ $project['name'] }}</h3>
                             <p class="text-sm text-gray-500">{{ $project['desc'] }}</p>
                         </div>
-                    </div>
+                    </a>
                 @endforeach
             </div>
         </div>
@@ -291,14 +302,14 @@
     {{-- ==================== VALUE PROPOSITION / CTA ==================== --}}
     <section class="relative py-24 lg:py-32 bg-neutral-900 overflow-hidden">
         <div class="absolute inset-0">
-            <img src="{{ asset('images/church-hill.png') }}" alt="" class="w-full h-full object-cover grayscale opacity-15">
+            <img src="{{ asset('images/richmond.png') }}" alt="" class="w-full h-full object-cover grayscale opacity-15">
         </div>
         <div class="relative max-w-4xl mx-auto px-6 lg:px-8 text-center">
             <h2 class="text-3xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight mb-6">
                 "We should have gone the custom route sooner!"
             </h2>
             <p class="text-lg text-gray-400 mb-10 max-w-2xl mx-auto">
-                -- Nearly Every Client
+                -- Almost Every Client
             </p>
             <a href="#contact" class="inline-flex items-center px-10 py-4 bg-brand text-white font-semibold text-lg rounded-lg hover:bg-gray-900 transition-colors shadow-lg shadow-brand/25">
                 Start a Project
@@ -311,10 +322,10 @@
         <div class="max-w-7xl mx-auto px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-16">
                 <div>
-                    <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-3">Get in Touch</p>
+                    <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-3">Contact Us</p>
                     <h2 class="text-4xl lg:text-5xl font-extrabold tracking-tight mb-6">Let's Build Something Together</h2>
                     <p class="text-lg text-gray-500 leading-relaxed mb-8">
-                        Whether you need a full-stack application, a brand refresh, or cloud hosting, we're here to help bring your vision to life.
+                        Help us understand your current challenges & project goals so we can craft a solution to fit the need...
                     </p>
 
                     <div class="space-y-6">
@@ -351,9 +362,12 @@
                 </div>
 
                 {{-- Contact form --}}
-                <div class="bg-gray-50 rounded-2xl p-8 lg:p-10" x-data="{
+                <div class="bg-white rounded-2xl p-8 lg:p-10 shadow-xl" x-data="{
                     selectedDate: '',
                     selectedTime: '',
+                    submitted: false,
+                    submitting: false,
+                    error: '',
                     isWeekday(dateStr) {
                         const d = new Date(dateStr + 'T12:00:00');
                         const day = d.getDay();
@@ -367,77 +381,111 @@
                     validateDate() {
                         if (this.selectedDate && !this.isWeekday(this.selectedDate)) {
                             this.selectedDate = '';
-                            alert('Please select a weekday (Monday\u2013Friday).');
                         }
                     },
-                    get timeSlots() {
-                        const slots = [];
-                        for (let h = 10; h <= 16; h++) {
-                            const hour12 = h > 12 ? h - 12 : h;
-                            const ampm = h >= 12 ? 'PM' : 'AM';
-                            const val = (h < 10 ? '0' : '') + h + ':00';
-                            slots.push({ value: val, label: hour12 + ':00 ' + ampm + ' EST' });
-                            if (h < 16) {
-                                const val30 = (h < 10 ? '0' : '') + h + ':30';
-                                slots.push({ value: val30, label: hour12 + ':30 ' + ampm + ' EST' });
+                    async submitForm(e) {
+                        this.submitting = true;
+                        this.error = '';
+                        const form = e.target;
+                        const data = Object.fromEntries(new FormData(form));
+                        try {
+                            const res = await fetch('/appointment', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify(data)
+                            });
+                            if (!res.ok) {
+                                const err = await res.json();
+                                this.error = err.message || 'Something went wrong. Please try again.';
+                                this.submitting = false;
+                                return;
                             }
+                            this.submitted = true;
+                        } catch (err) {
+                            this.error = 'Something went wrong. Please try again.';
+                            this.submitting = false;
                         }
-                        return slots;
                     }
                 }">
-                    <h3 class="text-xl font-bold mb-6">Request an Appointment</h3>
-                    <form class="space-y-5">
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                            <input type="text" id="name" name="name" required class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all" placeholder="Your name">
+                    <div x-show="submitted" x-cloak class="text-center py-12">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         </div>
-                        <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input type="email" id="email" name="email" required class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all" placeholder="you@company.com">
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Preferred Date</label>
-                                <input type="date" id="date" name="date" required
-                                       x-model="selectedDate"
-                                       :min="minDate"
-                                       @change="validateDate()"
-                                       class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all">
-                                <p class="text-xs text-gray-400 mt-1">Mon&ndash;Fri only</p>
-                            </div>
-                            <div>
-                                <label for="time" class="block text-sm font-medium text-gray-700 mb-1">Preferred Time</label>
-                                <select id="time" name="time" required x-model="selectedTime"
-                                        class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all bg-white">
-                                    <option value="">Select a time</option>
-                                    <template x-for="slot in timeSlots" :key="slot.value">
-                                        <option :value="slot.value" x-text="slot.label"></option>
-                                    </template>
-                                </select>
-                                <p class="text-xs text-gray-400 mt-1">10 AM&ndash;4 PM EST</p>
-                            </div>
-                        </div>
-                        <div>
-                            <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Tell Us About Your Project</label>
-                            <textarea id="description" name="description" rows="4" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all resize-none" placeholder="Brief description of what you're looking to build or discuss..."></textarea>
-                        </div>
-                        <button type="submit" class="w-full px-8 py-3.5 bg-brand text-white font-semibold rounded-lg hover:bg-gray-900 transition-colors shadow-lg shadow-brand/25">
-                            Request Appointment
-                        </button>
-                    </form>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-3">Thank You!</h3>
+                        <p class="text-gray-500 leading-relaxed">Your appointment request has been sent. We'll review the details and get back to you shortly to confirm.</p>
+                    </div>
+                    <div x-show="!submitted">
+                        <!-- <h3 class="text-xl font-bold mb-6">Request an Appointment</h3> -->
+                        <form class="space-y-5" @submit.prevent="submitForm($event)">
+                                <div>
+                                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                                    <input type="text" id="name" name="name" required class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all" placeholder="Your name">
+                                </div>
+                                <div>
+                                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input type="email" id="email" name="email" required class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all" placeholder="you@company.com">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                        <input type="date" id="date" name="date" required
+                                               x-model="selectedDate"
+                                               :min="minDate"
+                                               @change="validateDate()"
+                                               class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label for="time" class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                                        <select id="time" name="time" required x-model="selectedTime"
+                                                class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all bg-white">
+                                            <option value="">Select a time</option>
+                                            <option value="10:00 AM">10:00 AM EST</option>
+                                            <option value="10:30 AM">10:30 AM EST</option>
+                                            <option value="11:00 AM">11:00 AM EST</option>
+                                            <option value="11:30 AM">11:30 AM EST</option>
+                                            <option value="12:00 PM">12:00 PM EST</option>
+                                            <option value="12:30 PM">12:30 PM EST</option>
+                                            <option value="1:00 PM">1:00 PM EST</option>
+                                            <option value="1:30 PM">1:30 PM EST</option>
+                                            <option value="2:00 PM">2:00 PM EST</option>
+                                            <option value="2:30 PM">2:30 PM EST</option>
+                                            <option value="3:00 PM">3:00 PM EST</option>
+                                            <option value="3:30 PM">3:30 PM EST</option>
+                                            <option value="4:00 PM">4:00 PM EST</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Describe Your Project</label>
+                                    <textarea id="description" name="description" rows="4" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all resize-none" placeholder="Brief description of what you're looking to build or discuss..."></textarea>
+                                </div>
+                                <p x-show="error" x-text="error" class="text-red-600 text-sm"></p>
+                                <button type="submit" :disabled="submitting" class="w-full px-8 py-3.5 bg-brand text-white font-semibold rounded-lg hover:bg-gray-900 transition-colors shadow-lg shadow-brand/25 disabled:opacity-50">
+                                    <span x-show="!submitting">Request Appointment</span>
+                                    <span x-show="submitting">Sending...</span>
+                                </button>
+                            </form>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     {{-- ==================== FOOTER ==================== --}}
-    <footer class="bg-neutral-900 text-white py-16">
-        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <footer class="relative bg-neutral-900 text-white py-16 overflow-hidden">
+        <div class="absolute inset-0">
+            <img src="{{ asset('images/rva-street.png') }}" alt="" class="w-full h-full object-cover grayscale opacity-10">
+        </div>
+        <div class="relative max-w-7xl mx-auto px-6 lg:px-8">
             <div class="grid md:grid-cols-4 gap-10 mb-12">
                 {{-- Brand --}}
                 <div class="md:col-span-1">
                     <img src="{{ asset('images/logo.png') }}" alt="divStrong" class="h-8 brightness-0 invert">
-                    <p class="text-gray-500 text-sm mt-4 leading-relaxed">
+                    <p class="text-gray-300 text-sm mt-4 leading-relaxed">
                         Full-stack digital agency building scalable, open-source cloud solutions since 2009.
                     </p>
                     <div class="flex items-center gap-3 mt-4 text-lg">
@@ -450,40 +498,40 @@
 
                 {{-- Menu --}}
                 <div>
-                    <h4 class="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-4">Menu</h4>
+                    <h4 class="text-sm font-semibold uppercase tracking-wider text-white mb-4">Menu</h4>
                     <ul class="space-y-3">
-                        <li><a href="#" class="text-sm text-gray-500 hover:text-white transition-colors">Overview</a></li>
-                        <li><a href="#about" class="text-sm text-gray-500 hover:text-white transition-colors">About</a></li>
-                        <li><a href="#work" class="text-sm text-gray-500 hover:text-white transition-colors">Portfolio</a></li>
-                        <li><a href="#services" class="text-sm text-gray-500 hover:text-white transition-colors">Services</a></li>
-                        <li><a href="#contact" class="text-sm text-gray-500 hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="#" class="text-sm text-gray-300 hover:text-white transition-colors">Overview</a></li>
+                        <li><a href="#about" class="text-sm text-gray-300 hover:text-white transition-colors">About</a></li>
+                        <li><a href="#work" class="text-sm text-gray-300 hover:text-white transition-colors">Portfolio</a></li>
+                        <li><a href="#services" class="text-sm text-gray-300 hover:text-white transition-colors">Services</a></li>
+                        <li><a href="#contact" class="text-sm text-gray-300 hover:text-white transition-colors">Contact</a></li>
                     </ul>
                 </div>
 
                 {{-- Legal --}}
                 <div>
-                    <h4 class="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-4">Legal</h4>
+                    <h4 class="text-sm font-semibold uppercase tracking-wider text-white mb-4">Legal</h4>
                     <ul class="space-y-3">
-                        <li><a href="#" class="text-sm text-gray-500 hover:text-white transition-colors">Accessibility</a></li>
-                        <li><a href="#" class="text-sm text-gray-500 hover:text-white transition-colors">Terms</a></li>
-                        <li><a href="#" class="text-sm text-gray-500 hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="#" class="text-sm text-gray-500 hover:text-white transition-colors">Sitemap</a></li>
+                        <li><a href="#" class="text-sm text-gray-300 hover:text-white transition-colors">Accessibility</a></li>
+                        <li><a href="#" class="text-sm text-gray-300 hover:text-white transition-colors">Terms</a></li>
+                        <li><a href="#" class="text-sm text-gray-300 hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" class="text-sm text-gray-300 hover:text-white transition-colors">Sitemap</a></li>
                     </ul>
                 </div>
 
                 {{-- Contact --}}
                 <div>
-                    <h4 class="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-4">Contact</h4>
+                    <h4 class="text-sm font-semibold uppercase tracking-wider text-white mb-4">Contact</h4>
                     <ul class="space-y-3">
-                        <li><a href="mailto:hello@divstrong.com" class="text-sm text-gray-500 hover:text-white transition-colors">hello@divstrong.com</a></li>
-                        <li><a href="tel:+18043159609" class="text-sm text-gray-500 hover:text-white transition-colors">+1 (804) 315-9609</a></li>
+                        <li><a href="mailto:hello@divstrong.com" class="text-sm text-gray-300 hover:text-white transition-colors">hello@divstrong.com</a></li>
+                        <li><a href="tel:+18043159609" class="text-sm text-gray-300 hover:text-white transition-colors">+1 (804) 315-9609</a></li>
                     </ul>
                 </div>
             </div>
 
-            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                <p class="text-sm text-gray-600">&copy; {{ date('Y') }} divStrong. All rights reserved.</p>
-                <a href="https://www.linkedin.com/company/divstrong" target="_blank" rel="noopener" class="text-gray-600 hover:text-white transition-colors">
+            <div class="border-t border-neutral-700 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-sm text-gray-300">&copy; {{ date('Y') }} divStrong. All rights reserved.</p>
+                <a href="https://www.linkedin.com/company/divstrong" target="_blank" rel="noopener" class="text-gray-300 hover:text-white transition-colors">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
                 </a>
             </div>
@@ -491,6 +539,7 @@
     </footer>
 
     <style>
+        [x-cloak] { display: none !important; }
         html { scroll-behavior: smooth; }
 
         .logo-carousel {
