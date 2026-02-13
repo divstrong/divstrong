@@ -24,13 +24,13 @@ class ServiceLibraryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-shopping-bag';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Libraries';
+    protected static ?string $navigationParentItem = 'Proposals';
 
     protected static ?string $navigationLabel = 'Services';
 
     protected static ?string $modelLabel = 'Service Library Item';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {

@@ -27,8 +27,6 @@ class ClientResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Proposals';
-
     protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
@@ -48,6 +46,13 @@ class ClientResource extends Resource
                                         Forms\Components\TextInput::make('name')
                                             ->required()
                                             ->maxLength(255),
+                                        Forms\Components\FileUpload::make('logo')
+                                            ->label('Client Logo')
+                                            ->image()
+                                            ->directory('client-logos')
+                                            ->imageResizeMode('contain')
+                                            ->maxSize(1024)
+                                            ->columnSpanFull(),
                                         Forms\Components\TextInput::make('email')
                                             ->email()
                                             ->required()
@@ -77,6 +82,41 @@ class ClientResource extends Resource
                                         Forms\Components\TextInput::make('zip')
                                             ->label('ZIP Code')
                                             ->maxLength(20),
+                                    ]),
+                            ]),
+
+                        Tab::make('Featured Work')
+                            ->icon('heroicon-o-star')
+                            ->schema([
+                                Section::make('Feature this client on the homepage')
+                                    ->description('Fill in these fields to showcase this client in the Featured Work section.')
+                                    ->schema([
+                                        Forms\Components\FileUpload::make('feature_image')
+                                            ->label('Project Image')
+                                            ->image()
+                                            ->directory('featured-work')
+                                            ->imageResizeMode('cover')
+                                            ->imageCropAspectRatio('16:9')
+                                            ->maxSize(2048),
+                                        Forms\Components\TextInput::make('feature_title')
+                                            ->label('Project Title')
+                                            ->maxLength(255)
+                                            ->placeholder('e.g. E-Commerce Platform Redesign'),
+                                        Forms\Components\Textarea::make('feature_description')
+                                            ->label('Project Description')
+                                            ->rows(3)
+                                            ->maxLength(500)
+                                            ->placeholder('Brief description of the work done for this client...'),
+                                        Forms\Components\TagsInput::make('feature_tags')
+                                            ->label('Service Tags')
+                                            ->placeholder('Add a tag')
+                                            ->suggestions(['Strategy', 'Design', 'Coding', 'Hosting']),
+                                        Forms\Components\TextInput::make('feature_url')
+                                            ->label('Project URL')
+                                            ->url()
+                                            ->prefix('https://')
+                                            ->maxLength(255)
+                                            ->placeholder('www.example.com'),
                                     ]),
                             ]),
 
