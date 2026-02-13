@@ -213,29 +213,6 @@
         @endphp
     </section>
 
-    {{-- Client logo bar --}}
-    <div class="bg-gray-100 py-8 overflow-hidden">
-        <div class="logo-carousel relative">
-            <div class="logo-carousel-track">
-                @foreach($clients as $client)
-                    <div class="logo-carousel-item">
-                        <a href="{{ $client['url'] }}" target="_blank" rel="noopener" class="bg-white rounded-xl border border-gray-200 shadow-sm px-6 py-4 block hover:shadow-md hover:border-gray-300 transition-all">
-                            <img src="{{ asset('images/logo/' . $client['file']) }}" alt="{{ $client['name'] }}" class="max-h-16 max-w-[180px] object-contain">
-                        </a>
-                    </div>
-                @endforeach
-                {{-- Duplicate for seamless loop --}}
-                @foreach($clients as $client)
-                    <div class="logo-carousel-item">
-                        <a href="{{ $client['url'] }}" target="_blank" rel="noopener" class="bg-white rounded-xl border border-gray-200 shadow-sm px-6 py-4 block hover:shadow-md hover:border-gray-300 transition-all">
-                            <img src="{{ asset('images/logo/' . $client['file']) }}" alt="{{ $client['name'] }}" class="max-h-16 max-w-[180px] object-contain">
-                        </a>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-
     {{-- ==================== SERVICES ==================== --}}
     <section id="services" class="py-24 lg:py-32" x-data="{ active: null }">
         <div class="max-w-7xl mx-auto px-6 lg:px-8">
@@ -254,38 +231,38 @@
                 class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 origin-center"
             >
                 {{-- Strategy --}}
-                <div @click="active = 'strategy'" class="group relative p-8 rounded-2xl border border-gray-100 hover:border-brand/20 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300 cursor-pointer">
-                    <div class="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand/20 transition-colors">
+                <div @click="active = 'strategy'" class="service-card group relative p-8 rounded-2xl border border-gray-100 hover:border-brand/20 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300 cursor-pointer">
+                    <div class="wave-icon w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand/20 transition-colors">
                         <svg class="w-6 h-6 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-3">Strategy</h3>
+                    <h3 class="text-xl font-bold mb-3 wave-text"><span style="--i:0">S</span><span style="--i:1">t</span><span style="--i:2">r</span><span style="--i:3">a</span><span style="--i:4">t</span><span style="--i:5">e</span><span style="--i:6">g</span><span style="--i:7">y</span></h3>
                     <p class="text-gray-500 leading-relaxed">Consulting and planning to craft digital solutions to solve client problems.</p>
                 </div>
 
                 {{-- Design --}}
-                <div @click="active = 'design'" class="group relative p-8 rounded-2xl border border-gray-100 hover:border-brand/20 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300 cursor-pointer">
-                    <div class="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand/20 transition-colors">
+                <div @click="active = 'design'" class="service-card group relative p-8 rounded-2xl border border-gray-100 hover:border-brand/20 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300 cursor-pointer">
+                    <div class="wave-icon w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand/20 transition-colors">
                         <svg class="w-6 h-6 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-3">Design</h3>
+                    <h3 class="text-xl font-bold mb-3 wave-text"><span style="--i:0">D</span><span style="--i:1">e</span><span style="--i:2">s</span><span style="--i:3">i</span><span style="--i:4">g</span><span style="--i:5">n</span></h3>
                     <p class="text-gray-500 leading-relaxed">Modern, feature-rich, user interface concepts provide a visual roadmap to success.</p>
                 </div>
 
                 {{-- Coding --}}
-                <div @click="active = 'coding'" class="group relative p-8 rounded-2xl border border-gray-100 hover:border-brand/20 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300 cursor-pointer">
-                    <div class="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand/20 transition-colors">
+                <div @click="active = 'coding'" class="service-card group relative p-8 rounded-2xl border border-gray-100 hover:border-brand/20 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300 cursor-pointer">
+                    <div class="wave-icon w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand/20 transition-colors">
                         <svg class="w-6 h-6 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-3">Coding</h3>
+                    <h3 class="text-xl font-bold mb-3 wave-text"><span style="--i:0">C</span><span style="--i:1">o</span><span style="--i:2">d</span><span style="--i:3">i</span><span style="--i:4">n</span><span style="--i:5">g</span></h3>
                     <p class="text-gray-500 leading-relaxed">Developing a functional product that matches the strategic + creative vision.</p>
                 </div>
 
                 {{-- Hosting --}}
-                <div @click="active = 'hosting'" class="group relative p-8 rounded-2xl border border-gray-100 hover:border-brand/20 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300 cursor-pointer">
-                    <div class="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand/20 transition-colors">
+                <div @click="active = 'hosting'" class="service-card group relative p-8 rounded-2xl border border-gray-100 hover:border-brand/20 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300 cursor-pointer">
+                    <div class="wave-icon w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand/20 transition-colors">
                         <svg class="w-6 h-6 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-3">Hosting</h3>
+                    <h3 class="text-xl font-bold mb-3 wave-text"><span style="--i:0">H</span><span style="--i:1">o</span><span style="--i:2">s</span><span style="--i:3">t</span><span style="--i:4">i</span><span style="--i:5">n</span><span style="--i:6">g</span></h3>
                     <p class="text-gray-500 leading-relaxed">Our cloud hosting solutions ensure uptime, performance, and proper maintenance.</p>
                 </div>
             </div>
@@ -453,6 +430,28 @@
         </div>
     </section>
 
+    {{-- Client logo carousel --}}
+    <div class="-mt-6 lg:-mt-8 pb-16 lg:pb-24 overflow-hidden">
+        <div class="logo-carousel relative">
+            <div class="logo-carousel-track">
+                @foreach($clients as $client)
+                    <div class="logo-carousel-item">
+                        <a href="{{ $client['url'] }}" target="_blank" rel="noopener" class="group relative flex items-center justify-center bg-white rounded-2xl border border-gray-200 px-8 py-6 block hover:border-brand/30 hover:scale-[1.03] transition-all duration-300">
+                            <img src="{{ asset('images/logo/' . $client['file']) }}" alt="{{ $client['name'] }}" class="max-h-14 max-w-[160px] object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300">
+                        </a>
+                    </div>
+                @endforeach
+                @foreach($clients as $client)
+                    <div class="logo-carousel-item">
+                        <a href="{{ $client['url'] }}" target="_blank" rel="noopener" class="group relative flex items-center justify-center bg-white rounded-2xl border border-gray-200 px-8 py-6 block hover:border-brand/30 hover:scale-[1.03] transition-all duration-300">
+                            <img src="{{ asset('images/logo/' . $client['file']) }}" alt="{{ $client['name'] }}" class="max-h-14 max-w-[160px] object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300">
+                        </a>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+
     {{-- ==================== ABOUT ==================== --}}
     <section id="about" class="relative py-24 lg:py-32 bg-neutral-900 text-white overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">
@@ -515,7 +514,7 @@
                 {{-- About visual --}}
                 <div class="relative">
                     <div class="aspect-[4/3] rounded-2xl overflow-hidden">
-                        <img src="{{ asset('images/team3.png') }}" alt="divStrong team" class="w-full h-full object-cover">
+                        <img src="{{ asset('images/team.gif') }}" alt="divStrong team" class="w-full h-full object-cover">
                     </div>
                 </div>
             </div>
@@ -533,7 +532,7 @@
 
             <div class="grid md:grid-cols-2 gap-8">
                 @foreach([
-                    ['name' => 'Performance Pickleball', 'desc' => 'Web + native application builds to create a "country club" type experience for a premiere indoor pickleball facility.', 'image' => 'pickleball.png', 'url' => 'https://www.ppbrva.com'],
+                    ['name' => 'Performance Pickleball', 'desc' => 'Web + native application builds to create a "country club" type experience for a premiere indoor pickleball facility.', 'image' => 'pickleball.png', 'url' => 'https://apps.apple.com/us/app/performance-pickleball/id6470171328'],
                     ['name' => 'PromoSoft', 'desc' => 'Custom software created by indsutry professionals to organize and automate the order fulfillment process for apparel decorators.', 'image' => 'thepromosoft.png', 'url' => 'https://www.thepromosoft.com'],
                     ['name' => 'Secured Link Society', 'desc' => 'Web + native application builds to support a networking group passing $Ms in referral business around Richmond, VA.', 'image' => 'sls.png', 'url' => 'https://www.securedlinksociety.us'],
                     ['name' => 'Strokin', 'desc' => 'AI-enabled native application that provides an easy way to score + handicap golf competitions among friends.', 'image' => 'strokin.png', 'url' => 'https://strokin.app'],
@@ -566,7 +565,7 @@
     {{-- ==================== VALUE PROPOSITION / CTA ==================== --}}
     <section class="relative py-24 lg:py-32 bg-neutral-900 overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">
-            <img src="{{ asset('images/richmond.png') }}" alt="" class="w-full h-full object-cover grayscale opacity-15 animate-slow-zoom">
+            <img src="{{ asset('videos/cherryblossoms.gif') }}" alt="" class="w-full h-full object-cover grayscale opacity-15 animate-slow-zoom">
         </div>
         <div class="relative max-w-4xl mx-auto px-6 lg:px-8 text-center">
             <h2 class="text-3xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight mb-6">
@@ -817,17 +816,14 @@
             display: flex;
             align-items: center;
             width: max-content;
-            animation: logo-scroll 80s linear infinite;
+            animation: logo-scroll 60s linear infinite;
         }
         .logo-carousel-track:hover {
             animation-play-state: paused;
         }
         .logo-carousel-item {
             flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 2.5rem;
+            padding: 0 0.75rem;
         }
         @keyframes logo-scroll {
             0% { transform: translateX(0); }
@@ -851,6 +847,36 @@
             transform: scale(1.06);
             color: #111827 !important;
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 6px 20px rgba(237,37,55,0.4);
+        }
+        .service-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .service-card:hover {
+            transform: scale(1.04);
+        }
+        .wave-icon {
+            transition: transform 0.3s ease;
+        }
+        .group:hover .wave-icon {
+            animation: wave-bubble-icon 0.45s ease forwards;
+        }
+        .wave-text span {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+        .group:hover .wave-text span {
+            animation: wave-bubble 0.4s ease forwards;
+            animation-delay: calc(0.08s + var(--i) * 0.05s);
+        }
+        @keyframes wave-bubble-icon {
+            0% { transform: translateY(0) scale(1); }
+            35% { transform: translateY(-8px) scale(1.18); }
+            100% { transform: translateY(0) scale(1); }
+        }
+        @keyframes wave-bubble {
+            0% { transform: translateY(0) scale(1); }
+            40% { transform: translateY(-6px) scale(1.15); }
+            100% { transform: translateY(0) scale(1); }
         }
     </style>
 </body>
