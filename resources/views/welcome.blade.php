@@ -540,15 +540,15 @@
 
             <div class="grid md:grid-cols-2 gap-8">
                 @foreach([
-                    ['name' => 'Performance Pickleball', 'desc' => 'Web + native application builds to create a "country club" type experience for a premiere indoor pickleball facility.', 'image' => 'pickleball.png', 'url' => 'https://apps.apple.com/us/app/performance-pickleball/id6470171328'],
                     ['name' => 'PromoSoft', 'desc' => 'Custom software created by indsutry professionals to organize and automate the order fulfillment process for apparel decorators.', 'image' => 'thepromosoft.png', 'url' => 'https://www.thepromosoft.com'],
-                    ['name' => 'Secured Link Society', 'desc' => 'Web + native application builds to support a networking group passing $Ms in referral business around Richmond, VA.', 'image' => 'sls.png', 'url' => 'https://www.securedlinksociety.us'],
                     ['name' => 'Strokin', 'desc' => 'AI-enabled native application that provides an easy way to score + handicap golf competitions among friends.', 'image' => 'strokin.png', 'url' => 'https://strokin.app'],
+                    ['name' => 'Fresh Move Media', 'desc' => 'Custom web application for a digital marketing + video production agency to manage their entire operation the cloud.', 'image' => 'freshmove.png', 'url' => 'https://www.freshmovemedia.com'],
+                    ['name' => 'Secured Link Society', 'desc' => 'Web + native application builds to support a networking group passing $Ms in referral business around Richmond, VA.', 'image' => 'sls.png', 'url' => 'https://www.securedlinksociety.us'],
                 ] as $project)
-                    <a href="{{ $project['url'] ?? '#' }}" target="{{ $project['url'] ? '_blank' : '_self' }}" rel="{{ $project['url'] ? 'noopener' : '' }}" class="group relative rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 block">
+                    <a href="{{ $project['url'] ?? '#' }}" target="{{ $project['url'] ? '_blank' : '_self' }}" rel="{{ $project['url'] ? 'noopener' : '' }}" class="group relative rounded-2xl overflow-hidden border border-gray-200 shadow-md hover:shadow-2xl hover:border-brand/30 hover:scale-[1.02] transition-all duration-300 block">
                         @if($project['image'])
                             <div class="aspect-[16/10] overflow-hidden">
-                                <img src="{{ asset('images/' . $project['image']) }}" alt="{{ $project['name'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                <img src="{{ asset('images/' . $project['image']) }}" alt="{{ $project['name'] }}" class="w-full h-full object-cover">
                             </div>
                         @else
                             <div class="aspect-[16/10] bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-gray-200 group-hover:to-gray-300 transition-colors duration-300">
@@ -703,7 +703,7 @@
                                     <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
                                     <input type="email" id="email" name="email" required class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all" placeholder="you@company.com">
                                 </div>
-                                <div class="grid grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
                                         <input type="date" id="date" name="date" required
