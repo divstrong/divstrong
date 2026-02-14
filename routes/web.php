@@ -13,6 +13,8 @@ Route::get('/', function () {
 Route::get('/accessibility', fn () => view('accessibility'))->name('accessibility');
 Route::get('/terms', fn () => view('terms'))->name('terms');
 Route::get('/privacy', fn () => view('privacy'))->name('privacy');
+Route::get('/clients', fn () => view('clients'))->name('clients');
+Route::get('/sitemap', fn () => view('sitemap'))->name('sitemap');
 
 Route::post('/appointment', function (Request $request) {
     $validated = $request->validate([

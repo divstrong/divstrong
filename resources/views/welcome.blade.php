@@ -120,6 +120,12 @@
                 <a @click="$store.nav.mobileOpen = false" href="#services" class="block px-3 py-3 text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-brand hover:bg-gray-50 rounded-lg transition-colors">Services</a>
                 <a @click="$store.nav.mobileOpen = false" href="#work" class="block px-3 py-3 text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-brand hover:bg-gray-50 rounded-lg transition-colors">Portfolio</a>
                 <a @click="$store.nav.mobileOpen = false" href="#contact" class="block px-3 py-3 text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-brand hover:bg-gray-50 rounded-lg transition-colors">Contact</a>
+
+                <div class="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-1">
+                    <a @click="$store.nav.mobileOpen = false" href="{{ route('accessibility') }}" class="block px-3 py-2 text-xs font-medium tracking-wide text-gray-400 hover:text-brand hover:bg-gray-50 rounded-lg transition-colors">Accessibility</a>
+                    <a @click="$store.nav.mobileOpen = false" href="{{ route('terms') }}" class="block px-3 py-2 text-xs font-medium tracking-wide text-gray-400 hover:text-brand hover:bg-gray-50 rounded-lg transition-colors">Terms</a>
+                    <a @click="$store.nav.mobileOpen = false" href="{{ route('privacy') }}" class="block px-3 py-2 text-xs font-medium tracking-wide text-gray-400 hover:text-brand hover:bg-gray-50 rounded-lg transition-colors">Privacy Policy</a>
+                </div>
             </div>
 
             {{-- Client Portal at bottom --}}
@@ -204,7 +210,6 @@
                 ['file' => 'tsipromotionals.png', 'name' => 'TSI Promotionals', 'url' => 'https://www.tsipromotionals.com'],
                 ['file' => 'sls.png', 'name' => 'Secured Link Society', 'url' => 'https://www.securedlinksociety.com'],
                 ['file' => 'hemsworth.png', 'name' => 'Hemsworth Communications', 'url' => 'https://www.hemsworthcommunications.com'],
-                ['file' => 'goldenseed.png', 'name' => 'Golden Seed', 'url' => 'https://www.goldenseed.com'],
                 ['file' => 'casasrva.png', 'name' => 'Casas RVA', 'url' => 'https://www.casasrva.com'],
                 ['file' => 'cousins.jpg', 'name' => 'Cousins Maine Lobster', 'url' => 'https://www.cousinsmainelobster.com'],
                 ['file' => 'captapp.png', 'name' => 'The Capt App', 'url' => 'https://www.thecaptapp.com'],
@@ -219,7 +224,7 @@
             <div class="text-center max-w-2xl mx-auto mb-16">
                 <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-3">What We Do</p>
                 <h2 class="text-4xl lg:text-5xl font-extrabold tracking-tight mb-4">Custom Digital Solutions</h2>
-                <p class="text-lg text-gray-500">From strategy to launch and beyond, we handle every stage of your digital product's lifecycle.</p>
+                <p class="text-lg text-gray-500">From inception to launch and everything between, we handle all phases of your digital product's lifecycle.</p>
             </div>
 
             {{-- Service Cards Grid --}}
@@ -450,12 +455,15 @@
                 @endforeach
             </div>
         </div>
+        <div class="text-center mt-14">
+            <a href="{{ route('clients') }}" class="text-lg font-light text-gray-400 hover:text-brand transition-colors">Full Client List &rarr;</a>
+        </div>
     </div>
 
     {{-- ==================== ABOUT ==================== --}}
     <section id="about" class="relative py-24 lg:py-32 bg-neutral-900 text-white overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">
-            <img src="{{ asset('images/church-hill.png') }}" alt="" class="w-full h-full object-cover grayscale opacity-10 animate-slow-zoom">
+            <img src="{{ asset('images/rva-street.png') }}" alt="" class="w-full h-full object-cover grayscale opacity-10 animate-slow-zoom">
         </div>
         <div class="relative max-w-7xl mx-auto px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-16 items-center">
@@ -527,7 +535,7 @@
             <div class="text-center max-w-2xl mx-auto mb-16">
                 <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-3">Portfolio</p>
                 <h2 class="text-4xl lg:text-5xl font-extrabold tracking-tight mb-4">Featured Work</h2>
-                <p class="text-lg text-gray-500">Here are some recent examples of successful projects we built for clients:</p>
+                <p class="text-lg text-gray-500">Here are some recent examples of successful projects we built for <a href="#">Our Clients</a></p>
             </div>
 
             <div class="grid md:grid-cols-2 gap-8">
@@ -747,7 +755,7 @@
     {{-- ==================== FOOTER ==================== --}}
     <footer class="relative bg-neutral-900 text-white py-16 overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">
-            <img src="{{ asset('images/rva-street.png') }}" alt="" class="w-full h-full object-cover grayscale opacity-10 animate-slow-zoom">
+            <img src="{{ asset('images/street.png') }}" alt="" class="w-full h-full object-cover grayscale opacity-10 animate-slow-zoom">
         </div>
         <div class="relative max-w-7xl mx-auto px-6 lg:px-8">
             <div class="grid md:grid-cols-4 gap-10 mb-12">
@@ -783,7 +791,7 @@
                         <li><a href="{{ route('accessibility') }}" class="text-sm text-gray-300 hover:text-white transition-colors">Accessibility</a></li>
                         <li><a href="{{ route('terms') }}" class="text-sm text-gray-300 hover:text-white transition-colors">Terms</a></li>
                         <li><a href="{{ route('privacy') }}" class="text-sm text-gray-300 hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="#" class="text-sm text-gray-300 hover:text-white transition-colors">Sitemap</a></li>
+                        <li><a href="{{ route('sitemap') }}" class="text-sm text-gray-300 hover:text-white transition-colors">Sitemap</a></li>
                     </ul>
                 </div>
 
@@ -845,7 +853,7 @@
         }
         .btn-brand:hover {
             transform: scale(1.06);
-            color: #111827 !important;
+            color: #FFD700 !important;
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 6px 20px rgba(237,37,55,0.4);
         }
         .service-card {
