@@ -12,11 +12,11 @@ class ProposalRevenueChart extends ChartWidget
 {
     use InteractsWithPageFilters;
 
-    protected static ?string $heading = 'Proposal Revenue';
+    protected ?string $heading = 'Proposal Revenue';
 
     protected static ?int $sort = 2;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int | string | array $columnSpan = 2;
 
     protected function getType(): string
     {
@@ -80,15 +80,15 @@ class ProposalRevenueChart extends ChartWidget
                 [
                     'label' => 'Pending',
                     'data' => $pendingData,
-                    'backgroundColor' => '#f59e0b',
-                    'borderColor' => '#d97706',
+                    'backgroundColor' => '#ed2537',
+                    'borderColor' => '#c91e2e',
                     'borderWidth' => 1,
                 ],
                 [
                     'label' => 'Converted',
                     'data' => $convertedData,
-                    'backgroundColor' => '#10b981',
-                    'borderColor' => '#059669',
+                    'backgroundColor' => '#111827',
+                    'borderColor' => '#030712',
                     'borderWidth' => 1,
                 ],
             ],
@@ -107,6 +107,7 @@ class ProposalRevenueChart extends ChartWidget
             'last_month' => [$now->copy()->subMonth()->startOfMonth(), $now->copy()->subMonth()->endOfMonth()],
             'this_quarter' => [$now->copy()->firstOfQuarter(), $now->copy()->lastOfQuarter()],
             'last_quarter' => [$now->copy()->subQuarter()->firstOfQuarter(), $now->copy()->subQuarter()->lastOfQuarter()],
+            'all_time' => [Carbon::create(2020, 1, 1), $now->copy()->endOfYear()],
             'custom' => [
                 Carbon::parse($this->filters['date_start'] ?? $now->copy()->startOfYear()),
                 Carbon::parse($this->filters['date_end'] ?? $now->copy()->endOfYear()),
