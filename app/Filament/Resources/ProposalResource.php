@@ -414,17 +414,42 @@ class ProposalResource extends Resource
                     ->color('gray')
                     ->url(fn (Proposal $record) => url("/proposal/{$record->uuid}"))
                     ->openUrlInNewTab(),
-                Action::make('copyLink')
-                    ->icon('heroicon-o-link')
+                Action::make('copy')
+                    ->icon('heroicon-o-document-duplicate')
                     ->color('gray')
-                    ->action(function (Proposal $record, $livewire) {
-                        $livewire->js(
-                            "navigator.clipboard.writeText('" . url("/proposal/{$record->uuid}") . "')"
-                        );
+                    ->action(function (Proposal $record) {
+                        $clone = $record->replicate([
+                            'uuid', 'status', 'sent_at', 'first_viewed_at',
+                            'last_viewed_at', 'view_count', 'accepted_at',
+                            'declined_at', 'accepted_ip', 'signature_data',
+                            'signature_name', 'cr_signature_name', 'cr_signature_data',
+                            'cr_signed_at', 'tc_signature_name', 'tc_signature_data',
+                            'tc_signed_at',
+                        ]);
+                        $clone->status = ProposalStatus::Draft;
+                        $clone->view_count = 0;
+                        $clone->project_title = $record->project_title . ' (Copy)';
+                        $clone->save();
+
+                        foreach ($record->scopeItems as $item) {
+                            $clone->scopeItems()->create($item->replicate()->toArray());
+                        }
+                        foreach ($record->costItems as $item) {
+                            $clone->costItems()->create($item->replicate()->toArray());
+                        }
+                        foreach ($record->milestones as $item) {
+                            $clone->milestones()->create($item->replicate()->toArray());
+                        }
+                        foreach ($record->terms as $item) {
+                            $clone->terms()->create($item->replicate()->toArray());
+                        }
+
                         Notification::make()
                             ->success()
-                            ->title('Link copied to clipboard')
+                            ->title('Proposal duplicated')
                             ->send();
+
+                        return redirect(ProposalResource::getUrl('edit', ['record' => $clone]));
                     }),
             ])
             ->bulkActions([

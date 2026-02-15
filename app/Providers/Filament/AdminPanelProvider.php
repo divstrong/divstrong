@@ -60,19 +60,17 @@ class AdminPanelProvider extends PanelProvider
                         .fi-btn-primary,
                         .fi-btn-primary:focus,
                         .fi-btn-primary:active {
-                            --btn-bg: #ed2537 !important;
-                            --c-400: #ed2537 !important;
-                            --c-500: #ed2537 !important;
-                            --c-600: #ed2537 !important;
-                            background-color: #ed2537 !important;
+                            background: linear-gradient(to bottom, #f43f4f 0%, #ed2537 40%, #c91e2e 100%) !important;
+                            box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 2px 8px rgba(237,37,55,0.3) !important;
+                            border: 1px solid #b91a27 !important;
                             color: white !important;
+                            transition: transform 0.3s ease, box-shadow 0.3s ease, color 0.3s ease !important;
                         }
                         .fi-btn-primary:hover {
-                            --btn-bg: #111827 !important;
-                            --c-400: #111827 !important;
-                            --c-500: #111827 !important;
-                            --c-600: #111827 !important;
-                            background-color: #111827 !important;
+                            background: linear-gradient(to bottom, #f43f4f 0%, #ed2537 40%, #c91e2e 100%) !important;
+                            color: #FFD700 !important;
+                            transform: scale(1.06);
+                            box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 6px 20px rgba(237,37,55,0.4) !important;
                         }
                     </style>
                 '),

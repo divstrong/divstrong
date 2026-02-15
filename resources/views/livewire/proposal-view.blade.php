@@ -255,7 +255,6 @@
     <section id="overview" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
-                <svg class="hidden sm:block w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Overview</h2>
             </div>
             <div class="sm:pl-8">
@@ -305,7 +304,6 @@
     <section id="scope" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-12">
-                <svg class="hidden sm:block w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Scope of Work</h2>
 
                 {{-- Add Item button --}}
@@ -528,7 +526,7 @@
                                 </span>
                             @endif
                         </h3>
-                        <div class="space-y-4">
+                        <div class="space-y-4 sm:pl-4">
                             @foreach($items as $item)
                                 <div class="group bg-gray-50 border border-gray-200 rounded-lg p-5 hover:border-gray-300 transition-colors {{ $isAdmin ? 'relative' : '' }}"
                                      data-scope-id="{{ $item->id }}"
@@ -662,7 +660,6 @@
     <section id="investment" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
-                <svg class="hidden sm:block w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Investment</h2>
 
                 @if($isAdmin)
@@ -940,7 +937,6 @@
     <section id="milestones" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
-                <svg class="hidden sm:block w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Payment Milestones</h2>
 
                 @if($isAdmin)
@@ -1110,7 +1106,6 @@
     <section id="changes" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
-                <svg class="hidden sm:block w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Change Requests</h2>
             </div>
 
@@ -1138,7 +1133,6 @@
     <section id="terms" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center gap-3 mb-10">
-                <svg class="hidden sm:block w-7 h-7 text-brand flex-shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 <h2 class="text-3xl font-bold text-gray-900">Terms & Conditions</h2>
 
                 @if($isAdmin)
@@ -1296,20 +1290,22 @@
                 @if($proposal->tc_signed_at)
                     {{-- Signed state --}}
                     <div class="bg-white border border-emerald-200 rounded-xl p-6 shadow-sm">
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center">
-                                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-900">Signed by {{ $proposal->tc_signature_name }}</p>
+                                    <p class="text-xs text-gray-400">{{ $proposal->tc_signed_at->format('F j, Y \a\t g:i A') }}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="text-sm font-semibold text-gray-900">Signed by {{ $proposal->tc_signature_name }}</p>
-                                <p class="text-xs text-gray-400">{{ $proposal->tc_signed_at->format('F j, Y \a\t g:i A') }}</p>
-                            </div>
+                            @if($proposal->tc_signature_data)
+                                <div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                                    <img src="{{ $proposal->tc_signature_data }}" alt="Signature" class="max-h-16">
+                                </div>
+                            @endif
                         </div>
-                        @if($proposal->tc_signature_data)
-                            <div class="inline-block bg-gray-50 border border-gray-100 rounded-lg p-3">
-                                <img src="{{ $proposal->tc_signature_data }}" alt="Signature" class="max-h-16">
-                            </div>
-                        @endif
                     </div>
                 @elseif(!$isAdmin && !$converted && !$declined && !$expired)
                     {{-- Client signature form --}}
