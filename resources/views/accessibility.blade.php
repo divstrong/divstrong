@@ -56,7 +56,7 @@
 
             <p>If you are experiencing difficulties with any content on our website because of a disability, or if you require assistance with any part of our site because of your particular disability, please contact us and let us know. We will be happy to assist.</p>
 
-            <p>Please reach us by telephone <a href="tel:8043159609" class="text-brand hover:underline">(804) 315-9609</a>, via email by writing to <a href="mailto:jim@divstrong.com" class="text-brand hover:underline">jim@divstrong.com</a>, or send a letter to 14321 Winter Breeze Drive, Suite #55, Midlothian, VA 23119.</p>
+            <p>Please reach us by telephone <a href="tel:8043159609" class="text-brand hover:underline">(804) 315-9609</a>, via email by writing to <a href="mailto:support@divstrong.com" class="text-brand hover:underline">support@divstrong.com</a>, or send a letter to 14321 Winter Breeze Drive, Suite #55, Midlothian, VA 23119.</p>
 
             <p>One of our representatives will follow-up with you in a timely manner and do our best to accommodate.</p>
         </div>
@@ -68,7 +68,7 @@
             <a href="/" class="inline-block mb-4">
                 <img src="{{ asset('images/logo.png') }}" alt="divStrong" class="h-8 brightness-0 invert">
             </a>
-            <p class="text-sm text-gray-400">&copy; {{ date('Y') }} divStrong. All rights reserved.</p>
+            <p class="text-sm text-gray-400">&copy; 2009-{{ date('Y') }} divStrong</p>
         </div>
     </footer>
 

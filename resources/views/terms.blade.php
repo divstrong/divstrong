@@ -66,7 +66,7 @@
             <a href="/" class="inline-block mb-4">
                 <img src="{{ asset('images/logo.png') }}" alt="divStrong" class="h-8 brightness-0 invert">
             </a>
-            <p class="text-sm text-gray-400">&copy; {{ date('Y') }} divStrong. All rights reserved.</p>
+            <p class="text-sm text-gray-400">&copy; 2009-{{ date('Y') }} divStrong</p>
         </div>
     </footer>
 

@@ -70,9 +70,7 @@
                     {{-- Footer --}}
                     <tr>
                         <td style="text-align: center; padding-top: 30px;">
-                            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-                                &copy; {{ date('Y') }} DivStrong. All rights reserved.
-                            </p>
+            <p class="text-sm text-gray-400">&copy; 2009-{{ date('Y') }} divStrong</p>
                         </td>
                     </tr>
                 </table>

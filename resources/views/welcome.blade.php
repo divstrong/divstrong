@@ -471,11 +471,9 @@
                     <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-3">About Us</p>
                     <h2 class="text-4xl lg:text-5xl font-extrabold tracking-tight mb-6">Building APIs & MVPs Since 2009</h2>
                     <p class="text-lg text-gray-400 leading-relaxed mb-6">
-                        Our AI-enabled team of strategists, designers, and  developers create full-stack solutions for companies seeking to innovate, automate, and ultimately enhance their bottom line by investing in the digital ecosystem.
+                        Our AI-enabled team of strategists, designers, and  developers create full-stack solutions for companies seeking to innovate, automate, and invest in their own digital products.
                     </p>
-                    <p class="text-lg text-gray-400 leading-relaxed mb-8">
-                        We create 
-                    </p>
+
                     <div
                         class="grid grid-cols-3 gap-8"
                         x-data="{ started: false, years: 0, clients: 0, projects: 0 }"

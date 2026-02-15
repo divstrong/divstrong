@@ -1544,7 +1544,7 @@
     <footer class="py-8 px-6 bg-white border-t border-gray-200">
         <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
             <a href="https://www.divstrong.com" target="_blank" rel="noopener"><img src="{{ asset('images/logo.png') }}" alt="DivStrong" class="h-6"></a>
-            <p class="text-gray-400 text-xs">&copy; {{ date('Y') }} DivStrong. All rights reserved.</p>
+            <p class="text-gray-400 text-xs">&copy; 2009-{{ date('Y') }} divStrong</p>
         </div>
     </footer>
 </div>

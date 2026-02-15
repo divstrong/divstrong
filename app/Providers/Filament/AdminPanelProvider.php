@@ -57,16 +57,22 @@ class AdminPanelProvider extends PanelProvider
                             padding: 2rem;
                             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
                         }
-                        .fi-btn-primary,
-                        .fi-btn-primary:focus,
-                        .fi-btn-primary:active {
+                        .fi-btn.fi-color-primary:not(.fi-outlined) {
+                            --bg: #ed2537 !important;
+                            --hover-bg: #c91e2e !important;
+                            --text: white !important;
+                            --hover-text: #FFD700 !important;
+                            --dark-bg: #ed2537 !important;
+                            --dark-hover-bg: #c91e2e !important;
+                            --dark-text: white !important;
+                            --dark-hover-text: #FFD700 !important;
                             background: linear-gradient(to bottom, #f43f4f 0%, #ed2537 40%, #c91e2e 100%) !important;
                             box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 2px 8px rgba(237,37,55,0.3) !important;
                             border: 1px solid #b91a27 !important;
                             color: white !important;
                             transition: transform 0.3s ease, box-shadow 0.3s ease, color 0.3s ease !important;
                         }
-                        .fi-btn-primary:hover {
+                        .fi-btn.fi-color-primary:not(.fi-outlined):hover {
                             background: linear-gradient(to bottom, #f43f4f 0%, #ed2537 40%, #c91e2e 100%) !important;
                             color: #FFD700 !important;
                             transform: scale(1.06);

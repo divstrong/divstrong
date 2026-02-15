@@ -66,7 +66,7 @@
 
             <h2 class="text-2xl font-bold text-gray-900 pt-6">Contact Us</h2>
 
-            <p>If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at <a href="mailto:jim@divstrong.com" class="text-brand hover:underline">jim@divstrong.com</a>.</p>
+            <p>If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at <a href="mailto:support@divstrong.com" class="text-brand hover:underline">support@divstrong.com</a>.</p>
         </div>
     </section>
 
@@ -76,7 +76,7 @@
             <a href="/" class="inline-block mb-4">
                 <img src="{{ asset('images/logo.png') }}" alt="divStrong" class="h-8 brightness-0 invert">
             </a>
-            <p class="text-sm text-gray-400">&copy; {{ date('Y') }} divStrong. All rights reserved.</p>
+            <p class="text-sm text-gray-400">&copy; 2009-{{ date('Y') }} divStrong</p>
         </div>
     </footer>
 
