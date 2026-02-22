@@ -31,6 +31,8 @@ class ProposalResource extends Resource
 {
     protected static ?string $model = Proposal::class;
 
+    protected static ?string $modelLabel = 'Proposal';
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
     protected static ?int $navigationSort = 2;

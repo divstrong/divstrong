@@ -25,6 +25,8 @@ class ClientResource extends Resource
 {
     protected static ?string $model = Client::class;
 
+    protected static ?string $modelLabel = 'Client';
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
 
     protected static ?int $navigationSort = 1;
@@ -46,13 +48,8 @@ class ClientResource extends Resource
                                         Forms\Components\TextInput::make('name')
                                             ->required()
                                             ->maxLength(255),
-                                        Forms\Components\FileUpload::make('logo')
-                                            ->label('Client Logo')
-                                            ->image()
-                                            ->directory('client-logos')
-                                            ->imageResizeMode('contain')
-                                            ->maxSize(1024)
-                                            ->columnSpanFull(),
+                                        Forms\Components\TextInput::make('title')
+                                            ->maxLength(255),
                                         Forms\Components\TextInput::make('email')
                                             ->email()
                                             ->required()
@@ -65,6 +62,13 @@ class ClientResource extends Resource
                                         Forms\Components\TextInput::make('domain')
                                             ->maxLength(255)
                                             ->prefix('https://'),
+                                        Forms\Components\FileUpload::make('logo')
+                                            ->label('Avatar')
+                                            ->image()
+                                            ->directory('client-logos')
+                                            ->imageResizeMode('contain')
+                                            ->maxSize(1024)
+                                            ->columnSpanFull(),
                                     ]),
                                 Section::make('Address')
                                     ->columns(2)
@@ -77,8 +81,61 @@ class ClientResource extends Resource
                                             ->maxLength(255),
                                         Forms\Components\TextInput::make('city')
                                             ->maxLength(255),
-                                        Forms\Components\TextInput::make('state')
-                                            ->maxLength(255),
+                                        Forms\Components\Select::make('state')
+                                            ->searchable()
+                                            ->options([
+                                                'AL' => 'Alabama',
+                                                'AK' => 'Alaska',
+                                                'AZ' => 'Arizona',
+                                                'AR' => 'Arkansas',
+                                                'CA' => 'California',
+                                                'CO' => 'Colorado',
+                                                'CT' => 'Connecticut',
+                                                'DE' => 'Delaware',
+                                                'FL' => 'Florida',
+                                                'GA' => 'Georgia',
+                                                'HI' => 'Hawaii',
+                                                'ID' => 'Idaho',
+                                                'IL' => 'Illinois',
+                                                'IN' => 'Indiana',
+                                                'IA' => 'Iowa',
+                                                'KS' => 'Kansas',
+                                                'KY' => 'Kentucky',
+                                                'LA' => 'Louisiana',
+                                                'ME' => 'Maine',
+                                                'MD' => 'Maryland',
+                                                'MA' => 'Massachusetts',
+                                                'MI' => 'Michigan',
+                                                'MN' => 'Minnesota',
+                                                'MS' => 'Mississippi',
+                                                'MO' => 'Missouri',
+                                                'MT' => 'Montana',
+                                                'NE' => 'Nebraska',
+                                                'NV' => 'Nevada',
+                                                'NH' => 'New Hampshire',
+                                                'NJ' => 'New Jersey',
+                                                'NM' => 'New Mexico',
+                                                'NY' => 'New York',
+                                                'NC' => 'North Carolina',
+                                                'ND' => 'North Dakota',
+                                                'OH' => 'Ohio',
+                                                'OK' => 'Oklahoma',
+                                                'OR' => 'Oregon',
+                                                'PA' => 'Pennsylvania',
+                                                'RI' => 'Rhode Island',
+                                                'SC' => 'South Carolina',
+                                                'SD' => 'South Dakota',
+                                                'TN' => 'Tennessee',
+                                                'TX' => 'Texas',
+                                                'UT' => 'Utah',
+                                                'VT' => 'Vermont',
+                                                'VA' => 'Virginia',
+                                                'WA' => 'Washington',
+                                                'WV' => 'West Virginia',
+                                                'WI' => 'Wisconsin',
+                                                'WY' => 'Wyoming',
+                                                'DC' => 'District of Columbia',
+                                            ]),
                                         Forms\Components\TextInput::make('zip')
                                             ->label('ZIP Code')
                                             ->maxLength(20),
