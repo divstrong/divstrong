@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\ClientResource;
+use App\Filament\Resources\ProposalResource;
 use App\Filament\Widgets\ProposalRevenueChart;
 use App\Filament\Widgets\ProposalStatsWidget;
 use App\Filament\Widgets\RevenueGoalWidget;
@@ -18,6 +20,29 @@ use Filament\Widgets\WidgetConfiguration;
 class Dashboard extends BaseDashboard
 {
     use BaseDashboard\Concerns\HasFiltersForm;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->hasPermission('dashboard') ?? false;
+    }
+
+    public function mount(): void
+    {
+        if (! auth()->user()?->hasPermission('dashboard')) {
+            $redirectMap = [
+                'clients' => ClientResource::getUrl(),
+                'proposals' => ProposalResource::getUrl(),
+            ];
+
+            foreach ($redirectMap as $permission => $url) {
+                if (auth()->user()->hasPermission($permission)) {
+                    $this->redirect($url);
+
+                    return;
+                }
+            }
+        }
+    }
 
     public function filtersForm(Schema $schema): Schema
     {

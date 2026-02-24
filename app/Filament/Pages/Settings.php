@@ -19,6 +19,11 @@ use UnitEnum;
 
 class Settings extends Page
 {
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasPermission('settings') ?? false;
+    }
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
     protected static string|UnitEnum|null $navigationGroup = null;

@@ -31,6 +31,11 @@ class ProposalResource extends Resource
 {
     protected static ?string $model = Proposal::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasPermission('proposals') ?? false;
+    }
+
     protected static ?string $modelLabel = 'Proposal';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';

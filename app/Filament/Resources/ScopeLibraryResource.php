@@ -22,6 +22,11 @@ class ScopeLibraryResource extends Resource
 {
     protected static ?string $model = ScopeLibrary::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasPermission('scope_items') ?? false;
+    }
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-book-open';
 
     protected static ?string $navigationParentItem = 'Proposals';

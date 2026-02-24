@@ -21,6 +21,7 @@ class Role extends Model
             'categories' => 'Categories',
             'services' => 'Services',
             'scope_items' => 'Scope Items',
+            'users' => 'Users',
             'settings' => 'Settings',
         ];
     }

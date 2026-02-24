@@ -22,6 +22,11 @@ class ServiceLibraryResource extends Resource
 {
     protected static ?string $model = ServiceLibrary::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasPermission('services') ?? false;
+    }
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-shopping-bag';
 
     protected static ?string $navigationParentItem = 'Proposals';

@@ -12,9 +12,10 @@
                     {{-- Header --}}
                     <tr>
                         <td style="text-align: center; padding-bottom: 30px;">
-                            <span style="font-size: 24px; font-weight: bold; letter-spacing: 2px;">
-                                <span style="color: #ed2537;">div</span><span style="color: #ffffff;">Strong</span>
-                            </span>
+                            <img src="https://www.divstrong.com/images/logo.png"
+                                 alt="divStrong"
+                                 width="160"
+                                 style="display: inline-block; background-color: #ffffff; border-radius: 12px; padding: 12px 20px;" />
                         </td>
                     </tr>
 
@@ -28,7 +29,7 @@
                             </p>
 
                             <p style="color: #9ca3af; font-size: 16px; line-height: 1.6; margin: 0 0 8px 0;">
-                                You've been invited to join <strong style="color: #ffffff;">{{ $companyName }}</strong>. Your account has been created and is ready to use.
+                                You've been invited to join <strong style="color: #ffffff;">{{ $companyName }}</strong>. Click the button below to set your password and activate your account.
                             </p>
 
                             @if($notes)
@@ -43,19 +44,15 @@
                             <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 32px;">
                                 <tr>
                                     <td align="center" style="padding: 8px 0;">
-                                        <a href="{{ $loginUrl }}"
-                                           style="display: inline-block; background-color: #ed2537; color: #000000;
+                                        <a href="{{ $inviteUrl }}"
+                                           style="display: inline-block; background-color: #ed2537; color: #ffffff;
                                                   font-weight: 600; font-size: 16px; text-decoration: none;
                                                   padding: 14px 40px; border-radius: 8px;">
-                                            Sign In
+                                            Get Started
                                         </a>
                                     </td>
                                 </tr>
                             </table>
-
-                            <p style="color: #6b7280; font-size: 12px; margin-top: 24px; text-align: center;">
-                                Or copy this link: {{ $loginUrl }}
-                            </p>
                         </td>
                     </tr>
 

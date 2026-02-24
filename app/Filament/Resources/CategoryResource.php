@@ -21,6 +21,11 @@ class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasPermission('categories') ?? false;
+    }
+
     protected static ?string $modelLabel = 'Category';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-tag';

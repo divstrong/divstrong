@@ -17,6 +17,7 @@ class UserInvite extends Mailable
     public function __construct(
         public User $user,
         public ?string $notes = null,
+        public ?string $token = null,
     ) {}
 
     public function envelope(): Envelope
@@ -35,7 +36,7 @@ class UserInvite extends Mailable
             with: [
                 'user' => $this->user,
                 'notes' => $this->notes,
-                'loginUrl' => url('/admin/login'),
+                'inviteUrl' => url("/invite/{$this->token}"),
                 'companyName' => Setting::instance()->company_name ?? 'divStrong',
             ],
         );

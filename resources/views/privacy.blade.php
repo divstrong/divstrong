@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    @include('partials.gtag')
     <title>Privacy Policy | divStrong</title>
     <meta name="description" content="divStrong's privacy policy.">
 

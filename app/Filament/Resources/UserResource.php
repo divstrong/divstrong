@@ -19,11 +19,17 @@ use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use UnitEnum;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasPermission('users') ?? false;
+    }
 
     protected static ?string $modelLabel = 'User';
 
@@ -52,6 +58,11 @@ class UserResource extends Resource
                             ->dehydrated(fn (?string $state): bool => filled($state))
                             ->maxLength(255)
                             ->revealable(),
+                        Forms\Components\Select::make('role_id')
+                            ->label('Role')
+                            ->relationship('role', 'name')
+                            ->searchable()
+                            ->preload(),
                     ]),
             ]);
     }
@@ -66,6 +77,10 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('email')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('role.name')
+                    ->label('Role')
+                    ->badge()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Joined')
                     ->dateTime()
@@ -78,7 +93,7 @@ class UserResource extends Resource
                 Action::make('sendInvite')
                     ->label('Send Invite')
                     ->icon('heroicon-o-envelope')
-                    ->color('success')
+                    ->color('primary')
                     ->modalHeading('Send Invite')
                     ->modalDescription(fn (User $record) => "Send a branded email invite to {$record->name}.")
                     ->form([
@@ -92,7 +107,10 @@ class UserResource extends Resource
                             ->placeholder('Include a personal message in the invite...'),
                     ])
                     ->action(function (User $record, array $data): void {
-                        Mail::to($data['email'])->send(new UserInvite($record, $data['notes'] ?? null));
+                        $token = Str::random(64);
+                        $record->update(['invite_token' => $token]);
+
+                        Mail::to($data['email'])->send(new UserInvite($record, $data['notes'] ?? null, $token));
 
                         Notification::make()
                             ->success()

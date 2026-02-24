@@ -25,9 +25,14 @@ class ClientResource extends Resource
 {
     protected static ?string $model = Client::class;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasPermission('clients') ?? false;
+    }
+
     protected static ?string $modelLabel = 'Client';
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-heart';
 
     protected static ?int $navigationSort = 1;
 

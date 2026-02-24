@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    @include('partials.gtag')
     <title>divStrong | Full Stack, Web 3.0 App Builds</title>
     <meta name="description" content="We plan, design, and develop full-stack applications for B2B/B2C businesses worldwide.">
 
@@ -471,7 +472,7 @@
                     <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-3">About Us</p>
                     <h2 class="text-4xl lg:text-5xl font-extrabold tracking-tight mb-6">Building Apps, APIs & MVPs Since 2009</h2>
                     <p class="text-lg text-gray-400 leading-relaxed mb-6">
-                        Our AI-enabled team of strategists, designers, and  developers create full-stack solutions for companies seeking to innovate, automate and invest in creating their own digital properties.
+                        Our AI-enabled team of strategists, designers, and  developers create full-stack solutions for companies seeking to innovate, automate and invest in creating their own digital products.
 
                     <div
                         class="grid grid-cols-3 gap-8"

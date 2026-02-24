@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\AcceptInvite;
 use App\Livewire\ProposalView;
 use App\Mail\AppointmentRequest;
 use Illuminate\Http\Request;
@@ -36,6 +37,8 @@ Route::post('/appointment', function (Request $request) {
 
     return response()->json(['message' => 'Appointment request sent successfully.']);
 })->name('appointment.store');
+
+Route::get('/invite/{token}', AcceptInvite::class)->name('invite.accept');
 
 Route::get('/proposal/{uuid}', ProposalView::class)
     ->name('proposal.view')
