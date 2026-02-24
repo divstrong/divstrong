@@ -24,7 +24,8 @@ class RevenueGoalWidget extends Widget
     {
         [$start, $end] = $this->getDateRange();
 
-        $converted = Proposal::where('status', ProposalStatus::Converted)
+        $converted = Proposal::forUser()
+            ->where('status', ProposalStatus::Converted)
             ->whereBetween('proposal_date', [$start, $end])
             ->with('costItems')
             ->get()

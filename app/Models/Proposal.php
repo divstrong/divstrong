@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ProposalStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +13,7 @@ use App\Models\ProposalTerm;
 class Proposal extends Model
 {
     protected $fillable = [
-        'uuid', 'user_id', 'client_id', 'proposal_date', 'client_name', 'client_email',
+        'uuid', 'user_id', 'estimator_id', 'client_id', 'proposal_date', 'client_name', 'client_email',
         'client_company', 'client_domain', 'project_title', 'cover_image',
         'introduction', 'cost_notes', 'valid_until', 'status',
         'change_request_content', 'cr_signature_name', 'cr_signature_data', 'cr_signed_at',
@@ -50,9 +51,28 @@ class Proposal extends Model
         });
     }
 
+    public function scopeForUser(Builder $query): Builder
+    {
+        $user = auth()->user();
+
+        if ($user && $user->role) {
+            $query->where(function (Builder $q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhere('estimator_id', $user->id);
+            });
+        }
+
+        return $query;
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function estimator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'estimator_id');
     }
 
     public function client(): BelongsTo

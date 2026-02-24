@@ -7,8 +7,10 @@ use App\Filament\Resources\ProposalResource\Pages;
 use App\Mail\ProposalSent;
 use App\Models\Proposal;
 use App\Models\Client;
+use App\Models\Role;
 use App\Models\ScopeLibrary;
 use App\Models\ServiceLibrary;
+use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -23,6 +25,7 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use UnitEnum;
@@ -101,8 +104,20 @@ class ProposalResource extends Resource
                                                 $set('client_company', $client->company);
                                                 $set('client_domain', $client->domain);
                                                 return $client->id;
+                                            }),
+                                        Forms\Components\Select::make('estimator_id')
+                                            ->label('Estimator')
+                                            ->options(function () {
+                                                $estimatorRole = Role::where('name', 'Estimator')->first();
+                                                if (! $estimatorRole) {
+                                                    return [];
+                                                }
+
+                                                return User::where('role_id', $estimatorRole->id)
+                                                    ->pluck('name', 'id');
                                             })
-                                            ->columnSpanFull(),
+                                            ->searchable()
+                                            ->placeholder('Assign an estimator...'),
                                         Forms\Components\DatePicker::make('proposal_date')
                                             ->default(now())
                                             ->required(),
@@ -377,6 +392,11 @@ class ProposalResource extends Resource
                     ->label('Company')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('estimator.name')
+                    ->label('Estimator')
+                    ->placeholder('—')
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge(),
                 Tables\Columns\TextColumn::make('valid_until')
@@ -464,6 +484,11 @@ class ProposalResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->forUser();
     }
 
     public static function getRelations(): array

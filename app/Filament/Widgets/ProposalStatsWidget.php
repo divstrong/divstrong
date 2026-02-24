@@ -14,18 +14,18 @@ class ProposalStatsWidget extends StatsOverviewWidget
     protected function getStats(): array
     {
         return [
-            Stat::make('Draft', Proposal::where('status', ProposalStatus::Draft)->count())
+            Stat::make('Draft', Proposal::forUser()->where('status', ProposalStatus::Draft)->count())
                 ->icon('heroicon-o-pencil-square')
                 ->color('gray'),
-            Stat::make('Sent', Proposal::where('status', ProposalStatus::Sent)->count())
+            Stat::make('Sent', Proposal::forUser()->where('status', ProposalStatus::Sent)->count())
                 ->icon('heroicon-o-paper-airplane')
                 ->color('info'),
-            Stat::make('Accepted', Proposal::where('status', ProposalStatus::Accepted)->count())
+            Stat::make('Accepted', Proposal::forUser()->where('status', ProposalStatus::Accepted)->count())
                 ->icon('heroicon-o-check-circle')
                 ->color('success'),
             Stat::make('Total Accepted Value',
                 '$' . number_format(
-                    Proposal::where('status', ProposalStatus::Accepted)
+                    Proposal::forUser()->where('status', ProposalStatus::Accepted)
                         ->with('costItems')
                         ->get()
                         ->sum(fn ($p) => $p->subtotal),

@@ -42,7 +42,8 @@ class ProposalRevenueChart extends ChartWidget
         ];
 
         // Load all proposals in range with cost items in one query
-        $proposals = Proposal::whereBetween('proposal_date', [$start, $end])
+        $proposals = Proposal::forUser()
+            ->whereBetween('proposal_date', [$start, $end])
             ->with('costItems')
             ->get();
 
