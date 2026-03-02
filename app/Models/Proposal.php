@@ -15,7 +15,9 @@ class Proposal extends Model
     protected $fillable = [
         'uuid', 'user_id', 'estimator_id', 'client_id', 'proposal_date', 'client_name', 'client_email',
         'client_company', 'client_domain', 'project_title', 'cover_image',
-        'introduction', 'cost_notes', 'valid_until', 'status',
+        'introduction', 'cost_notes', 'valid_until',
+        'discount_enabled', 'discount_type', 'discount_value',
+        'status',
         'change_request_content', 'cr_signature_name', 'cr_signature_data', 'cr_signed_at',
         'tc_signature_name', 'tc_signature_data', 'tc_signed_at',
         'sent_at', 'first_viewed_at', 'last_viewed_at', 'view_count',
@@ -35,6 +37,8 @@ class Proposal extends Model
             'declined_at' => 'datetime',
             'cr_signed_at' => 'datetime',
             'tc_signed_at' => 'datetime',
+            'discount_enabled' => 'boolean',
+            'discount_value' => 'decimal:2',
         ];
     }
 
@@ -95,6 +99,11 @@ class Proposal extends Model
         return $this->hasMany(ProposalMilestone::class)->orderBy('sort_order');
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(ProposalPayment::class);
+    }
+
     public function terms(): HasMany
     {
         return $this->hasMany(ProposalTerm::class)->orderBy('sort_order');
@@ -105,9 +114,22 @@ class Proposal extends Model
         return (float) $this->costItems->sum('amount');
     }
 
+    public function getDiscountAmountAttribute(): float
+    {
+        if (! $this->discount_enabled || $this->discount_value <= 0) {
+            return 0.0;
+        }
+
+        if ($this->discount_type === 'percent') {
+            return round($this->subtotal * ($this->discount_value / 100), 2);
+        }
+
+        return min((float) $this->discount_value, $this->subtotal);
+    }
+
     public function getTotalAttribute(): float
     {
-        return $this->subtotal;
+        return $this->subtotal - $this->discount_amount;
     }
 
     public function getPublicUrlAttribute(): string

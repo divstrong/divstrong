@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -48,6 +49,17 @@ class ProposalView extends Component
     public string $editingValidUntil = '';
     public string $editingChangeRequestContent = '';
 
+    // Discount editing
+    public bool $editingDiscountEnabled = false;
+    public string $editingDiscountType = 'percent';
+    public $editingDiscountValue = 0;
+
+    // Payment state
+    public ?int $payingMilestoneId = null;
+    public bool $paymentSuccess = false;
+    public string $paymentError = '';
+    public string $lastCaptureId = '';
+
     // Share modal
     public string $shareEmail = '';
     public string $shareNotes = '';
@@ -73,6 +85,9 @@ class ProposalView extends Component
             $this->editingCostNotes = $this->proposal->cost_notes ?? '';
             $this->editingValidUntil = $this->proposal->valid_until?->format('Y-m-d') ?? '';
             $this->editingChangeRequestContent = $this->proposal->change_request_content ?? '';
+            $this->editingDiscountEnabled = (bool) $this->proposal->discount_enabled;
+            $this->editingDiscountType = $this->proposal->discount_type ?? 'percent';
+            $this->editingDiscountValue = (float) ($this->proposal->discount_value ?? 0);
             $this->shareEmail = $this->proposal->client_email ?? '';
         }
     }
@@ -110,11 +125,55 @@ class ProposalView extends Component
         $this->proposal->refresh();
     }
 
+    #[On('update-proposal-date')]
+    public function onUpdateProposalDate(string $date): void
+    {
+        $this->editingProposalDate = $date;
+        $this->updatedEditingProposalDate($date);
+    }
+
     public function updatedEditingValidUntil($value): void
     {
         if (! $this->isAdmin) return;
 
         $this->proposal->update(['valid_until' => $value ?: null]);
+        $this->proposal->refresh();
+        $this->expired = $this->proposal->valid_until && $this->proposal->valid_until->isPast();
+    }
+
+    #[On('update-valid-until')]
+    public function onUpdateValidUntil(string $date): void
+    {
+        $this->editingValidUntil = $date;
+        $this->updatedEditingValidUntil($date);
+    }
+
+    public function updatedEditingDiscountEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['discount_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function updatedEditingDiscountType($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['discount_type' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function updatedEditingDiscountValue($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $value = max(0, (float) $value);
+        if ($this->editingDiscountType === 'percent') {
+            $value = min(100, $value);
+        }
+
+        $this->proposal->update(['discount_value' => $value]);
         $this->proposal->refresh();
     }
 
@@ -413,7 +472,7 @@ class ProposalView extends Component
 
         $item = $this->proposal->milestones()->find($id);
         if ($item) {
-            $amount = ($percentage / 100) * $this->proposal->subtotal;
+            $amount = ($percentage / 100) * $this->proposal->total;
             $item->update([
                 'title' => $title,
                 'percentage' => $percentage,
@@ -666,6 +725,44 @@ class ProposalView extends Component
 
         Mail::to('jim@divstrong.com')
             ->send(new ProposalStatusChanged($this->proposal, 'declined'));
+    }
+
+    // ---- Payment Methods ----
+
+    public function selectMilestoneForPayment(int $milestoneId): void
+    {
+        if (! $this->converted) return;
+
+        $milestone = $this->proposal->milestones()->where('id', $milestoneId)->first();
+        if (! $milestone || $milestone->payment_status === 'paid') return;
+
+        $this->payingMilestoneId = $milestoneId;
+        $this->paymentSuccess = false;
+        $this->paymentError = '';
+
+        $this->dispatch('init-paypal-payment', milestoneId: $milestoneId);
+    }
+
+    public function cancelPayment(): void
+    {
+        $this->payingMilestoneId = null;
+        $this->paymentSuccess = false;
+        $this->paymentError = '';
+    }
+
+    public function markMilestonePaid(int $milestoneId, string $captureId): void
+    {
+        $this->proposal->load('milestones');
+        $this->payingMilestoneId = null;
+        $this->paymentSuccess = true;
+        $this->lastCaptureId = $captureId;
+        $this->paymentError = '';
+    }
+
+    public function paymentFailed(string $error): void
+    {
+        $this->paymentError = $error;
+        $this->paymentSuccess = false;
     }
 
     public function render()

@@ -43,3 +43,11 @@ Route::get('/invite/{token}', AcceptInvite::class)->name('invite.accept');
 Route::get('/proposal/{uuid}', ProposalView::class)
     ->name('proposal.view')
     ->middleware('track.proposal.view');
+
+// PayPal payment endpoints
+Route::prefix('proposal/{uuid}/payment')->group(function () {
+    Route::post('/create-order', [\App\Http\Controllers\PayPalController::class, 'createOrder'])
+        ->name('proposal.payment.create');
+    Route::post('/{orderId}/capture', [\App\Http\Controllers\PayPalController::class, 'captureOrder'])
+        ->name('proposal.payment.capture');
+});

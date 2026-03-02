@@ -235,11 +235,27 @@
         <div class="absolute bottom-16 sm:bottom-12 left-1/2 -translate-x-1/2 z-10 text-center">
             <div class="mb-4 sm:mb-6">
                 @if($isAdmin)
-                    <input type="date"
-                           wire:model.live="editingProposalDate"
-                           class="bg-transparent border-0 border-b-2 border-dashed border-transparent hover:border-gray-300 focus:border-brand focus:ring-0 text-white/80 text-sm cursor-pointer p-0 transition-colors text-center">
+                    <div wire:ignore x-data="{
+                        fp: null,
+                        init() {
+                            this.fp = flatpickr(this.$refs.datepicker, {
+                                dateFormat: 'Y-m-d',
+                                altInput: true,
+                                altFormat: 'F j, Y',
+                                altInputClass: 'bg-transparent border-0 border-b-2 border-dashed border-transparent hover:border-gray-300 focus:border-brand focus:ring-0 text-white/80 text-sm cursor-pointer p-0 transition-colors text-center',
+                                defaultDate: @js($editingProposalDate),
+                                onChange(selectedDates, dateStr) {
+                                    Livewire.dispatch('update-proposal-date', { date: dateStr });
+                                },
+                            });
+                        },
+                        destroy() { if (this.fp) this.fp.destroy(); }
+                    }" class="inline-block">
+                        <input x-ref="datepicker" type="text" readonly
+                               class="hidden">
+                    </div>
                 @else
-                    <p class="text-white/80 text-sm">{{ $proposal->proposal_date->format('m/d/Y') }}</p>
+                    <p class="text-white/80 text-sm">{{ $proposal->proposal_date->format('F j, Y') }}</p>
                 @endif
             </div>
             <div class="animate-bounce">
@@ -897,28 +913,116 @@
                             @endforeach
                         </tbody>
                         <tfoot>
-                            <tr class="bg-gray-50 border-t-2 border-gray-200">
-                                <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-3 sm:px-6 py-5 text-right">
-                                    <span class="text-gray-900 font-bold text-lg">Total</span>
-                                </td>
-                                <td class="px-3 sm:px-6 py-5 text-right">
-                                    <span class="text-gray-900 font-bold text-xl sm:text-2xl">${{ number_format($proposal->subtotal, 0) }}</span>
-                                </td>
-                                @if($isAdmin)<td></td>@endif
-                            </tr>
+                            @if($proposal->discount_enabled && $proposal->discount_amount > 0)
+                                {{-- Subtotal row --}}
+                                <tr class="border-t border-gray-200">
+                                    <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-3 sm:px-6 py-3 text-right">
+                                        <span class="text-gray-600 font-medium">Subtotal</span>
+                                    </td>
+                                    <td class="px-3 sm:px-6 py-3 text-right">
+                                        <span class="text-gray-600 font-medium text-lg">${{ number_format($proposal->subtotal, 0) }}</span>
+                                    </td>
+                                    @if($isAdmin)<td></td>@endif
+                                </tr>
+
+                                {{-- Discount row --}}
+                                <tr class="border-t border-gray-100">
+                                    <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-3 sm:px-6 py-3 text-right">
+                                        <span class="text-green-600 font-medium">
+                                            Discount
+                                            @if($proposal->discount_type === 'percent')
+                                                ({{ number_format($proposal->discount_value, 0) }}%)
+                                            @endif
+                                        </span>
+                                    </td>
+                                    <td class="px-3 sm:px-6 py-3 text-right">
+                                        <span class="text-green-600 font-medium text-lg">(${{ number_format($proposal->discount_amount, 0) }})</span>
+                                    </td>
+                                    @if($isAdmin)<td></td>@endif
+                                </tr>
+
+                                {{-- Total row --}}
+                                <tr class="bg-gray-50 border-t-2 border-gray-200">
+                                    <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-3 sm:px-6 py-5 text-right">
+                                        <span class="text-gray-900 font-bold text-lg">Total</span>
+                                    </td>
+                                    <td class="px-3 sm:px-6 py-5 text-right">
+                                        <span class="text-gray-900 font-bold text-xl sm:text-2xl">${{ number_format($proposal->total, 0) }}</span>
+                                    </td>
+                                    @if($isAdmin)<td></td>@endif
+                                </tr>
+                            @else
+                                {{-- No discount: single Total row --}}
+                                <tr class="bg-gray-50 border-t-2 border-gray-200">
+                                    <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-3 sm:px-6 py-5 text-right">
+                                        <span class="text-gray-900 font-bold text-lg">Total</span>
+                                    </td>
+                                    <td class="px-3 sm:px-6 py-5 text-right">
+                                        <span class="text-gray-900 font-bold text-xl sm:text-2xl">${{ number_format($proposal->subtotal, 0) }}</span>
+                                    </td>
+                                    @if($isAdmin)<td></td>@endif
+                                </tr>
+                            @endif
                         </tfoot>
                     </table>
                 </div>
             </div>
 
+            {{-- Discount toggle (admin only) --}}
+            @if($isAdmin)
+            <div class="mt-4 px-2 flex items-center gap-4 flex-wrap">
+                <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <span class="text-sm text-gray-400">Add Discount</span>
+                    <div class="relative">
+                        <input type="checkbox"
+                               wire:model.live="editingDiscountEnabled"
+                               class="sr-only peer">
+                        <div class="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-brand peer-focus:outline-none after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white"></div>
+                    </div>
+                </label>
+
+                @if($proposal->discount_enabled)
+                <div class="flex items-center gap-2">
+                    <select wire:model.live="editingDiscountType"
+                            class="text-sm bg-white border border-gray-200 rounded-lg px-2 py-1.5 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none cursor-pointer">
+                        <option value="percent">%</option>
+                        <option value="fixed">$</option>
+                    </select>
+
+                    <input type="number"
+                           wire:model.live.debounce.500ms="editingDiscountValue"
+                           min="0"
+                           @if($editingDiscountType === 'percent') max="100" @endif
+                           step="1"
+                           placeholder="0"
+                           class="w-24 text-sm text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-1.5 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                </div>
+                @endif
+            </div>
+            @endif
+
             {{-- Valid until --}}
             <div class="mt-4 px-2">
                 @if($isAdmin)
-                    <div class="flex items-center gap-2 text-sm text-gray-400">
+                    <div wire:ignore x-data="{
+                        fp: null,
+                        init() {
+                            this.fp = flatpickr(this.$refs.datepicker, {
+                                dateFormat: 'Y-m-d',
+                                altInput: true,
+                                altFormat: 'F j, Y',
+                                altInputClass: 'bg-transparent border-0 border-b-2 border-dashed border-transparent hover:border-gray-300 focus:border-brand focus:ring-0 text-gray-600 text-sm cursor-pointer p-0 transition-colors',
+                                defaultDate: @js($editingValidUntil),
+                                onChange(selectedDates, dateStr) {
+                                    Livewire.dispatch('update-valid-until', { date: dateStr });
+                                },
+                            });
+                        },
+                        destroy() { if (this.fp) this.fp.destroy(); }
+                    }" class="flex items-center gap-2 text-sm text-gray-400">
                         <span>Valid until</span>
-                        <input type="date"
-                               wire:model.live="editingValidUntil"
-                               class="bg-transparent border-0 border-b-2 border-dashed border-transparent hover:border-gray-300 focus:border-brand focus:ring-0 text-gray-600 text-sm cursor-pointer p-0 transition-colors">
+                        <input x-ref="datepicker" type="text" readonly
+                               class="hidden">
                     </div>
                 @elseif($proposal->valid_until)
                     <span class="text-gray-400 text-sm">
@@ -1048,7 +1152,7 @@
                                   @if($isAdmin) @click="startMsEdit({{ $milestone->id }}, @js($milestone->title), {{ $milestone->percentage ?? 0 }})" @endif>
                                 @if($milestone->percentage)
                                     <span class="font-bold">{{ number_format($milestone->percentage, 0) }}%</span>
-                                    <span class="text-gray-500">(${{ number_format(($milestone->percentage / 100) * $proposal->subtotal, 0) }})</span>
+                                    <span class="text-gray-500">(${{ number_format(($milestone->percentage / 100) * $proposal->total, 0) }})</span>
                                 @endif
                                 {{ $milestone->title }}
                             </span>
@@ -1387,6 +1491,116 @@
                             </div>
                         </div>
                     @endif
+
+                    {{-- PAYMENT MILESTONES --}}
+                    @if($proposal->milestones->count() && !$isAdmin)
+                    <div class="mt-12 pt-12 border-t border-gray-200 text-left max-w-xl mx-auto">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2 text-center">Payment Schedule</h3>
+                        <p class="text-sm text-gray-500 mb-6 text-center">Complete milestone payments to get your project started.</p>
+
+                        <div class="space-y-3">
+                            @foreach($proposal->milestones as $milestone)
+                            @php
+                                $msAmount = round(($milestone->percentage / 100) * $proposal->total, 2);
+                            @endphp
+                            <div class="border rounded-xl p-4 transition-all
+                                        {{ $milestone->payment_status === 'paid' ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-gray-200' }}">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <span class="font-semibold text-gray-900">{{ $milestone->title }}</span>
+                                        <span class="text-gray-500 text-sm ml-2">
+                                            {{ number_format($milestone->percentage, 0) }}% &mdash; ${{ number_format($msAmount, 2) }}
+                                        </span>
+                                    </div>
+
+                                    @if($milestone->payment_status === 'paid')
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                            Paid
+                                        </span>
+                                    @else
+                                        <button wire:click="selectMilestoneForPayment({{ $milestone->id }})"
+                                                class="px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer
+                                                       {{ $payingMilestoneId === $milestone->id ? 'ring-2 ring-brand/30' : '' }}">
+                                            Pay ${{ number_format($msAmount, 2) }}
+                                        </button>
+                                    @endif
+                                </div>
+
+                                {{-- Payment fields for selected milestone --}}
+                                @if($payingMilestoneId === $milestone->id)
+                                <div class="mt-4 pt-4 border-t border-gray-100"
+                                     x-data="paypalCheckout({{ $milestone->id }}, '{{ $proposal->uuid }}')"
+                                     x-init="initPayPal()"
+                                     wire:ignore.self>
+
+                                    {{-- Card Fields (only shown when eligible) --}}
+                                    <div x-show="cardFieldsEligible" x-cloak class="mb-4">
+                                        <p class="text-sm font-medium text-gray-700 mb-3">Pay with Credit or Debit Card</p>
+                                        <div class="space-y-3">
+                                            <div id="card-number-field-{{ $milestone->id }}" class="h-11 bg-white border border-gray-200 rounded-lg overflow-hidden"></div>
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div id="card-expiry-field-{{ $milestone->id }}" class="h-11 bg-white border border-gray-200 rounded-lg overflow-hidden"></div>
+                                                <div id="card-cvv-field-{{ $milestone->id }}" class="h-11 bg-white border border-gray-200 rounded-lg overflow-hidden"></div>
+                                            </div>
+                                        </div>
+                                        <button @click="submitCard()"
+                                                :disabled="processing"
+                                                class="w-full mt-3 px-4 py-3 bg-gray-900 hover:bg-black text-white font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <span x-show="!processing">Pay ${{ number_format($msAmount, 2) }}</span>
+                                            <span x-show="processing" x-cloak class="inline-flex items-center gap-2">
+                                                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                                </svg>
+                                                Processing...
+                                            </span>
+                                        </button>
+                                    </div>
+
+                                    {{-- PayPal Button --}}
+                                    <div class="mt-4">
+                                        <p x-show="!cardFieldsEligible" class="text-sm font-medium text-gray-700 mb-3">Pay with PayPal</p>
+                                        <div id="paypal-button-{{ $milestone->id }}"></div>
+                                    </div>
+
+                                    {{-- Error display --}}
+                                    <div x-show="error" x-cloak class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600" x-text="error"></div>
+
+                                    {{-- Cancel --}}
+                                    <button wire:click="cancelPayment"
+                                            class="w-full mt-3 text-sm text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+                                        Cancel
+                                    </button>
+                                </div>
+                                @endif
+
+                                {{-- Paid timestamp --}}
+                                @if($milestone->payment_status === 'paid' && $milestone->paid_at)
+                                    <p class="text-xs text-emerald-600 mt-2">Paid on {{ $milestone->paid_at->format('M j, Y \a\t g:i A') }}</p>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+
+                        {{-- Success message --}}
+                        @if($paymentSuccess)
+                        <div class="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
+                            <p class="text-emerald-700 font-semibold">Payment successful!</p>
+                            <p class="text-emerald-600 text-sm mt-1">Confirmation: {{ $lastCaptureId }}</p>
+                        </div>
+                        @endif
+
+                        {{-- Error message --}}
+                        @if($paymentError)
+                        <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-center">
+                            <p class="text-red-600 text-sm">{{ $paymentError }}</p>
+                        </div>
+                        @endif
+                    </div>
+                    @endif
                 </div>
 
             @elseif($accepted)
@@ -1548,3 +1762,171 @@
         </div>
     </footer>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('paypalCheckout', (milestoneId, proposalUuid) => ({
+        processing: false,
+        error: '',
+        cardFields: null,
+        cardFieldsEligible: false,
+
+        loadPayPalSdk() {
+            return new Promise((resolve, reject) => {
+                if (typeof paypal !== 'undefined') { resolve(); return; }
+                if (document.getElementById('paypal-sdk')) {
+                    // SDK script already added, wait for it
+                    const check = setInterval(() => {
+                        if (typeof paypal !== 'undefined') { clearInterval(check); resolve(); }
+                    }, 200);
+                    setTimeout(() => { clearInterval(check); reject(new Error('PayPal SDK timed out')); }, 10000);
+                    return;
+                }
+                const script = document.createElement('script');
+                script.id = 'paypal-sdk';
+                script.src = @js(config('paypal.sdk_url') . '?client-id=' . config('paypal.client_id') . '&components=buttons,card-fields&currency=USD&intent=capture&disable-funding=paylater');
+                script.onload = resolve;
+                script.onerror = () => reject(new Error('PayPal SDK failed to load'));
+                document.head.appendChild(script);
+            });
+        },
+
+        async initPayPal() {
+            try {
+                await this.loadPayPalSdk();
+            } catch (e) {
+                this.error = 'Payment system failed to load. Please check your connection and refresh the page.';
+                console.error('PayPal SDK error:', e.message);
+                return;
+            }
+
+            const self = this;
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+            const createOrderFn = async () => {
+                const response = await fetch(`/proposal/${proposalUuid}/payment/create-order`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ milestone_id: milestoneId }),
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Failed to create order');
+                return data.id;
+            };
+
+            const onApproveFn = async (data) => {
+                self.processing = true;
+                self.error = '';
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 30000);
+                    const response = await fetch(`/proposal/${proposalUuid}/payment/${data.orderID}/capture`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                        },
+                        signal: controller.signal,
+                    });
+                    clearTimeout(timeoutId);
+                    const result = await response.json();
+                    if (result.status === 'completed') {
+                        self.$wire.markMilestonePaid(milestoneId, result.capture_id);
+                    } else {
+                        self.error = result.error || 'Payment was not completed. Please try again.';
+                    }
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        self.error = 'Payment request timed out. Please check your payment status before retrying.';
+                    } else {
+                        self.error = 'Payment failed. Please try again.';
+                    }
+                } finally {
+                    self.processing = false;
+                }
+            };
+
+            const onErrorFn = (err) => {
+                console.error('PayPal error:', err);
+                self.error = 'A payment error occurred. Please try again.';
+                self.processing = false;
+            };
+
+            // Initialize Card Fields
+            try {
+                this.cardFields = paypal.CardFields({
+                    style: {
+                        input: {
+                            'font-size': '15px',
+                            'font-family': 'Outfit, system-ui, sans-serif',
+                            'font-weight': '400',
+                            'color': '#111827',
+                            'background-color': '#ffffff',
+                            'padding': '0 14px',
+                        },
+                        'input::placeholder': {
+                            'color': '#9ca3af',
+                        },
+                        'input:focus': {
+                            'color': '#111827',
+                        },
+                        '.invalid': {
+                            'color': '#dc2626',
+                        },
+                    },
+                    createOrder: createOrderFn,
+                    onApprove: onApproveFn,
+                    onError: onErrorFn,
+                });
+
+                const eligible = this.cardFields.isEligible();
+                console.log('PayPal CardFields isEligible:', eligible);
+                console.log('PayPal SDK components available:', Object.keys(paypal));
+
+                if (eligible) {
+                    this.cardFieldsEligible = true;
+                    this.cardFields.NumberField({ placeholder: 'Card number' }).render(`#card-number-field-${milestoneId}`);
+                    this.cardFields.ExpiryField({ placeholder: 'MM / YY' }).render(`#card-expiry-field-${milestoneId}`);
+                    this.cardFields.CVVField({ placeholder: 'CVV' }).render(`#card-cvv-field-${milestoneId}`);
+                } else {
+                    console.warn('PayPal Advanced Card Fields not eligible. This requires "Advanced Credit and Debit Card Payments" to be enabled in your PayPal account.');
+                }
+            } catch (e) {
+                console.warn('Card fields not available:', e);
+            }
+
+            // Initialize PayPal Buttons
+            paypal.Buttons({
+                style: { layout: 'horizontal', color: 'gold', shape: 'rect', label: 'pay', height: 45, tagline: false },
+                createOrder: createOrderFn,
+                onApprove: onApproveFn,
+                onError: onErrorFn,
+            }).render(`#paypal-button-${milestoneId}`);
+        },
+
+        async submitCard() {
+            if (this.processing) return;
+            if (!this.cardFields || !this.cardFieldsEligible) {
+                this.error = 'Card payment is not available. Please use the PayPal button below.';
+                return;
+            }
+            this.processing = true;
+            this.error = '';
+
+            try {
+                await this.cardFields.submit();
+            } catch (err) {
+                this.error = err.message || 'Card payment failed. Please check your details and try again.';
+                this.processing = false;
+            }
+        },
+    }));
+});
+</script>
+@endpush

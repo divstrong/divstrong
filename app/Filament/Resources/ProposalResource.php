@@ -230,10 +230,8 @@ class ProposalResource extends Resource
                                                         'Hosting' => 'Hosting',
                                                         'Content' => 'Content',
                                                         'Maintenance' => 'Maintenance',
-                                                    ])
-                                                    ->required(),
+                                                    ]),
                                                 Forms\Components\TextInput::make('title')
-                                                    ->required()
                                                     ->maxLength(255),
                                                 Forms\Components\Textarea::make('description')
                                                     ->rows(2)
@@ -258,6 +256,25 @@ class ProposalResource extends Resource
                                             ->columnSpanFull(),
                                         Forms\Components\DatePicker::make('valid_until')
                                             ->label('Proposal Valid Until'),
+                                        Forms\Components\Toggle::make('discount_enabled')
+                                            ->label('Apply Discount')
+                                            ->live()
+                                            ->columnSpanFull(),
+                                        Forms\Components\Select::make('discount_type')
+                                            ->label('Discount Type')
+                                            ->options([
+                                                'percent' => 'Percentage (%)',
+                                                'fixed' => 'Fixed Amount ($)',
+                                            ])
+                                            ->default('percent')
+                                            ->visible(fn (callable $get) => $get('discount_enabled')),
+                                        Forms\Components\TextInput::make('discount_value')
+                                            ->label('Discount Value')
+                                            ->numeric()
+                                            ->default(0)
+                                            ->minValue(0)
+                                            ->suffix(fn (callable $get) => $get('discount_type') === 'percent' ? '%' : '$')
+                                            ->visible(fn (callable $get) => $get('discount_enabled')),
                                     ]),
                                 Section::make('Line Items')
                                     ->headerActions([
