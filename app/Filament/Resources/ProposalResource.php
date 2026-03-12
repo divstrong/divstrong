@@ -19,6 +19,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Livewire;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -392,6 +393,23 @@ class ProposalResource extends Resource
                                             ->defaultItems(0)
                                             ->addActionLabel('Add Milestone'),
                                     ]),
+                            ]),
+
+                        // TAB 6: Notes
+                        Tab::make('Notes')
+                            ->icon('heroicon-o-chat-bubble-left-right')
+                            ->schema([
+                                Livewire::make('proposal-notes', fn ($livewire) => [
+                                    'proposalId' => $livewire->getRecord()?->id ?? 0,
+                                ])
+                                    ->visible(fn ($livewire) => $livewire instanceof Pages\EditProposal),
+                                Section::make()
+                                    ->schema([
+                                        Forms\Components\Placeholder::make('notes_placeholder')
+                                            ->content('Save the proposal first to access notes.')
+                                            ->columnSpanFull(),
+                                    ])
+                                    ->visible(fn ($livewire) => $livewire instanceof Pages\CreateProposal),
                             ]),
                     ]),
             ]);

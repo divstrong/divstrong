@@ -109,6 +109,11 @@ class Proposal extends Model
         return $this->hasMany(ProposalTerm::class)->orderBy('sort_order');
     }
 
+    public function notes(): HasMany
+    {
+        return $this->hasMany(ProposalNote::class)->orderBy('created_at');
+    }
+
     public function getSubtotalAttribute(): float
     {
         return (float) $this->costItems->sum('amount');
