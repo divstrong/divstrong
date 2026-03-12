@@ -49,7 +49,6 @@ class AdminPanelProvider extends PanelProvider
                         }
                         .fi-simple-layout .fi-simple-main-ctn {
                             background-color: rgba(0, 0, 0, 0.5);
-                            backdrop-filter: blur(2px);
                         }
                         .fi-simple-main {
                             background-color: white;

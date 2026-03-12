@@ -11,6 +11,8 @@ class ProposalNote extends Model
         'proposal_id',
         'user_id',
         'body',
+        'attachment_path',
+        'attachment_name',
     ];
 
     public function proposal(): BelongsTo

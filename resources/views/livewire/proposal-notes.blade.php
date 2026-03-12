@@ -25,7 +25,34 @@
                                 : 'background-color: white; color: #111827; border: 1px solid #e5e7eb; border-bottom-left-radius: 0.25rem;'
                             }}
                         ">
-                            <p style="font-size: 0.875rem; white-space: pre-wrap; margin: 0; line-height: 1.5;">{{ $note->body }}</p>
+                            @if($note->body)
+                                <p style="font-size: 0.875rem; white-space: pre-wrap; margin: 0; line-height: 1.5;">{!! preg_replace(
+                                    '/(https?:\/\/[^\s<]+)/',
+                                    '<a href="$1" target="_blank" rel="noopener" style="text-decoration: underline; ' . ($isMe ? 'color: #93c5fd;' : 'color: #2563eb;') . '">$1</a>',
+                                    e($note->body)
+                                ) !!}</p>
+                            @endif
+                            @if($note->attachment_path)
+                                <div style="margin-top: {{ $note->body ? '0.5rem' : '0' }};">
+                                    @php
+                                        $ext = strtolower(pathinfo($note->attachment_name, PATHINFO_EXTENSION));
+                                        $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
+                                    @endphp
+                                    @if($isImage)
+                                        <a href="{{ Storage::url($note->attachment_path) }}" target="_blank" rel="noopener">
+                                            <img src="{{ Storage::url($note->attachment_path) }}" alt="{{ $note->attachment_name }}" style="max-width: 100%; max-height: 200px; border-radius: 0.5rem; margin-top: 0.25rem;">
+                                        </a>
+                                    @else
+                                        <a href="{{ Storage::url($note->attachment_path) }}" target="_blank" rel="noopener"
+                                           style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.625rem; border-radius: 0.5rem; font-size: 0.75rem; text-decoration: none; {{ $isMe ? 'background-color: rgba(255,255,255,0.15); color: #e5e7eb;' : 'background-color: #f3f4f6; color: #374151;' }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" style="width: 0.875rem; height: 0.875rem; flex-shrink: 0;">
+                                                <path fill-rule="evenodd" d="M4 2a1.5 1.5 0 0 0-1.5 1.5v9A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5V6.621a1.5 1.5 0 0 0-.44-1.06L9.94 2.439A1.5 1.5 0 0 0 8.878 2H4Zm4 3.5a.75.75 0 0 1 .75.75v2.69l.72-.72a.75.75 0 1 1 1.06 1.06l-2 2a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 0 1 1.06-1.06l.72.72V6.25A.75.75 0 0 1 8 5.5Z" clip-rule="evenodd" />
+                                            </svg>
+                                            {{ Str::limit($note->attachment_name, 30) }}
+                                        </a>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                         {{-- Meta --}}
                         <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; {{ $isMe ? 'justify-content: flex-end;' : 'justify-content: flex-start;' }}">
@@ -56,8 +83,34 @@
         @endif
     </div>
 
+    {{-- Attachment preview --}}
+    @if($attachment)
+        <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; margin-bottom: 0.5rem; background-color: #f3f4f6; border-radius: 0.5rem; font-size: 0.75rem; color: #374151;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" style="width: 0.875rem; height: 0.875rem; flex-shrink: 0; color: #6b7280;">
+                <path fill-rule="evenodd" d="M4 2a1.5 1.5 0 0 0-1.5 1.5v9A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5V6.621a1.5 1.5 0 0 0-.44-1.06L9.94 2.439A1.5 1.5 0 0 0 8.878 2H4Z" clip-rule="evenodd" />
+            </svg>
+            <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $attachment->getClientOriginalName() }}</span>
+            <button wire:click="removeAttachment" type="button" style="background: none; border: none; cursor: pointer; padding: 0; color: #9ca3af; line-height: 0;" title="Remove">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" style="width: 0.75rem; height: 0.75rem;">
+                    <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
+                </svg>
+            </button>
+        </div>
+    @endif
+
     {{-- Input --}}
-    <div style="display: flex; gap: 0.75rem; align-items: center;">
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        {{-- Attachment button --}}
+        <label style="display: inline-flex; align-items: center; justify-content: center; border-radius: 0.75rem; background-color: #f3f4f6; border: 1px solid #d1d5db; cursor: pointer; color: #6b7280; flex-shrink: 0; height: 2.75rem; width: 2.75rem; transition: background-color 0.15s;"
+               onmouseover="this.style.backgroundColor='#e5e7eb'"
+               onmouseout="this.style.backgroundColor='#f3f4f6'"
+               title="Attach file">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 1.125rem; height: 1.125rem;">
+                <path fill-rule="evenodd" d="M15.621 4.379a3 3 0 0 0-4.242 0l-7 7a3 3 0 0 0 4.241 4.243h.001l.497-.5a.75.75 0 0 1 1.064 1.057l-.498.501-.002.002a4.5 4.5 0 0 1-6.364-6.364l7-7a4.5 4.5 0 0 1 6.368 6.36l-3.455 3.553A2.625 2.625 0 1 1 9.52 9.52l3.45-3.451a.75.75 0 1 1 1.061 1.06l-3.45 3.451a1.125 1.125 0 0 0 1.587 1.595l3.454-3.553a3 3 0 0 0 0-4.242Z" clip-rule="evenodd" />
+            </svg>
+            <input type="file" wire:model="attachment" style="display: none;">
+        </label>
+
         <input
             type="text"
             wire:model="newNote"
@@ -76,7 +129,10 @@
     @error('newNote')
         <p style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ $message }}</p>
     @enderror
-    <p style="font-size: 0.6875rem; color: #9ca3af; margin-top: 0.375rem;">Press Enter to send</p>
+    @error('attachment')
+        <p style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ $message }}</p>
+    @enderror
+    <p style="font-size: 0.6875rem; color: #9ca3af; margin-top: 0.375rem;">Press Enter to send &middot; Max 10MB attachments</p>
 
     {{-- Auto-scroll to bottom --}}
     <script>
