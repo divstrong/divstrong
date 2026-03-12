@@ -130,7 +130,7 @@ PROMPT;
                     ->sortable()
                     ->placeholder('Untitled')
                     ->limit(50)
-                    ->description(fn (RfpScreen $record) => $record->created_at->format('M j, Y g:i A'))
+                    ->description(fn (RfpScreen $record) => $record->created_at->format('M j, Y g:i A') . ' by ' . ($record->user?->name ?? 'Unknown'))
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('score')
                     ->label('Fit Score')
@@ -148,12 +148,9 @@ PROMPT;
                         default => 'gray',
                     })
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label('By')
-                    ->sortable()
-                    ->toggleable(),
             ])
             ->defaultSort('created_at', 'desc')
+            ->defaultPaginationPageOption(50)
             ->actions([
                 Action::make('reanalyze')
                     ->label('Re-analyze')

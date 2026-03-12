@@ -64,8 +64,7 @@
                             </span>
                             @if($isMe)
                                 <button
-                                    wire:click="deleteNote({{ $note->id }})"
-                                    wire:confirm="Delete this note?"
+                                    onclick="window._notesDeleteConfirm({{ $note->id }}, this)"
                                     style="background: none; border: none; cursor: pointer; padding: 0; color: #9ca3af; line-height: 0;"
                                     onmouseover="this.style.color='#ef4444'"
                                     onmouseout="this.style.color='#9ca3af'"
@@ -134,15 +133,87 @@
     @enderror
     <p style="font-size: 0.6875rem; color: #9ca3af; margin-top: 0.375rem;">Press Enter to send &middot; Max 10MB attachments</p>
 
-    {{-- Auto-scroll to bottom --}}
-    <script>
-        document.addEventListener('livewire:init', () => {
-            const scrollToBottom = () => {
-                const thread = document.getElementById('notes-thread');
-                if (thread) thread.scrollTop = thread.scrollHeight;
-            };
-            scrollToBottom();
-            Livewire.hook('morph.updated', () => setTimeout(scrollToBottom, 50));
-        });
-    </script>
 </div>
+
+@script
+<script>
+    // Auto-scroll
+    const scrollToBottom = () => {
+        const thread = document.getElementById('notes-thread');
+        if (thread) thread.scrollTop = thread.scrollHeight;
+    };
+    scrollToBottom();
+    Livewire.hook('morph.updated', () => setTimeout(scrollToBottom, 50));
+
+    // Delete confirmation modal — appended to body to escape sidebar stacking context
+    let modal = document.getElementById('notes-delete-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'notes-delete-modal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);backdrop-filter:blur(2px);';
+
+        const card = document.createElement('div');
+        card.style.cssText = 'background:white;border-radius:1rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);width:100%;max-width:360px;margin:0 1rem;overflow:hidden;';
+
+        const body = document.createElement('div');
+        body.style.cssText = 'padding:1.5rem;text-align:center;';
+
+        const iconWrap = document.createElement('div');
+        iconWrap.style.cssText = 'width:3rem;height:3rem;border-radius:9999px;background-color:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;';
+        iconWrap.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="#ef4444" style="width:1.25rem;height:1.25rem;"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.519.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd"/></svg>';
+
+        const heading = document.createElement('h3');
+        heading.style.cssText = 'font-size:1rem;font-weight:600;color:#111827;margin:0 0 0.25rem;';
+        heading.textContent = 'Delete note?';
+
+        const desc = document.createElement('p');
+        desc.style.cssText = 'font-size:0.875rem;color:#6b7280;margin:0;';
+        desc.textContent = 'This action cannot be undone.';
+
+        body.append(iconWrap, heading, desc);
+
+        const footer = document.createElement('div');
+        footer.style.cssText = 'display:flex;gap:0.75rem;padding:0 1.5rem 1.5rem;justify-content:center;';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.style.cssText = 'flex:1;padding:0.625rem 1rem;font-size:0.875rem;font-weight:500;color:#374151;background:white;border:1px solid #d1d5db;border-radius:0.5rem;cursor:pointer;font-family:inherit;';
+        cancelBtn.addEventListener('mouseover', () => cancelBtn.style.backgroundColor = '#f9fafb');
+        cancelBtn.addEventListener('mouseout', () => cancelBtn.style.backgroundColor = 'white');
+        cancelBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.setAttribute('data-action', 'delete');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.style.cssText = 'flex:1;padding:0.625rem 1rem;font-size:0.875rem;font-weight:500;color:white;background-color:#ef4444;border:none;border-radius:0.5rem;cursor:pointer;font-family:inherit;';
+        deleteBtn.addEventListener('mouseover', () => deleteBtn.style.backgroundColor = '#dc2626');
+        deleteBtn.addEventListener('mouseout', () => deleteBtn.style.backgroundColor = '#ef4444');
+
+        footer.append(cancelBtn, deleteBtn);
+        card.append(body, footer);
+        modal.appendChild(card);
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.style.display === 'flex') modal.style.display = 'none'; });
+    }
+
+    window._notesDeleteConfirm = function(noteId, btnEl) {
+        const modal = document.getElementById('notes-delete-modal');
+        modal.style.display = 'flex';
+        const deleteBtn = modal.querySelector('[data-action="delete"]');
+        const newBtn = deleteBtn.cloneNode(true);
+        newBtn.style.cssText = deleteBtn.style.cssText;
+        newBtn.addEventListener('mouseover', () => newBtn.style.backgroundColor = '#dc2626');
+        newBtn.addEventListener('mouseout', () => newBtn.style.backgroundColor = '#ef4444');
+        newBtn.addEventListener('click', () => {
+            const wireEl = btnEl.closest('[wire\\:id]');
+            if (wireEl) {
+                Livewire.find(wireEl.getAttribute('wire:id')).call('deleteNote', noteId);
+            }
+            modal.style.display = 'none';
+        });
+        deleteBtn.replaceWith(newBtn);
+    };
+</script>
+@endscript
