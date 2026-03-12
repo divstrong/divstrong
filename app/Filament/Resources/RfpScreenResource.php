@@ -40,6 +40,8 @@ class RfpScreenResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Screened RFPs';
 
+    protected static ?string $slug = 'screenah';
+
     protected static ?int $navigationSort = 6;
 
     public static function getDefaultPrompt(): string

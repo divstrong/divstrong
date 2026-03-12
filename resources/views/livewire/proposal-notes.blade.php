@@ -21,7 +21,7 @@
                             padding: 0.75rem 1rem;
                             border-radius: 1rem;
                             {{ $isMe
-                                ? 'background-color: #ed2537; color: white; border-bottom-right-radius: 0.25rem;'
+                                ? 'background-color: #374151; color: white; border-bottom-right-radius: 0.25rem;'
                                 : 'background-color: white; color: #111827; border: 1px solid #e5e7eb; border-bottom-left-radius: 0.25rem;'
                             }}
                         ">
@@ -57,28 +57,26 @@
     </div>
 
     {{-- Input --}}
-    <form wire:submit="addNote" style="display: flex; gap: 0.75rem; align-items: flex-end;">
-        <div style="flex: 1;">
-            <textarea
-                wire:model="newNote"
-                rows="2"
-                placeholder="Type a note..."
-                style="width: 100%; border-radius: 0.75rem; border: 1px solid #d1d5db; background-color: white; padding: 0.75rem 1rem; font-size: 0.875rem; color: #111827; resize: none; font-family: inherit; outline: none; box-sizing: border-box;"
-                onfocus="this.style.borderColor='#ed2537'; this.style.boxShadow='0 0 0 1px #ed2537'"
-                onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'"
-                onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); $wire.addNote(); }"
-            ></textarea>
-            @error('newNote')
-                <p style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ $message }}</p>
-            @enderror
-        </div>
-        <button type="submit" style="display: inline-flex; align-items: center; justify-content: center; border-radius: 0.75rem; background-color: #ed2537; padding: 0.75rem; border: none; cursor: pointer; color: white; flex-shrink: 0;" title="Send">
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <input
+            type="text"
+            wire:model="newNote"
+            placeholder="Type a note..."
+            style="flex: 1; border-radius: 0.75rem; border: 1px solid #d1d5db; background-color: white; padding: 0.75rem 1rem; font-size: 0.875rem; color: #111827; font-family: inherit; outline: none; box-sizing: border-box; height: 2.75rem;"
+            onfocus="this.style.borderColor='#ed2537'; this.style.boxShadow='0 0 0 1px #ed2537'"
+            onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'"
+            onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); $wire.addNote(); }"
+        />
+        <button type="button" wire:click="addNote" style="display: inline-flex; align-items: center; justify-content: center; border-radius: 0.75rem; background-color: #ed2537; padding: 0.75rem; border: none; cursor: pointer; color: white; flex-shrink: 0; height: 2.75rem; width: 2.75rem;" title="Send">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
                 <path d="M3.105 2.288a.75.75 0 0 0-.826.95l1.414 4.926A1.5 1.5 0 0 0 5.135 9.25h6.115a.75.75 0 0 1 0 1.5H5.135a1.5 1.5 0 0 0-1.442 1.086l-1.414 4.926a.75.75 0 0 0 .826.95 28.897 28.897 0 0 0 15.293-7.155.75.75 0 0 0 0-1.114A28.897 28.897 0 0 0 3.105 2.288Z" />
             </svg>
         </button>
-    </form>
-    <p style="font-size: 0.6875rem; color: #9ca3af; margin-top: 0.375rem;">Press Enter to send, Shift+Enter for new line</p>
+    </div>
+    @error('newNote')
+        <p style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ $message }}</p>
+    @enderror
+    <p style="font-size: 0.6875rem; color: #9ca3af; margin-top: 0.375rem;">Press Enter to send</p>
 
     {{-- Auto-scroll to bottom --}}
     <script>

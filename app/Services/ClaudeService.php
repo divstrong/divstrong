@@ -26,34 +26,72 @@ class ClaudeService
 
         $content = $this->buildMessageContent($fullPath, $extension, $prompt);
 
-        $response = Http::timeout(180)
-            ->withHeaders([
-                'x-api-key' => $this->apiKey,
-                'anthropic-version' => '2023-06-01',
-                'content-type' => 'application/json',
-            ])
-            ->post('https://api.anthropic.com/v1/messages', [
-                'model' => $this->model,
-                'max_tokens' => $this->maxTokens,
-                'messages' => [
-                    [
-                        'role' => 'user',
-                        'content' => $content,
-                    ],
-                ],
-            ]);
-
-        if ($response->failed()) {
-            Log::error('Claude API request failed', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-            throw new \RuntimeException('Claude API request failed: ' . $response->body());
-        }
+        $response = $this->sendWithRetry($content);
 
         $rawText = $response->json('content.0.text', '');
 
         return $this->parseResponse($rawText);
+    }
+
+    private function sendWithRetry(array $content, int $maxRetries = 2): \Illuminate\Http\Client\Response
+    {
+        $attempt = 0;
+
+        while (true) {
+            $attempt++;
+
+            $response = Http::timeout(180)
+                ->withHeaders([
+                    'x-api-key' => $this->apiKey,
+                    'anthropic-version' => '2023-06-01',
+                    'content-type' => 'application/json',
+                ])
+                ->post('https://api.anthropic.com/v1/messages', [
+                    'model' => $this->model,
+                    'max_tokens' => $this->maxTokens,
+                    'messages' => [
+                        [
+                            'role' => 'user',
+                            'content' => $content,
+                        ],
+                    ],
+                ]);
+
+            if ($response->successful()) {
+                return $response;
+            }
+
+            $status = $response->status();
+            $body = $response->json();
+            $errorType = $body['error']['type'] ?? '';
+
+            Log::warning('Claude API request failed', [
+                'attempt' => $attempt,
+                'status' => $status,
+                'error_type' => $errorType,
+            ]);
+
+            // Retry on rate limit (429) or overloaded (529)
+            if (in_array($status, [429, 529]) && $attempt < $maxRetries) {
+                $retryAfter = (int) $response->header('retry-after', 60);
+                $waitSeconds = min($retryAfter, 90);
+
+                Log::info("Rate limited — waiting {$waitSeconds}s before retry (attempt {$attempt}/{$maxRetries})");
+                sleep($waitSeconds);
+                continue;
+            }
+
+            // Friendly error messages
+            $message = match ($errorType) {
+                'rate_limit_error' => 'Rate limit reached — the document may be too large for your current API tier. Please wait a minute and try again.',
+                'overloaded_error' => 'Claude is currently overloaded. Please try again in a few moments.',
+                'authentication_error' => 'Invalid API key. Check your ANTHROPIC_API_KEY in Settings.',
+                'invalid_request_error' => 'Invalid request — ' . ($body['error']['message'] ?? 'check the document format.'),
+                default => 'Claude API error: ' . ($body['error']['message'] ?? $response->body()),
+            };
+
+            throw new \RuntimeException($message);
+        }
     }
 
     private function buildMessageContent(string $fullPath, string $extension, string $prompt): array
