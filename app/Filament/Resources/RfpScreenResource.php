@@ -38,7 +38,7 @@ class RfpScreenResource extends Resource
 
     protected static ?string $modelLabel = 'RFP Screen';
 
-    protected static ?string $pluralModelLabel = 'Screened RFPs';
+    protected static ?string $pluralModelLabel = 'Screenah';
 
     protected static ?string $slug = 'screenah';
 
@@ -58,8 +58,6 @@ RED FLAGS to look for (score each as present or not):
 - FedRAMP, FISMA, or government-specific compliance
 - Large team staffing requirements (dedicated account managers, on-site staff)
 - Multi-year SLA commitments with financial penalties
-- Requiring physical office locations or geographic presence
-- Bonds or financial guarantees
 - Minority/diversity certification requirements (MBE, WBE, DBE)
 - Excessive past performance requirements (5+ similar contracts)
 

@@ -3,12 +3,14 @@
 namespace App\Filament\Resources\RfpScreenResource\Pages;
 
 use App\Filament\Resources\RfpScreenResource;
+use App\Mail\RfpAnalysisComplete;
 use App\Models\RfpScreen;
 use App\Services\ClaudeService;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class ListRfpScreens extends ListRecords
 {
@@ -59,6 +61,8 @@ class ListRfpScreens extends ListRecords
                             ->title("RFP Analysis Complete — {$record->score}/100 ({$label})")
                             ->success()
                             ->send();
+
+                        Mail::to('jim@divstrong.com')->queue(new RfpAnalysisComplete($record));
                     } catch (\Throwable $e) {
                         Log::error('RFP screening failed', [
                             'rfp_screen_id' => $record->id,
