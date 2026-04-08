@@ -122,6 +122,8 @@ class ProposalResource extends Resource
                                         Forms\Components\DatePicker::make('proposal_date')
                                             ->default(now())
                                             ->required(),
+                                        Forms\Components\DatePicker::make('valid_until')
+                                            ->label('Proposal Valid Until'),
                                         Forms\Components\TextInput::make('project_title')
                                             ->required()
                                             ->maxLength(255),

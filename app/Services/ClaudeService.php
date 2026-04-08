@@ -178,6 +178,72 @@ class ClaudeService
         return preg_replace('/\s+/', ' ', trim($text));
     }
 
+    public function generateProposalContent(string $rfpName, string $summary, array $requirements, array $redFlags): array
+    {
+        $requirementsList = collect($requirements)->map(fn ($r, $i) => ($i + 1) . ". {$r}")->implode("\n");
+        $redFlagsList = collect($redFlags)->map(fn ($r) => "- {$r}")->implode("\n");
+
+        $prompt = <<<PROMPT
+You are a proposal writer for a boutique web development and SaaS company called divStrong. Based on the following RFP analysis, generate proposal content.
+
+RFP NAME: {$rfpName}
+
+SUMMARY: {$summary}
+
+KEY REQUIREMENTS:
+{$requirementsList}
+
+RED FLAGS (be aware of these but don't mention them in the proposal):
+{$redFlagsList}
+
+RESPOND IN THIS EXACT JSON FORMAT:
+```json
+{
+    "introduction": "<A professional 2-4 paragraph HTML introduction/overview for the proposal. Use <p> tags for paragraphs. Address the client's needs, briefly describe our approach, and express enthusiasm for the project. Do NOT use placeholder names — write generically about 'your organization' or 'your team'. Keep it concise and professional.>",
+    "scope_items": [
+        {
+            "category": "<one of: Design, Development, SEO, Hosting, Content, Maintenance>",
+            "title": "<short scope item title>",
+            "description": "<brief description of this scope item>",
+            "bullets": ["<specific deliverable or task>", "<another deliverable>"]
+        }
+    ],
+    "contact_name": "<extracted contact person name from the RFP if available, or null>",
+    "contact_email": "<extracted contact email from the RFP if available, or null>",
+    "contact_company": "<extracted organization/company name from the RFP if available, or null>"
+}
+```
+
+Generate 3-6 scope items that logically cover the RFP requirements. Each scope item should have 2-4 bullets.
+PROMPT;
+
+        $content = [
+            ['type' => 'text', 'text' => $prompt],
+        ];
+
+        $response = $this->sendWithRetry($content);
+        $rawText = $response->json('content.0.text', '');
+
+        $jsonMatch = [];
+        if (preg_match('/```json\s*(.*?)\s*```/s', $rawText, $jsonMatch)) {
+            $parsed = json_decode($jsonMatch[1], true);
+        } else {
+            $parsed = json_decode($rawText, true);
+        }
+
+        if (is_array($parsed) && isset($parsed['introduction'])) {
+            return $parsed;
+        }
+
+        return [
+            'introduction' => '<p>' . e($summary) . '</p>',
+            'scope_items' => [],
+            'contact_name' => null,
+            'contact_email' => null,
+            'contact_company' => null,
+        ];
+    }
+
     private function parseResponse(string $rawText): array
     {
         // Try to extract JSON from the response

@@ -2,7 +2,10 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\ProposalStatus;
 use App\Filament\Resources\RfpScreenResource\Pages;
+use App\Filament\Resources\ProposalResource;
+use App\Models\Proposal;
 use App\Models\RfpScreen;
 use BackedEnum;
 use App\Services\ClaudeService;
@@ -16,6 +19,7 @@ use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Filament\Schemas\Schema;
 use Filament\Tables;
@@ -150,6 +154,68 @@ PROMPT;
             ->defaultSort('created_at', 'desc')
             ->defaultPaginationPageOption(50)
             ->actions([
+                Action::make('createProposal')
+                    ->label('Create Proposal')
+                    ->icon('heroicon-o-document-plus')
+                    ->color('success')
+                    ->visible(fn (RfpScreen $record) => $record->status === 'completed')
+                    ->requiresConfirmation()
+                    ->modalHeading('Create Proposal from RFP')
+                    ->modalDescription(fn (RfpScreen $record) => "Generate a draft proposal from \"{$record->rfp_name}\"? Claude will write an overview and scope items based on the RFP analysis.")
+                    ->modalSubmitActionLabel('Generate Proposal')
+                    ->action(function (RfpScreen $record) {
+                        try {
+                            $service = new ClaudeService();
+                            $content = $service->generateProposalContent(
+                                $record->rfp_name ?? 'Untitled RFP',
+                                $record->summary ?? '',
+                                $record->requirements ?? [],
+                                $record->red_flags ?? [],
+                            );
+
+                            $proposal = Proposal::create([
+                                'user_id' => Auth::id(),
+                                'project_title' => $record->rfp_name ?? 'Untitled Project',
+                                'proposal_date' => now(),
+                                'valid_until' => now()->addDays(60),
+                                'client_name' => $content['contact_name'] ?? '',
+                                'client_email' => $content['contact_email'] ?? '',
+                                'client_company' => $content['contact_company'] ?? '',
+                                'introduction' => $content['introduction'] ?? '',
+                                'status' => ProposalStatus::Draft,
+                                'view_count' => 0,
+                            ]);
+
+                            foreach ($content['scope_items'] ?? [] as $i => $item) {
+                                $proposal->scopeItems()->create([
+                                    'category' => $item['category'] ?? 'Development',
+                                    'title' => $item['title'] ?? '',
+                                    'description' => $item['description'] ?? '',
+                                    'bullets' => $item['bullets'] ?? [],
+                                    'sort_order' => $i,
+                                ]);
+                            }
+
+                            Notification::make()
+                                ->success()
+                                ->title('Draft proposal created')
+                                ->body("Review and refine the generated content.")
+                                ->send();
+
+                            return redirect(ProposalResource::getUrl('edit', ['record' => $proposal]));
+                        } catch (\Throwable $e) {
+                            Log::error('Proposal generation from RFP failed', [
+                                'rfp_screen_id' => $record->id,
+                                'error' => $e->getMessage(),
+                            ]);
+
+                            Notification::make()
+                                ->danger()
+                                ->title('Proposal generation failed')
+                                ->body($e->getMessage())
+                                ->send();
+                        }
+                    }),
                 Action::make('reanalyze')
                     ->label('Re-analyze')
                     ->icon('heroicon-o-arrow-path')
