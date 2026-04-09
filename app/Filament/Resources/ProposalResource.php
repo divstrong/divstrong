@@ -139,6 +139,10 @@ class ProposalResource extends Resource
                                         Forms\Components\TextInput::make('client_domain')
                                             ->maxLength(255)
                                             ->prefix('https://'),
+                                        Forms\Components\Select::make('status')
+                                            ->options(ProposalStatus::class)
+                                            ->default(ProposalStatus::Draft)
+                                            ->required(),
                                     ]),
                                 Section::make('Cover Image')
                                     ->schema([
@@ -359,7 +363,107 @@ class ProposalResource extends Resource
                                     ]),
                             ]),
 
-                        // TAB 5: Payment Milestones
+                        // TAB 5: Roadmap
+                        Tab::make('Roadmap')
+                            ->icon('heroicon-o-map')
+                            ->schema([
+                                Section::make('Roadmap Settings')
+                                    ->columns(2)
+                                    ->schema([
+                                        Forms\Components\Toggle::make('roadmap_enabled')
+                                            ->label('Include Roadmap in Proposal')
+                                            ->live()
+                                            ->columnSpanFull(),
+                                        Forms\Components\TextInput::make('roadmap_title')
+                                            ->label('Roadmap Title')
+                                            ->default('Operational Transformation Roadmap')
+                                            ->maxLength(255)
+                                            ->visible(fn (callable $get) => $get('roadmap_enabled')),
+                                        Forms\Components\TextInput::make('roadmap_subtitle')
+                                            ->label('Subtitle')
+                                            ->placeholder('e.g., Phased Implementation Over 12 Months')
+                                            ->maxLength(255)
+                                            ->visible(fn (callable $get) => $get('roadmap_enabled')),
+                                        Forms\Components\TextInput::make('roadmap_months')
+                                            ->label('Total Months')
+                                            ->numeric()
+                                            ->default(12)
+                                            ->minValue(1)
+                                            ->visible(fn (callable $get) => $get('roadmap_enabled')),
+                                        Forms\Components\TextInput::make('roadmap_hours_per_sprint')
+                                            ->label('Hours Per Sprint')
+                                            ->numeric()
+                                            ->default(160)
+                                            ->minValue(1)
+                                            ->visible(fn (callable $get) => $get('roadmap_enabled')),
+                                    ]),
+                                Section::make('Phases')
+                                    ->visible(fn (callable $get) => $get('roadmap_enabled'))
+                                    ->schema([
+                                        Forms\Components\Repeater::make('roadmapPhases')
+                                            ->relationship('roadmapPhases')
+                                            ->orderColumn('sort_order')
+                                            ->reorderable()
+                                            ->collapsible()
+                                            ->itemLabel(fn (array $state): ?string =>
+                                                'Phase ' . (($state['sort_order'] ?? 0) + 1) . ': ' . ($state['title'] ?? 'New Phase')
+                                            )
+                                            ->schema([
+                                                Forms\Components\TextInput::make('title')
+                                                    ->label('Phase Title')
+                                                    ->required()
+                                                    ->placeholder('e.g., Company Hub & Safety')
+                                                    ->maxLength(255),
+                                                Forms\Components\TextInput::make('subtitle')
+                                                    ->placeholder('e.g., Intranet & Safety Training')
+                                                    ->maxLength(255),
+                                                Forms\Components\Textarea::make('description')
+                                                    ->rows(2)
+                                                    ->placeholder('Brief description of this phase...')
+                                                    ->columnSpanFull(),
+                                                Forms\Components\Select::make('icon')
+                                                    ->label('Icon')
+                                                    ->options([
+                                                        'building' => 'Building / Company',
+                                                        'cog' => 'Gear / Settings',
+                                                        'clipboard' => 'Clipboard / Operations',
+                                                        'handshake' => 'Handshake / CRM',
+                                                        'calculator' => 'Calculator / Estimating',
+                                                        'truck' => 'Truck / Field Ops',
+                                                        'dollar' => 'Dollar / Finance',
+                                                        'shield' => 'Shield / Safety',
+                                                        'chart' => 'Chart / Analytics',
+                                                        'code' => 'Code / Development',
+                                                        'globe' => 'Globe / Web',
+                                                        'paint' => 'Paint / Design',
+                                                        'rocket' => 'Rocket / Launch',
+                                                        'users' => 'Users / Team',
+                                                        'lock' => 'Lock / Security',
+                                                        'database' => 'Database / Data',
+                                                        'cloud' => 'Cloud / Hosting',
+                                                        'mobile' => 'Mobile / App',
+                                                    ])
+                                                    ->default('clipboard'),
+                                                Forms\Components\ColorPicker::make('color')
+                                                    ->label('Phase Color')
+                                                    ->default('#3B82F6'),
+                                                Forms\Components\TextInput::make('duration_weeks')
+                                                    ->label('Duration (weeks)')
+                                                    ->numeric()
+                                                    ->default(4)
+                                                    ->minValue(1),
+                                                Forms\Components\TextInput::make('hours')
+                                                    ->label('Hours')
+                                                    ->numeric()
+                                                    ->placeholder('e.g., 160'),
+                                            ])
+                                            ->columns(2)
+                                            ->defaultItems(0)
+                                            ->addActionLabel('Add Phase'),
+                                    ]),
+                            ]),
+
+                        // TAB 6: Payment Milestones
                         Tab::make('Milestones')
                             ->icon('heroicon-o-flag')
                             ->schema([

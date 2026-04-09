@@ -19,7 +19,7 @@
                     {{-- Main Content --}}
                     <tr>
                         <td style="background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 12px; padding: 40px;">
-                            <h1 style="color: #18181b; font-size: 24px; margin: 0 0 16px 0;">Scannah Analysis Complete</h1>
+                            <h1 style="color: #18181b; font-size: 24px; margin: 0 0 16px 0;">Scanna Analysis Complete</h1>
 
                             <p style="color: #71717a; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
                                 A new RFP has been screened and is ready for review.

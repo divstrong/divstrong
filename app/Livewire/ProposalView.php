@@ -7,6 +7,7 @@ use App\Mail\ProposalShared;
 use App\Mail\ProposalStatusChanged;
 use App\Models\Client;
 use App\Models\Proposal;
+use App\Models\ProposalRoadmapPhase;
 use App\Models\ProposalScopeItem;
 use App\Models\ProposalTerm;
 use App\Models\ScopeLibrary;
@@ -49,6 +50,13 @@ class ProposalView extends Component
     public string $editingValidUntil = '';
     public string $editingChangeRequestContent = '';
 
+    // Roadmap editing
+    public bool $editingRoadmapEnabled = false;
+    public string $editingRoadmapTitle = '';
+    public string $editingRoadmapSubtitle = '';
+    public $editingRoadmapHoursPerSprint = 160;
+    public $editingRoadmapMonths = 12;
+
     // Discount editing
     public bool $editingDiscountEnabled = false;
     public string $editingDiscountType = 'percent';
@@ -67,7 +75,7 @@ class ProposalView extends Component
     public function mount(string $uuid): void
     {
         $this->proposal = Proposal::where('uuid', $uuid)
-            ->with(['scopeItems', 'costItems', 'milestones', 'terms', 'client'])
+            ->with(['scopeItems', 'costItems', 'milestones', 'terms', 'client', 'roadmapPhases'])
             ->firstOrFail();
 
         $this->accepted = $this->proposal->status === ProposalStatus::Accepted;
@@ -85,6 +93,11 @@ class ProposalView extends Component
             $this->editingCostNotes = $this->proposal->cost_notes ?? '';
             $this->editingValidUntil = $this->proposal->valid_until?->format('Y-m-d') ?? '';
             $this->editingChangeRequestContent = $this->proposal->change_request_content ?? '';
+            $this->editingRoadmapEnabled = (bool) $this->proposal->roadmap_enabled;
+            $this->editingRoadmapTitle = $this->proposal->roadmap_title ?? 'Operational Transformation Roadmap';
+            $this->editingRoadmapSubtitle = $this->proposal->roadmap_subtitle ?? '';
+            $this->editingRoadmapHoursPerSprint = $this->proposal->roadmap_hours_per_sprint ?? 160;
+            $this->editingRoadmapMonths = $this->proposal->roadmap_months ?? 12;
             $this->editingDiscountEnabled = (bool) $this->proposal->discount_enabled;
             $this->editingDiscountType = $this->proposal->discount_type ?? 'percent';
             $this->editingDiscountValue = (float) ($this->proposal->discount_value ?? 0);
@@ -524,6 +537,117 @@ class ProposalView extends Component
         }
 
         $this->proposal->load('milestones');
+    }
+
+    // ---- Roadmap Methods ----
+
+    public function updatedEditingRoadmapEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['roadmap_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function saveRoadmapSettings(): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update([
+            'roadmap_title' => $this->editingRoadmapTitle,
+            'roadmap_subtitle' => $this->editingRoadmapSubtitle,
+            'roadmap_hours_per_sprint' => max(1, (int) $this->editingRoadmapHoursPerSprint),
+            'roadmap_months' => max(1, (int) $this->editingRoadmapMonths),
+        ]);
+        $this->proposal->refresh();
+    }
+
+    public function addRoadmapPhase(): void
+    {
+        if (! $this->isAdmin) return;
+
+        $maxSort = $this->proposal->roadmapPhases()->max('sort_order') ?? -1;
+        $colors = ['#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899', '#06B6D4'];
+        $colorIndex = $this->proposal->roadmapPhases()->count() % count($colors);
+
+        $this->proposal->roadmapPhases()->create([
+            'title' => 'New Phase',
+            'subtitle' => '',
+            'color' => $colors[$colorIndex],
+            'icon' => 'clipboard',
+            'duration_weeks' => 4,
+            'hours' => $this->proposal->roadmap_hours_per_sprint ?? 160,
+            'sort_order' => $maxSort + 1,
+        ]);
+
+        $this->proposal->load('roadmapPhases');
+    }
+
+    public function updateRoadmapPhase(int $id, string $title, ?string $subtitle, ?string $description, string $color, string $icon, int $durationWeeks, ?int $hours): void
+    {
+        if (! $this->isAdmin) return;
+
+        $phase = $this->proposal->roadmapPhases()->find($id);
+        if ($phase) {
+            $phase->update([
+                'title' => $title,
+                'subtitle' => $subtitle,
+                'description' => $description,
+                'color' => $color,
+                'icon' => $icon,
+                'duration_weeks' => max(1, $durationWeeks),
+                'hours' => $hours,
+            ]);
+            $this->proposal->load('roadmapPhases');
+        }
+    }
+
+    public function duplicateRoadmapPhase(int $id): void
+    {
+        if (! $this->isAdmin) return;
+
+        $phase = $this->proposal->roadmapPhases()->find($id);
+        if ($phase) {
+            $this->proposal->roadmapPhases()->create([
+                'title' => $phase->title,
+                'subtitle' => $phase->subtitle,
+                'description' => $phase->description,
+                'color' => $phase->color,
+                'icon' => $phase->icon,
+                'duration_weeks' => $phase->duration_weeks,
+                'hours' => $phase->hours,
+                'sort_order' => $phase->sort_order + 1,
+            ]);
+
+            $allPhases = $this->proposal->roadmapPhases()->orderBy('sort_order')->get();
+            foreach ($allPhases as $index => $p) {
+                $p->update(['sort_order' => $index]);
+            }
+
+            $this->proposal->load('roadmapPhases');
+        }
+    }
+
+    public function deleteRoadmapPhase(int $id): void
+    {
+        if (! $this->isAdmin) return;
+
+        $phase = $this->proposal->roadmapPhases()->find($id);
+        if ($phase) {
+            $phase->delete();
+            $this->proposal->load('roadmapPhases');
+        }
+    }
+
+    public function reorderRoadmapPhases(array $orderedIds): void
+    {
+        if (! $this->isAdmin) return;
+
+        foreach ($orderedIds as $index => $id) {
+            $this->proposal->roadmapPhases()->where('id', $id)->update(['sort_order' => $index]);
+        }
+
+        $this->proposal->load('roadmapPhases');
     }
 
     // ---- Change Request Methods ----

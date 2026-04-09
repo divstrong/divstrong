@@ -17,6 +17,7 @@ class Proposal extends Model
         'client_company', 'client_domain', 'project_title', 'cover_image',
         'introduction', 'cost_notes', 'valid_until',
         'discount_enabled', 'discount_type', 'discount_value',
+        'roadmap_enabled', 'roadmap_title', 'roadmap_subtitle', 'roadmap_hours_per_sprint', 'roadmap_months',
         'status',
         'change_request_content', 'cr_signature_name', 'cr_signature_data', 'cr_signed_at',
         'tc_signature_name', 'tc_signature_data', 'tc_signed_at',
@@ -39,6 +40,9 @@ class Proposal extends Model
             'tc_signed_at' => 'datetime',
             'discount_enabled' => 'boolean',
             'discount_value' => 'decimal:2',
+            'roadmap_enabled' => 'boolean',
+            'roadmap_hours_per_sprint' => 'integer',
+            'roadmap_months' => 'integer',
         ];
     }
 
@@ -112,6 +116,11 @@ class Proposal extends Model
     public function notes(): HasMany
     {
         return $this->hasMany(ProposalNote::class)->orderBy('created_at');
+    }
+
+    public function roadmapPhases(): HasMany
+    {
+        return $this->hasMany(ProposalRoadmapPhase::class)->orderBy('sort_order');
     }
 
     public function getSubtotalAttribute(): float

@@ -18,7 +18,7 @@ class RfpAnalysisComplete extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Scannah Result: {$this->rfpScreen->rfp_name} — {$this->rfpScreen->score}/100",
+            subject: "Scanna Result: {$this->rfpScreen->rfp_name} — {$this->rfpScreen->score}/100",
         );
     }
 

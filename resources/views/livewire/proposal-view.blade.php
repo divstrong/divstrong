@@ -5,8 +5,8 @@
     <nav x-data="{
             scrolled: false,
             active: '',
-            sections: ['overview', 'scope', 'investment', 'milestones', 'changes', 'terms'],
-            labels: { overview: 'Overview', scope: 'Scope', investment: 'Investment', milestones: 'Milestones', changes: 'Changes', terms: 'Terms' },
+            sections: ['overview', @if($proposal->roadmap_enabled) 'roadmap', @endif 'scope', 'investment', 'milestones', 'changes', 'terms'],
+            labels: { overview: 'Overview', @if($proposal->roadmap_enabled) roadmap: 'Roadmap', @endif scope: 'Scope', investment: 'Investment', milestones: 'Milestones', changes: 'Changes', terms: 'Terms' },
             updateNav() {
                 this.scrolled = window.scrollY > window.innerHeight * 0.6;
                 let current = '';
@@ -311,6 +311,437 @@
                 </div>
             @endif
             </div>
+        </div>
+    </section>
+    @endif
+
+    {{-- ========== ROADMAP SECTION ========== --}}
+    @if($proposal->roadmap_enabled || $isAdmin)
+    <section id="roadmap" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16 overflow-hidden">
+        <div class="max-w-6xl mx-auto">
+
+            {{-- Admin: Toggle + Settings --}}
+            @if($isAdmin)
+            <div class="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200"
+                 x-data="{ showSettings: false }">
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingRoadmapEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Include Roadmap in Proposal</span>
+                    </label>
+                    <button @click="showSettings = !showSettings"
+                            x-show="$wire.editingRoadmapEnabled"
+                            class="text-xs text-brand hover:text-gray-900 font-medium transition-colors cursor-pointer">
+                        <span x-text="showSettings ? 'Hide Settings' : 'Edit Settings'"></span>
+                    </button>
+                </div>
+
+                <div x-show="showSettings && $wire.editingRoadmapEnabled" x-cloak x-collapse class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="col-span-2">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Title</label>
+                            <input type="text" wire:model.blur="editingRoadmapTitle"
+                                   wire:change="saveRoadmapSettings"
+                                   class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Subtitle</label>
+                            <input type="text" wire:model.blur="editingRoadmapSubtitle"
+                                   wire:change="saveRoadmapSettings"
+                                   placeholder="e.g., Phased Implementation Over 12 Months"
+                                   class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Total Months</label>
+                            <input type="number" wire:model.blur="editingRoadmapMonths"
+                                   wire:change="saveRoadmapSettings"
+                                   min="1"
+                                   class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Hours/Sprint</label>
+                            <input type="number" wire:model.blur="editingRoadmapHoursPerSprint"
+                                   wire:change="saveRoadmapSettings"
+                                   min="1"
+                                   class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @if($proposal->roadmap_enabled)
+            {{-- Roadmap Header --}}
+            <div class="text-center mb-10">
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{{ $proposal->roadmap_title ?? 'Project Roadmap' }}</h2>
+                @if($proposal->roadmap_subtitle)
+                    <p class="text-gray-500 text-lg">{{ $proposal->roadmap_subtitle }}</p>
+                @else
+                    <p class="text-gray-500 text-lg">
+                        Phased Implementation Over {{ $proposal->roadmap_months ?? 12 }} Months
+                        <span class="text-gray-400">(~{{ $proposal->roadmap_hours_per_sprint ?? 160 }} Hours Per Sprint)</span>
+                    </p>
+                @endif
+            </div>
+
+            {{-- Month Timeline Bar --}}
+            @php
+                $totalMonths = $proposal->roadmap_months ?? 12;
+                $phases = $proposal->roadmapPhases;
+                $monthMarkers = [];
+                $current = 1;
+                // Show a few key month markers
+                if ($totalMonths <= 6) {
+                    $monthMarkers = range(1, $totalMonths);
+                } else {
+                    $step = max(1, floor($totalMonths / 6));
+                    for ($m = 1; $m <= $totalMonths; $m += $step) {
+                        $monthMarkers[] = $m;
+                    }
+                    if (end($monthMarkers) != $totalMonths) $monthMarkers[] = $totalMonths;
+                }
+            @endphp
+
+            <div class="mb-8 hidden sm:block">
+                <div class="flex items-center gap-0 bg-gray-100 rounded-lg overflow-hidden h-8">
+                    @foreach($monthMarkers as $i => $month)
+                        <div class="flex-1 flex items-center justify-center text-xs font-medium text-gray-500 border-r border-gray-200 last:border-r-0">
+                            Month {{ $month }}
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- Phase Chevrons - Desktop --}}
+            <div class="hidden sm:block" x-data="{
+                    editingPhaseId: null,
+                    editTitle: '', editSubtitle: '', editDescription: '', editColor: '#3B82F6', editIcon: 'clipboard', editWeeks: 4, editHours: 160,
+                    deletePhaseId: null, deletePhaseTitle: '',
+                    phaseDragOver: null,
+                    startEdit(phase) {
+                        this.editingPhaseId = phase.id;
+                        this.editTitle = phase.title;
+                        this.editSubtitle = phase.subtitle || '';
+                        this.editDescription = phase.description || '';
+                        this.editColor = phase.color;
+                        this.editIcon = phase.icon;
+                        this.editWeeks = phase.duration_weeks;
+                        this.editHours = phase.hours || {{ $proposal->roadmap_hours_per_sprint ?? 160 }};
+                    },
+                    saveEdit() {
+                        if (this.editingPhaseId && this.editTitle.trim()) {
+                            $wire.updateRoadmapPhase(this.editingPhaseId, this.editTitle, this.editSubtitle || null, this.editDescription || null, this.editColor, this.editIcon, parseInt(this.editWeeks), parseInt(this.editHours) || null);
+                        }
+                        this.editingPhaseId = null;
+                    },
+                    confirmDelete(id, title) { this.deletePhaseId = id; this.deletePhaseTitle = title; },
+                    executeDelete() { if (this.deletePhaseId) $wire.deleteRoadmapPhase(this.deletePhaseId); this.deletePhaseId = null; },
+                    handleDrop(e, targetId) {
+                        this.phaseDragOver = null;
+                        const sourceId = parseInt(e.dataTransfer.getData('phase'));
+                        if (!sourceId || sourceId === targetId) return;
+                        const all = document.querySelectorAll('[data-phase-id]');
+                        const ordered = Array.from(all).map(el => parseInt(el.dataset.phaseId));
+                        const from = ordered.indexOf(sourceId);
+                        const to = ordered.indexOf(targetId);
+                        ordered.splice(from, 1);
+                        ordered.splice(to, 0, sourceId);
+                        $wire.reorderRoadmapPhases(ordered);
+                    }
+                }">
+
+                {{-- Delete modal --}}
+                <div x-show="deletePhaseId" x-cloak
+                     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                     x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                     class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                     @keydown.escape.window="deletePhaseId = null">
+                    <div @click.outside="deletePhaseId = null"
+                         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                         class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
+                        <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-1">Remove Phase</h3>
+                        <p class="text-sm text-gray-500 mb-6">Remove <span class="font-medium text-gray-700" x-text="deletePhaseTitle"></span>?</p>
+                        <div class="flex items-center gap-3">
+                            <button @click="deletePhaseId = null" class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">Cancel</button>
+                            <button @click="executeDelete()" class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-gray-900 transition-colors cursor-pointer">Remove</button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Edit Phase Modal --}}
+                <div x-show="editingPhaseId" x-cloak
+                     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                     x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                     class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+                     @keydown.escape.window="editingPhaseId = null">
+                    <div x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                         class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+                        <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-gray-900">Edit Phase</h3>
+                            <button @click="editingPhaseId = null" class="p-1 text-gray-400 hover:text-gray-600 transition cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        <div class="px-6 py-5 space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Phase Title</label>
+                                    <input type="text" x-model="editTitle" class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Subtitle</label>
+                                    <input type="text" x-model="editSubtitle" placeholder="e.g., Intranet & Safety Training" class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
+                                    <textarea x-model="editDescription" rows="2" placeholder="Brief description..." class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none resize-none"></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Color</label>
+                                    <input type="color" x-model="editColor" class="w-full h-10 rounded-lg border border-gray-200 cursor-pointer">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Icon</label>
+                                    <select x-model="editIcon" class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                                        <option value="building">Building</option>
+                                        <option value="cog">Gear</option>
+                                        <option value="clipboard">Clipboard</option>
+                                        <option value="handshake">Handshake</option>
+                                        <option value="calculator">Calculator</option>
+                                        <option value="truck">Truck</option>
+                                        <option value="dollar">Dollar</option>
+                                        <option value="shield">Shield</option>
+                                        <option value="chart">Chart</option>
+                                        <option value="code">Code</option>
+                                        <option value="globe">Globe</option>
+                                        <option value="paint">Paint</option>
+                                        <option value="rocket">Rocket</option>
+                                        <option value="users">Users</option>
+                                        <option value="lock">Lock</option>
+                                        <option value="database">Database</option>
+                                        <option value="cloud">Cloud</option>
+                                        <option value="mobile">Mobile</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Duration (weeks)</label>
+                                    <input type="number" x-model="editWeeks" min="1" class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Hours</label>
+                                    <input type="number" x-model="editHours" min="0" class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                            <button @click="editingPhaseId = null" class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">Cancel</button>
+                            <button @click="saveEdit()" class="px-5 py-2.5 text-sm font-medium text-white bg-brand rounded-lg hover:bg-gray-900 transition-colors cursor-pointer shadow-sm">Save Phase</button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Phase Arrow Timeline --}}
+                <div class="flex items-stretch gap-0 relative">
+                    @foreach($phases as $index => $phase)
+                    <div class="flex-1 group/phase relative"
+                         data-phase-id="{{ $phase->id }}"
+                         @if($isAdmin)
+                         draggable="true"
+                         @dragstart="$event.dataTransfer.setData('phase', '{{ $phase->id }}'); $event.dataTransfer.effectAllowed = 'move'"
+                         @dragover.prevent="phaseDragOver = {{ $phase->id }}"
+                         @dragleave="phaseDragOver = null"
+                         @drop.prevent="handleDrop($event, {{ $phase->id }})"
+                         :class="{ 'ring-2 ring-brand ring-dashed': phaseDragOver === {{ $phase->id }} }"
+                         @endif>
+
+                        {{-- Chevron Arrow Shape --}}
+                        <div class="relative">
+                            <svg viewBox="0 0 200 200" class="w-full h-auto" preserveAspectRatio="none">
+                                @if($index === 0)
+                                <path d="M0,0 L170,0 L200,100 L170,200 L0,200 Z" fill="{{ $phase->color }}" />
+                                @elseif($index === count($phases) - 1)
+                                <path d="M0,0 L200,0 L200,200 L0,200 L30,100 Z" fill="{{ $phase->color }}" />
+                                @else
+                                <path d="M0,0 L170,0 L200,100 L170,200 L0,200 L30,100 Z" fill="{{ $phase->color }}" />
+                                @endif
+                            </svg>
+
+                            {{-- Phase Content Overlay --}}
+                            <div class="absolute inset-0 flex flex-col items-center justify-center text-white px-8 py-5">
+                                {{-- Icon --}}
+                                <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-4">
+                                    @switch($phase->icon)
+                                        @case('building')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                        @break
+                                        @case('cog')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                        @break
+                                        @case('clipboard')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                                        @break
+                                        @case('handshake')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                        @break
+                                        @case('calculator')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                        @break
+                                        @case('truck')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+                                        @break
+                                        @case('dollar')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        @break
+                                        @case('shield')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                        @break
+                                        @case('chart')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                        @break
+                                        @case('code')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                                        @break
+                                        @case('globe')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                                        @break
+                                        @case('paint')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+                                        @break
+                                        @case('rocket')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/></svg>
+                                        @break
+                                        @case('users')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                        @break
+                                        @case('lock')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                        @break
+                                        @case('database')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+                                        @break
+                                        @case('cloud')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+                                        @break
+                                        @case('mobile')
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                        @break
+                                    @endswitch
+                                </div>
+
+                                {{-- Phase Title --}}
+                                <div class="text-center">
+                                    <div class="text-[11px] uppercase tracking-wider font-semibold opacity-80 mb-0.5">Phase {{ $index + 1 }}:</div>
+                                    <div class="text-sm font-bold leading-tight">{{ $phase->title }}</div>
+                                    @if($phase->subtitle)
+                                        <div class="text-[11px] opacity-80 mt-0.5 leading-tight">{{ $phase->subtitle }}</div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Admin action buttons --}}
+                            @if($isAdmin)
+                            <div class="absolute top-1 right-1 flex items-center gap-0.5 opacity-0 group-hover/phase:opacity-100 transition-opacity z-10">
+                                <button @click="startEdit(@js($phase->toArray()))" title="Edit" class="p-1 bg-white/90 rounded text-gray-600 hover:text-brand transition-colors cursor-pointer shadow-sm">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+                                <button wire:click="duplicateRoadmapPhase({{ $phase->id }})" title="Duplicate" class="p-1 bg-white/90 rounded text-gray-600 hover:text-brand transition-colors cursor-pointer shadow-sm">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                </button>
+                                <button @click="confirmDelete({{ $phase->id }}, @js($phase->title))" title="Delete" class="p-1 bg-white/90 rounded text-gray-600 hover:text-red-500 transition-colors cursor-pointer shadow-sm">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                            @endif
+                        </div>
+
+                        {{-- Phase Details Below Arrow --}}
+                        <div class="text-center mt-3 px-2">
+                            @if($phase->description)
+                                <p class="text-sm text-gray-500 leading-snug mb-1">{{ $phase->description }}</p>
+                            @endif
+                            <div class="text-sm font-bold text-gray-800">{{ $phase->duration_weeks }} WEEKS</div>
+                            @if($phase->hours)
+                                <div class="text-[11px] text-gray-400 font-medium">~{{ $phase->hours }} HRS</div>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+
+                {{-- Add Phase Button --}}
+                @if($isAdmin)
+                <div class="mt-6 text-center">
+                    <button wire:click="addRoadmapPhase"
+                            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand border border-brand/30 rounded-lg hover:bg-brand hover:text-white transition-colors cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Add Phase
+                    </button>
+                </div>
+                @endif
+            </div>
+
+            {{-- Mobile: Vertical Timeline --}}
+            <div class="sm:hidden space-y-4">
+                @foreach($phases as $index => $phase)
+                <div class="flex gap-4">
+                    {{-- Phase number circle --}}
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-lg" style="background-color: {{ $phase->color }}">
+                            {{ $index + 1 }}
+                        </div>
+                        @if(!$loop->last)
+                        <div class="w-0.5 flex-1 mt-2 rounded-full" style="background-color: {{ $phase->color }}33"></div>
+                        @endif
+                    </div>
+
+                    {{-- Phase content --}}
+                    <div class="pb-6 flex-1">
+                        <div class="rounded-xl border border-gray-200 p-4 shadow-sm" style="border-left: 3px solid {{ $phase->color }}">
+                            <div class="text-[10px] uppercase tracking-wider font-semibold mb-1" style="color: {{ $phase->color }}">Phase {{ $index + 1 }}</div>
+                            <h4 class="font-bold text-gray-900 text-sm">{{ $phase->title }}</h4>
+                            @if($phase->subtitle)
+                                <p class="text-xs text-gray-500 mt-0.5">{{ $phase->subtitle }}</p>
+                            @endif
+                            @if($phase->description)
+                                <p class="text-xs text-gray-400 mt-1 leading-relaxed">{{ $phase->description }}</p>
+                            @endif
+                            <div class="mt-2 flex items-center gap-3 text-xs">
+                                <span class="font-bold text-gray-700">{{ $phase->duration_weeks }} weeks</span>
+                                @if($phase->hours)
+                                    <span class="text-gray-400">~{{ $phase->hours }} hrs</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+
+                @if($isAdmin)
+                <div class="text-center pt-2">
+                    <button wire:click="addRoadmapPhase"
+                            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand border border-brand/30 rounded-lg hover:bg-brand hover:text-white transition-colors cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Add Phase
+                    </button>
+                </div>
+                @endif
+            </div>
+
+            {{-- Footer tagline --}}
+            @if($phases->count() > 0)
+            <div class="text-center mt-10 text-sm text-gray-400 italic">
+                Iterative Sprints &bull; Testing & Feedback Between Phases &bull; Continuous Improvement
+            </div>
+            @endif
+            @endif
+
         </div>
     </section>
     @endif
