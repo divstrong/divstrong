@@ -5,8 +5,8 @@
     <nav x-data="{
             scrolled: false,
             active: '',
-            sections: ['overview', @if($proposal->roadmap_enabled) 'roadmap', @endif 'scope', 'investment', 'milestones', 'changes', 'terms'],
-            labels: { overview: 'Overview', @if($proposal->roadmap_enabled) roadmap: 'Roadmap', @endif scope: 'Scope', investment: 'Investment', milestones: 'Milestones', changes: 'Changes', terms: 'Terms' },
+            sections: [@if($proposal->roadmap_enabled) 'roadmap', @endif 'overview', 'scope', 'investment', 'milestones', 'changes', 'terms'],
+            labels: { @if($proposal->roadmap_enabled) roadmap: 'Roadmap', @endif overview: 'Overview', scope: 'Scope', investment: 'Investment', milestones: 'Milestones', changes: 'Changes', terms: 'Terms' },
             updateNav() {
                 this.scrolled = window.scrollY > window.innerHeight * 0.6;
                 let current = '';
@@ -265,55 +265,6 @@
             </div>
         </div>
     </section>
-
-    {{-- ========== OVERVIEW SECTION ========== --}}
-    @if($proposal->introduction || $isAdmin)
-    <section id="overview" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
-        <div class="max-w-4xl mx-auto">
-            <div class="flex items-center gap-3 mb-10">
-                <h2 class="text-3xl font-bold text-gray-900">Overview</h2>
-            </div>
-            <div class="sm:pl-8">
-            @if($isAdmin)
-                <div x-data="{
-                        editing: false,
-                        save() {
-                            this.editing = false;
-                            $wire.set('editingIntroduction', $refs.introEditor.innerHTML);
-                            $wire.saveIntroduction();
-                        }
-                     }"
-                     class="relative group">
-                    {{-- Read mode --}}
-                    <div x-show="!editing"
-                         @click="editing = true; $nextTick(() => { $refs.introEditor.focus(); })"
-                         class="prose-light max-w-none text-lg leading-relaxed cursor-pointer rounded-lg p-4 -m-4 border-2 border-dashed border-transparent hover:border-gray-300 transition-colors min-h-[60px]">
-                        @if($proposal->introduction)
-                            {!! $proposal->introduction !!}
-                        @else
-                            <p class="text-gray-400 italic">Click to add introduction text...</p>
-                        @endif
-                    </div>
-                    {{-- Edit mode --}}
-                    <div x-show="editing" x-cloak
-                         @click.outside="save()"
-                         @keydown.escape.window="save()">
-                        <div x-ref="introEditor"
-                             contenteditable="true"
-                             class="prose-light max-w-none text-lg leading-relaxed bg-white border-2 border-brand/30 focus:border-brand rounded-lg p-4 -m-4 focus:outline-none min-h-[120px] transition-colors"
-                        >{!! $proposal->introduction !!}</div>
-                        <p class="text-xs text-gray-400 mt-3">Click outside or press Escape to save.</p>
-                    </div>
-                </div>
-            @else
-                <div class="prose-light max-w-none text-lg leading-relaxed">
-                    {!! $proposal->introduction !!}
-                </div>
-            @endif
-            </div>
-        </div>
-    </section>
-    @endif
 
     {{-- ========== ROADMAP SECTION ========== --}}
     @if($proposal->roadmap_enabled || $isAdmin)
@@ -742,6 +693,55 @@
             @endif
             @endif
 
+        </div>
+    </section>
+    @endif
+
+    {{-- ========== OVERVIEW SECTION ========== --}}
+    @if($proposal->introduction || $isAdmin)
+    <section id="overview" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center gap-3 mb-10">
+                <h2 class="text-3xl font-bold text-gray-900">Overview</h2>
+            </div>
+            <div class="sm:pl-8">
+            @if($isAdmin)
+                <div x-data="{
+                        editing: false,
+                        save() {
+                            this.editing = false;
+                            $wire.set('editingIntroduction', $refs.introEditor.innerHTML);
+                            $wire.saveIntroduction();
+                        }
+                     }"
+                     class="relative group">
+                    {{-- Read mode --}}
+                    <div x-show="!editing"
+                         @click="editing = true; $nextTick(() => { $refs.introEditor.focus(); })"
+                         class="prose-light max-w-none text-lg leading-relaxed cursor-pointer rounded-lg p-4 -m-4 border-2 border-dashed border-transparent hover:border-gray-300 transition-colors min-h-[60px]">
+                        @if($proposal->introduction)
+                            {!! $proposal->introduction !!}
+                        @else
+                            <p class="text-gray-400 italic">Click to add introduction text...</p>
+                        @endif
+                    </div>
+                    {{-- Edit mode --}}
+                    <div x-show="editing" x-cloak
+                         @click.outside="save()"
+                         @keydown.escape.window="save()">
+                        <div x-ref="introEditor"
+                             contenteditable="true"
+                             class="prose-light max-w-none text-lg leading-relaxed bg-white border-2 border-brand/30 focus:border-brand rounded-lg p-4 -m-4 focus:outline-none min-h-[120px] transition-colors"
+                        >{!! $proposal->introduction !!}</div>
+                        <p class="text-xs text-gray-400 mt-3">Click outside or press Escape to save.</p>
+                    </div>
+                </div>
+            @else
+                <div class="prose-light max-w-none text-lg leading-relaxed">
+                    {!! $proposal->introduction !!}
+                </div>
+            @endif
+            </div>
         </div>
     </section>
     @endif
