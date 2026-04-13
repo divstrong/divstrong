@@ -15,7 +15,7 @@ class Proposal extends Model
     protected $fillable = [
         'uuid', 'user_id', 'estimator_id', 'client_id', 'proposal_date', 'client_name', 'client_email',
         'client_company', 'client_domain', 'project_title', 'cover_image',
-        'introduction', 'cost_notes', 'valid_until',
+        'introduction', 'overview_image', 'cost_notes', 'valid_until',
         'discount_enabled', 'discount_type', 'discount_value',
         'roadmap_enabled', 'roadmap_title', 'roadmap_subtitle', 'roadmap_hours_per_sprint', 'roadmap_months',
         'status',

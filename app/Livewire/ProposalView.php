@@ -46,6 +46,7 @@ class ProposalView extends Component
     public string $editingProposalDate = '';
     public string $editingIntroduction = '';
     public $coverImage = null;
+    public $overviewImage = null;
     public string $editingCostNotes = '';
     public string $editingValidUntil = '';
     public string $editingChangeRequestContent = '';
@@ -226,6 +227,37 @@ class ProposalView extends Component
         if ($this->proposal->cover_image) {
             Storage::disk('public')->delete($this->proposal->cover_image);
             $this->proposal->update(['cover_image' => null]);
+            $this->proposal->refresh();
+        }
+    }
+
+    public function updatedOverviewImage(): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->validate([
+            'overviewImage' => 'image|max:10240',
+        ]);
+
+        if ($this->proposal->overview_image) {
+            Storage::disk('public')->delete($this->proposal->overview_image);
+        }
+
+        $path = $this->overviewImage->store('proposal-overviews', 'public');
+
+        $this->proposal->update(['overview_image' => $path]);
+        $this->proposal->refresh();
+        $this->overviewImage = null;
+        $this->dispatch('overview-image-uploaded');
+    }
+
+    public function removeOverviewImage(): void
+    {
+        if (! $this->isAdmin) return;
+
+        if ($this->proposal->overview_image) {
+            Storage::disk('public')->delete($this->proposal->overview_image);
+            $this->proposal->update(['overview_image' => null]);
             $this->proposal->refresh();
         }
     }

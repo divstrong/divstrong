@@ -44,6 +44,9 @@ Route::get('/proposal/{uuid}', ProposalView::class)
     ->name('proposal.view')
     ->middleware('track.proposal.view');
 
+Route::get('/proposal/{uuid}/pdf', [\App\Http\Controllers\ProposalPdfController::class, 'download'])
+    ->name('proposal.pdf');
+
 // PayPal payment endpoints
 Route::prefix('proposal/{uuid}/payment')->group(function () {
     Route::post('/create-order', [\App\Http\Controllers\PayPalController::class, 'createOrder'])

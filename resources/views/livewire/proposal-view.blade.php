@@ -1,7 +1,24 @@
 <div class="min-h-screen">
-    @php $hasCover = (bool) $proposal->cover_image; @endphp
+    @php
+        $hasCover = (bool) $proposal->cover_image;
+        $isPdfMode = request()->boolean('pdf');
+    @endphp
+
+    @if($isPdfMode)
+        <style>
+            @page { size: Letter; margin: 0.5in; }
+            html, body { background: #fff !important; }
+            /* Avoid splitting key blocks across pages */
+            section, .pdf-keep-together { break-inside: avoid; page-break-inside: avoid; }
+            /* Cover should fit to one page */
+            section.pdf-cover { min-height: 0 !important; height: auto !important; padding: 3rem 2rem !important; }
+            /* Hide interactive-only elements */
+            nav, .pdf-hide, [x-show="showShare"], [x-cloak] { display: none !important; }
+        </style>
+    @endif
 
     {{-- ========== STICKY NAV BAR ========== --}}
+    @unless($isPdfMode)
     <nav x-data="{
             scrolled: false,
             active: '',
@@ -53,9 +70,10 @@
             </div>
         </div>
     </nav>
+    @endunless
 
     {{-- ========== COVER SECTION ========== --}}
-    <section class="relative min-h-screen flex items-center justify-center px-4 sm:px-6 bg-gray-900">
+    <section class="relative min-h-screen flex items-center justify-center px-4 sm:px-6 bg-gray-900 pdf-cover">
         {{-- Background video --}}
         <div class="absolute inset-0 overflow-hidden">
             <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover opacity-40">
@@ -99,10 +117,75 @@
             </div>
         @endif
 
-        {{-- Admin: Share button --}}
+        {{-- Top-right actions: Download PDF (logged-in only) + Share (admin only) --}}
+        @unless($isPdfMode)
+        <div class="absolute top-4 right-4 z-20 flex items-center gap-2 pdf-hide"
+             x-data="{
+                generating: false,
+                error: null,
+                downloadPdf() {
+                    this.generating = true;
+                    this.error = null;
+                    let filename = 'proposal.pdf';
+                    fetch('{{ route('proposal.pdf', $proposal->uuid) }}')
+                        .then(res => {
+                            if (!res.ok) throw new Error('PDF generation failed');
+                            const cd = res.headers.get('Content-Disposition') || '';
+                            const match = cd.match(/filename=&quot;?([^&quot;]+)&quot;?/) || cd.match(/filename=([^;]+)/);
+                            if (match) filename = match[1].trim().replace(/^&quot;|&quot;$/g, '');
+                            return res.blob();
+                        })
+                        .then(blob => {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url; a.download = filename;
+                            document.body.appendChild(a); a.click();
+                            a.remove(); URL.revokeObjectURL(url);
+                        })
+                        .catch(() => { this.error = 'Sorry, we could not generate the PDF. Please try again.'; })
+                        .finally(() => { this.generating = false; });
+                }
+             }">
+            @auth
+            <button @click="downloadPdf()" :disabled="generating"
+                    class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/90 border border-gray-200 text-gray-600 hover:bg-white hover:text-gray-900 shadow-sm transition cursor-pointer backdrop-blur-sm disabled:opacity-60 disabled:cursor-wait">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                <span x-text="generating ? 'Generating…' : 'Download PDF'"></span>
+            </button>
+            @endauth
+
+            {{-- Generating PDF modal --}}
+            <div x-show="generating || error" x-cloak
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-8 text-center">
+                    <template x-if="!error">
+                        <div>
+                            <div class="w-14 h-14 mx-auto mb-4 rounded-full border-4 border-gray-200 border-t-brand animate-spin"></div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-1">Generating your PDF</h3>
+                            <p class="text-sm text-gray-500">This usually takes a few seconds…</p>
+                        </div>
+                    </template>
+                    <template x-if="error">
+                        <div>
+                            <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
+                                <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-1">Something went wrong</h3>
+                            <p class="text-sm text-gray-500 mb-5" x-text="error"></p>
+                            <button @click="error = null"
+                                    class="px-5 py-2 text-sm font-medium text-white bg-brand rounded-lg hover:bg-gray-900 transition-colors cursor-pointer">
+                                Close
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
         @if($isAdmin)
-            <div class="absolute top-4 right-4 z-20"
-                 x-data="{ showShare: false, shareSent: false }"
+            <div x-data="{ showShare: false, shareSent: false }"
                  @proposal-shared.window="shareSent = true">
                 <button @click="showShare = true; shareSent = false"
                         class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/90 border border-gray-200 text-gray-600 hover:bg-white hover:text-gray-900 shadow-sm transition cursor-pointer backdrop-blur-sm">
@@ -189,6 +272,8 @@
                 </div>
             </div>
         @endif
+        </div>
+        @endunless
 
         {{-- Center content --}}
         <div class="relative z-10 text-center max-w-3xl mx-auto">
@@ -699,48 +784,111 @@
 
     {{-- ========== OVERVIEW SECTION ========== --}}
     @if($proposal->introduction || $isAdmin)
+    @php $hasOverviewImage = (bool) $proposal->overview_image; @endphp
     <section id="overview" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
-        <div class="max-w-4xl mx-auto">
+        <div class="{{ $hasOverviewImage ? 'max-w-6xl' : 'max-w-4xl' }} mx-auto">
             <div class="flex items-center gap-3 mb-10">
                 <h2 class="text-3xl font-bold text-gray-900">Overview</h2>
+                @if($isAdmin)
+                    <div class="ml-auto flex items-center gap-2 pdf-hide"
+                         x-data="{ showUpload: false }"
+                         @overview-image-uploaded.window="showUpload = false">
+                        <button @click="showUpload = !showUpload"
+                                class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm transition cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            {{ $hasOverviewImage ? 'Change Image' : 'Add Image' }}
+                        </button>
+                        <div x-show="showUpload" x-cloak @click.outside="showUpload = false"
+                             x-transition
+                             class="absolute right-4 mt-14 bg-white rounded-xl shadow-lg border border-gray-200 p-4 w-72 z-20">
+                            <p class="text-xs text-gray-500 mb-2">Optional exhibit image. Shown beside overview text; clickable for full view.</p>
+                            <input type="file" wire:model="overviewImage" accept="image/*"
+                                   class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 file:cursor-pointer">
+                            <div wire:loading wire:target="overviewImage" class="mt-2 text-xs text-gray-400">Uploading...</div>
+                            @if($hasOverviewImage)
+                                <button wire:click="removeOverviewImage"
+                                        class="mt-3 text-xs text-red-500 hover:text-red-700 transition cursor-pointer">
+                                    Remove current image
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                @endif
             </div>
-            <div class="sm:pl-8">
-            @if($isAdmin)
-                <div x-data="{
-                        editing: false,
-                        save() {
-                            this.editing = false;
-                            $wire.set('editingIntroduction', $refs.introEditor.innerHTML);
-                            $wire.saveIntroduction();
-                        }
-                     }"
-                     class="relative group">
-                    {{-- Read mode --}}
-                    <div x-show="!editing"
-                         @click="editing = true; $nextTick(() => { $refs.introEditor.focus(); })"
-                         class="prose-light max-w-none text-lg leading-relaxed cursor-pointer rounded-lg p-4 -m-4 border-2 border-dashed border-transparent hover:border-gray-300 transition-colors min-h-[60px]">
-                        @if($proposal->introduction)
-                            {!! $proposal->introduction !!}
-                        @else
-                            <p class="text-gray-400 italic">Click to add introduction text...</p>
-                        @endif
+            <div class="{{ $hasOverviewImage ? 'grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 items-center' : 'sm:pl-8' }}">
+                <div>
+                @if($isAdmin)
+                    <div x-data="{
+                            editing: false,
+                            save() {
+                                this.editing = false;
+                                $wire.set('editingIntroduction', $refs.introEditor.innerHTML);
+                                $wire.saveIntroduction();
+                            }
+                         }"
+                         class="relative group">
+                        {{-- Read mode --}}
+                        <div x-show="!editing"
+                             @click="editing = true; $nextTick(() => { $refs.introEditor.focus(); })"
+                             class="prose-light max-w-none text-lg leading-relaxed cursor-pointer rounded-lg p-4 -m-4 border-2 border-dashed border-transparent hover:border-gray-300 transition-colors min-h-[60px]">
+                            @if($proposal->introduction)
+                                {!! $proposal->introduction !!}
+                            @else
+                                <p class="text-gray-400 italic">Click to add introduction text...</p>
+                            @endif
+                        </div>
+                        {{-- Edit mode --}}
+                        <div x-show="editing" x-cloak
+                             @click.outside="save()"
+                             @keydown.escape.window="save()">
+                            <div x-ref="introEditor"
+                                 contenteditable="true"
+                                 class="prose-light max-w-none text-lg leading-relaxed bg-white border-2 border-brand/30 focus:border-brand rounded-lg p-4 -m-4 focus:outline-none min-h-[120px] transition-colors"
+                            >{!! $proposal->introduction !!}</div>
+                            <p class="text-xs text-gray-400 mt-3">Click outside or press Escape to save.</p>
+                        </div>
                     </div>
-                    {{-- Edit mode --}}
-                    <div x-show="editing" x-cloak
-                         @click.outside="save()"
-                         @keydown.escape.window="save()">
-                        <div x-ref="introEditor"
-                             contenteditable="true"
-                             class="prose-light max-w-none text-lg leading-relaxed bg-white border-2 border-brand/30 focus:border-brand rounded-lg p-4 -m-4 focus:outline-none min-h-[120px] transition-colors"
-                        >{!! $proposal->introduction !!}</div>
-                        <p class="text-xs text-gray-400 mt-3">Click outside or press Escape to save.</p>
+                @else
+                    <div class="prose-light max-w-none text-lg leading-relaxed">
+                        {!! $proposal->introduction !!}
                     </div>
+                @endif
                 </div>
-            @else
-                <div class="prose-light max-w-none text-lg leading-relaxed">
-                    {!! $proposal->introduction !!}
-                </div>
-            @endif
+                @if($hasOverviewImage)
+                    <div x-data="{ showLightbox: false }">
+                        <a href="{{ Storage::url($proposal->overview_image) }}"
+                           target="_blank" rel="noopener"
+                           @click.prevent="showLightbox = true"
+                           class="block group relative rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow bg-white">
+                            <img src="{{ Storage::url($proposal->overview_image) }}"
+                                 alt="Overview exhibit"
+                                 class="w-full h-auto object-contain">
+                            <div class="pdf-hide absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white/95 text-gray-700 rounded-full shadow">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m-3-3h6"/></svg>
+                                    Click to enlarge
+                                </span>
+                            </div>
+                        </a>
+                        {{-- Lightbox --}}
+                        <div x-show="showLightbox" x-cloak
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             class="pdf-hide fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+                             @click.self="showLightbox = false"
+                             @keydown.escape.window="showLightbox = false">
+                            <button @click="showLightbox = false"
+                                    class="absolute top-4 right-4 p-2 text-white/80 hover:text-white transition cursor-pointer"
+                                    aria-label="Close">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                            <img src="{{ Storage::url($proposal->overview_image) }}"
+                                 alt="Overview exhibit"
+                                 class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl">
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </section>
