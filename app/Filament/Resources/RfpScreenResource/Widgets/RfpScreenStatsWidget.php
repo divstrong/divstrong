@@ -2,27 +2,18 @@
 
 namespace App\Filament\Resources\RfpScreenResource\Widgets;
 
+use App\Filament\Resources\RfpScreenResource\Widgets\ScreenahDateRange;
 use App\Models\RfpScreen;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Database\Eloquent\Builder;
 
 class RfpScreenStatsWidget extends StatsOverviewWidget
 {
+    use InteractsWithPageFilters;
+
     protected int | string | array $columnSpan = 'full';
-
-    public ?string $filter = 'all';
-
-    protected function getFilters(): ?array
-    {
-        return [
-            'week' => 'This Week',
-            'month' => 'This Month',
-            'quarter' => 'This Quarter',
-            'year' => 'This Year',
-            'all' => 'All Time',
-        ];
-    }
 
     protected function getStats(): array
     {
@@ -50,14 +41,14 @@ class RfpScreenStatsWidget extends StatsOverviewWidget
 
     protected function applyDateFilter(Builder $query): Builder
     {
-        $now = now();
+        $range = ScreenahDateRange::resolve($this->filters ?? []);
 
-        return match ($this->filter) {
-            'week' => $query->whereBetween('analyzed_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]),
-            'month' => $query->whereBetween('analyzed_at', [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()]),
-            'quarter' => $query->whereBetween('analyzed_at', [$now->copy()->startOfQuarter(), $now->copy()->endOfQuarter()]),
-            'year' => $query->whereBetween('analyzed_at', [$now->copy()->startOfYear(), $now->copy()->endOfYear()]),
-            default => $query,
-        };
+        if ($range === null) {
+            return $query;
+        }
+
+        [$start, $end] = $range;
+
+        return $query->whereBetween('created_at', [$start, $end]);
     }
 }
