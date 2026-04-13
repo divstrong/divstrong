@@ -19,18 +19,62 @@ class ClaudeService
         $this->maxTokens = config('claude.max_tokens');
     }
 
-    public function analyzeRfp(string $filePath, string $prompt): array
+    public function analyzeRfp(string $filePath, string $prompt, array $attachmentPaths = []): array
     {
-        $fullPath = Storage::disk('public')->path($filePath);
-        $extension = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
-
-        $content = $this->buildMessageContent($fullPath, $extension, $prompt);
+        $content = $this->buildMultiDocContent($filePath, $prompt, $attachmentPaths);
 
         $response = $this->sendWithRetry($content);
 
         $rawText = $response->json('content.0.text', '');
 
         return $this->parseResponse($rawText);
+    }
+
+    private function buildMultiDocContent(string $primaryPath, string $prompt, array $attachmentPaths): array
+    {
+        $content = [];
+        $textPieces = [];
+
+        $docs = array_merge([$primaryPath], $attachmentPaths);
+
+        foreach ($docs as $i => $path) {
+            $fullPath = Storage::disk('public')->path($path);
+            $extension = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+            $label = $i === 0 ? 'PRIMARY RFP DOCUMENT' : 'SUPPORTING DOCUMENT ' . $i . ' (' . basename($path) . ')';
+
+            if ($extension === 'pdf') {
+                $content[] = [
+                    'type' => 'text',
+                    'text' => "--- {$label} ---",
+                ];
+                $content[] = [
+                    'type' => 'document',
+                    'source' => [
+                        'type' => 'base64',
+                        'media_type' => 'application/pdf',
+                        'data' => base64_encode(file_get_contents($fullPath)),
+                    ],
+                ];
+            } else {
+                $textPieces[] = "--- BEGIN {$label} ---\n\n"
+                    . $this->extractText($fullPath, $extension)
+                    . "\n\n--- END {$label} ---";
+            }
+        }
+
+        $instructions = $prompt;
+
+        if (count($docs) > 1) {
+            $instructions .= "\n\nNOTE: Multiple documents are provided — the PRIMARY RFP DOCUMENT plus SUPPORTING DOCUMENTS. Consider all of them together when scoring and summarizing. Supporting documents may clarify requirements, add scope, or change the fit assessment.";
+        }
+
+        if (! empty($textPieces)) {
+            $instructions .= "\n\n" . implode("\n\n", $textPieces);
+        }
+
+        $content[] = ['type' => 'text', 'text' => $instructions];
+
+        return $content;
     }
 
     private function sendWithRetry(array $content, int $maxRetries = 2): \Illuminate\Http\Client\Response
@@ -92,39 +136,6 @@ class ClaudeService
 
             throw new \RuntimeException($message);
         }
-    }
-
-    private function buildMessageContent(string $fullPath, string $extension, string $prompt): array
-    {
-        // For PDFs, send as a document block — Claude reads PDFs natively
-        if ($extension === 'pdf') {
-            $base64 = base64_encode(file_get_contents($fullPath));
-
-            return [
-                [
-                    'type' => 'document',
-                    'source' => [
-                        'type' => 'base64',
-                        'media_type' => 'application/pdf',
-                        'data' => $base64,
-                    ],
-                ],
-                [
-                    'type' => 'text',
-                    'text' => $prompt,
-                ],
-            ];
-        }
-
-        // For text-based formats, extract and send as text
-        $documentText = $this->extractText($fullPath, $extension);
-
-        return [
-            [
-                'type' => 'text',
-                'text' => $prompt . "\n\n--- BEGIN RFP DOCUMENT ---\n\n" . $documentText . "\n\n--- END RFP DOCUMENT ---",
-            ],
-        ];
     }
 
     private function extractText(string $fullPath, string $extension): string
@@ -257,6 +268,7 @@ PROMPT;
         if (is_array($parsed) && isset($parsed['score'])) {
             return [
                 'rfp_name' => $parsed['rfp_name'] ?? null,
+                'due_date' => $this->parseDueDate($parsed['due_date'] ?? null),
                 'score' => (int) max(0, min(100, $parsed['score'])),
                 'summary' => $parsed['summary'] ?? '',
                 'red_flags' => $parsed['red_flags'] ?? [],
@@ -267,11 +279,25 @@ PROMPT;
 
         // If JSON parsing failed, return raw text with a default structure
         return [
+            'due_date' => null,
             'score' => null,
             'summary' => $rawText,
             'red_flags' => [],
             'requirements' => [],
             'raw_response' => $rawText,
         ];
+    }
+
+    private function parseDueDate(mixed $value): ?string
+    {
+        if (! is_string($value) || trim($value) === '' || strtolower($value) === 'null') {
+            return null;
+        }
+
+        try {
+            return \Carbon\Carbon::parse($value)->toDateString();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

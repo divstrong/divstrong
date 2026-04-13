@@ -7,6 +7,8 @@ use App\Services\ClaudeService;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Forms;
+use App\Models\RfpScreenAttachment;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Section;
@@ -108,6 +110,27 @@ class ViewRfpScreen extends ViewRecord
                     ->collapsible()
                     ->visible(fn ($record) => !empty($record->requirements)),
 
+                Section::make('Supporting Documents')
+                    ->description('Additional documents uploaded after the initial screen. These are considered in re-analyses.')
+                    ->schema([
+                        RepeatableEntry::make('attachments')
+                            ->hiddenLabel()
+                            ->schema([
+                                TextEntry::make('original_filename')
+                                    ->hiddenLabel()
+                                    ->url(fn (RfpScreenAttachment $record) => Storage::disk('public')->url($record->file_path))
+                                    ->openUrlInNewTab()
+                                    ->icon('heroicon-o-document')
+                                    ->color('primary'),
+                                TextEntry::make('created_at')
+                                    ->label('Uploaded')
+                                    ->dateTime('M j, Y g:i A'),
+                            ])
+                            ->columns(2),
+                    ])
+                    ->collapsible()
+                    ->visible(fn ($record) => $record->attachments()->exists()),
+
                 Section::make('Document Details')
                     ->schema([
                         TextEntry::make('original_filename')
@@ -153,62 +176,108 @@ class ViewRfpScreen extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('addAttachments')
+                ->label('Add Supporting Documents')
+                ->icon('heroicon-o-paper-clip')
+                ->color('primary')
+                ->form([
+                    Forms\Components\FileUpload::make('files')
+                        ->label('Supporting Documents')
+                        ->multiple()
+                        ->directory('rfp-documents')
+                        ->disk('public')
+                        ->acceptedFileTypes([
+                            'application/pdf',
+                            'application/msword',
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            'text/plain',
+                            'text/csv',
+                            'text/markdown',
+                        ])
+                        ->maxSize(20480)
+                        ->required()
+                        ->helperText('PDF, DOC, DOCX, TXT, CSV, MD (max 20MB each). The RFP will be re-analyzed against the full document set.'),
+                ])
+                ->modalSubmitActionLabel('Upload & Re-analyze')
+                ->action(function (array $data) {
+                    $record = $this->record;
+                    $files = (array) ($data['files'] ?? []);
+
+                    foreach ($files as $filePath) {
+                        $record->attachments()->create([
+                            'filename' => basename($filePath),
+                            'original_filename' => basename($filePath),
+                            'file_path' => $filePath,
+                            'file_type' => strtolower(pathinfo($filePath, PATHINFO_EXTENSION)),
+                        ]);
+                    }
+
+                    $this->runReanalysis();
+                }),
             Actions\Action::make('reanalyze')
                 ->label('Re-analyze')
                 ->icon('heroicon-o-arrow-path')
                 ->color('gray')
                 ->requiresConfirmation()
                 ->modalHeading('Re-analyze this RFP?')
-                ->modalDescription('This will send the document back to Claude for a fresh analysis, overwriting the current results.')
-                ->action(function () {
-                    $record = $this->record;
-                    $record->update(['status' => 'analyzing']);
-
-                    try {
-                        $service = new ClaudeService();
-                        $result = $service->analyzeRfp($record->file_path, $record->prompt);
-
-                        $updateData = [
-                            'score' => $result['score'],
-                            'summary' => $result['summary'],
-                            'red_flags' => $result['red_flags'],
-                            'requirements' => $result['requirements'],
-                            'raw_response' => $result['raw_response'],
-                            'status' => 'completed',
-                            'analyzed_at' => now(),
-                        ];
-
-                        if (empty($record->rfp_name) && !empty($result['rfp_name'])) {
-                            $updateData['rfp_name'] = $result['rfp_name'];
-                        }
-
-                        $record->update($updateData);
-
-                        Notification::make()
-                            ->title("Re-analysis Complete — {$record->score}/100")
-                            ->success()
-                            ->send();
-                    } catch (\Throwable $e) {
-                        Log::error('RFP re-screening failed', [
-                            'rfp_screen_id' => $record->id,
-                            'error' => $e->getMessage(),
-                        ]);
-
-                        $record->update([
-                            'status' => 'failed',
-                            'raw_response' => $e->getMessage(),
-                        ]);
-
-                        Notification::make()
-                            ->title('Re-analysis Failed')
-                            ->body($e->getMessage())
-                            ->danger()
-                            ->send();
-                    }
-
-                    $this->refreshFormData(['rfp_name', 'score', 'summary', 'red_flags', 'requirements', 'raw_response', 'status', 'analyzed_at']);
-                }),
+                ->modalDescription('This will send the RFP and any supporting documents back to Claude for a fresh analysis, overwriting the current results.')
+                ->action(fn () => $this->runReanalysis()),
             Actions\DeleteAction::make(),
         ];
+    }
+
+    protected function runReanalysis(): void
+    {
+        $record = $this->record;
+        $record->update(['status' => 'analyzing']);
+
+        try {
+            $service = new ClaudeService();
+            $result = $service->analyzeRfp(
+                $record->file_path,
+                $record->prompt,
+                $record->attachments()->pluck('file_path')->all(),
+            );
+
+            $updateData = [
+                'score' => $result['score'],
+                'due_date' => $result['due_date'] ?? $record->due_date,
+                'summary' => $result['summary'],
+                'red_flags' => $result['red_flags'],
+                'requirements' => $result['requirements'],
+                'raw_response' => $result['raw_response'],
+                'status' => 'completed',
+                'analyzed_at' => now(),
+            ];
+
+            if (empty($record->rfp_name) && !empty($result['rfp_name'])) {
+                $updateData['rfp_name'] = $result['rfp_name'];
+            }
+
+            $record->update($updateData);
+
+            Notification::make()
+                ->title("Re-analysis Complete — {$record->score}/100")
+                ->success()
+                ->send();
+        } catch (\Throwable $e) {
+            Log::error('RFP re-screening failed', [
+                'rfp_screen_id' => $record->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $record->update([
+                'status' => 'failed',
+                'raw_response' => $e->getMessage(),
+            ]);
+
+            Notification::make()
+                ->title('Re-analysis Failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+
+        $this->refreshFormData(['rfp_name', 'due_date', 'score', 'summary', 'red_flags', 'requirements', 'raw_response', 'status', 'analyzed_at']);
     }
 }

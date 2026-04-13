@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RfpScreen extends Model
 {
@@ -15,6 +16,7 @@ class RfpScreen extends Model
         'file_path',
         'file_type',
         'rfp_name',
+        'due_date',
         'prompt',
         'score',
         'summary',
@@ -31,12 +33,18 @@ class RfpScreen extends Model
             'red_flags' => 'array',
             'requirements' => 'array',
             'analyzed_at' => 'datetime',
+            'due_date' => 'date',
         ];
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(RfpScreenAttachment::class);
     }
 
     public function scopeForUser(Builder $query): Builder

@@ -16,6 +16,13 @@ class ListRfpScreens extends ListRecords
 {
     protected static string $resource = RfpScreenResource::class;
 
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\RfpScreenResource\Widgets\RfpScreenStatsWidget::class,
+        ];
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -42,6 +49,7 @@ class ListRfpScreens extends ListRecords
 
                         $updateData = [
                             'score' => $result['score'],
+                            'due_date' => $result['due_date'] ?? null,
                             'summary' => $result['summary'],
                             'red_flags' => $result['red_flags'],
                             'requirements' => $result['requirements'],

@@ -36,8 +36,6 @@ class RfpScreenResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-funnel';
 
-    protected static ?string $navigationParentItem = 'Proposals';
-
     protected static ?string $navigationLabel = 'Screenah';
 
     protected static ?string $modelLabel = 'RFP Screen';
@@ -46,7 +44,7 @@ class RfpScreenResource extends Resource
 
     protected static ?string $slug = 'screenah';
 
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = 3;
 
     public static function getDefaultPrompt(): string
     {
@@ -69,6 +67,7 @@ RESPOND IN THIS EXACT JSON FORMAT:
 ```json
 {
     "rfp_name": "<short descriptive name for this RFP, e.g. 'City of Austin Website Redesign' or 'DOE Cloud Migration Services'>",
+    "due_date": "<response/proposal submission due date in YYYY-MM-DD format, or null if not specified. Look for terms like 'proposals due', 'submission deadline', 'responses must be received by'. Use the final submission deadline, not Q&A or intent-to-bid dates.>",
     "score": <0-100 integer, where 100 = perfect fit for a small SaaS company>,
     "summary": "<2-3 sentence executive summary of the RFP and fit assessment>",
     "red_flags": [
@@ -133,6 +132,26 @@ PROMPT;
                     ->placeholder('Untitled')
                     ->limit(50)
                     ->description(fn (RfpScreen $record) => $record->created_at->format('M j, Y g:i A') . ' by ' . ($record->user?->name ?? 'Unknown'))
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('due_date')
+                    ->label('Due')
+                    ->date('M j, Y')
+                    ->sortable()
+                    ->placeholder('—')
+                    ->color(function (RfpScreen $record) {
+                        if (! $record->due_date) return 'gray';
+                        $days = now()->startOfDay()->diffInDays($record->due_date, false);
+                        if ($days < 0) return 'danger';
+                        if ($days <= 7) return 'warning';
+                        return null;
+                    })
+                    ->description(function (RfpScreen $record) {
+                        if (! $record->due_date) return null;
+                        $days = (int) now()->startOfDay()->diffInDays($record->due_date, false);
+                        if ($days < 0) return abs($days) . ' days overdue';
+                        if ($days === 0) return 'Due today';
+                        return "in {$days} days";
+                    })
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('score')
                     ->label('Fit Score')
@@ -228,10 +247,15 @@ PROMPT;
 
                         try {
                             $service = new ClaudeService();
-                            $result = $service->analyzeRfp($record->file_path, $record->prompt);
+                            $result = $service->analyzeRfp(
+                                $record->file_path,
+                                $record->prompt,
+                                $record->attachments()->pluck('file_path')->all(),
+                            );
 
                             $updateData = [
                                 'score' => $result['score'],
+                                'due_date' => $result['due_date'] ?? null,
                                 'summary' => $result['summary'],
                                 'red_flags' => $result['red_flags'],
                                 'requirements' => $result['requirements'],
@@ -285,6 +309,13 @@ PROMPT;
         return [
             'index' => Pages\ListRfpScreens::route('/'),
             'view' => Pages\ViewRfpScreen::route('/{record}'),
+        ];
+    }
+
+    public static function getWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\RfpScreenResource\Widgets\RfpScreenStatsWidget::class,
         ];
     }
 
