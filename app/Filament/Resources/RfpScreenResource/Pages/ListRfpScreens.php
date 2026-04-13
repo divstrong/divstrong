@@ -66,6 +66,7 @@ class ListRfpScreens extends ListRecords
     {
         return $schema->components([
             \Filament\Schemas\Components\EmbeddedSchema::make('filtersForm'),
+            \Filament\Schemas\Components\Livewire::make(RfpScreenStatsWidget::class, fn () => ['pageFilters' => $this->filters]),
             $this->getTabsContentComponent(),
             \Filament\Schemas\Components\RenderHook::make(\Filament\View\PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_BEFORE),
             \Filament\Schemas\Components\EmbeddedTable::make(),
@@ -85,13 +86,6 @@ class ListRfpScreens extends ListRecords
         }
 
         return $query;
-    }
-
-    protected function getHeaderWidgets(): array
-    {
-        return [
-            RfpScreenStatsWidget::class,
-        ];
     }
 
     protected function getHeaderActions(): array
