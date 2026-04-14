@@ -115,6 +115,11 @@ class ListRfpScreens extends ListRecords
                         $updateData = [
                             'score' => $result['score'],
                             'due_date' => $result['due_date'] ?? null,
+                            'contact_name' => $result['contact_name'] ?? null,
+                            'contact_title' => $result['contact_title'] ?? null,
+                            'contact_department' => $result['contact_department'] ?? null,
+                            'contact_email' => $result['contact_email'] ?? null,
+                            'contact_phone' => $result['contact_phone'] ?? null,
                             'summary' => $result['summary'],
                             'red_flags' => $result['red_flags'],
                             'requirements' => $result['requirements'],

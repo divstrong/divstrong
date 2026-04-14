@@ -38,6 +38,12 @@ class CreateRfpScreen extends CreateRecord
 
             $record->update([
                 'rfp_name' => $result['rfp_name'],
+                'contact_name' => $result['contact_name'] ?? null,
+                'contact_title' => $result['contact_title'] ?? null,
+                'contact_department' => $result['contact_department'] ?? null,
+                'contact_email' => $result['contact_email'] ?? null,
+                'contact_phone' => $result['contact_phone'] ?? null,
+                'due_date' => $result['due_date'] ?? null,
                 'score' => $result['score'],
                 'summary' => $result['summary'],
                 'red_flags' => $result['red_flags'],

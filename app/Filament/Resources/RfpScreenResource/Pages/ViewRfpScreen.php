@@ -80,6 +80,36 @@ class ViewRfpScreen extends ViewRecord
                             ->columnSpan(8),
                     ]),
 
+                Section::make('Contact Person')
+                    ->icon('heroicon-o-user')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('contact_name')
+                            ->label('Name')
+                            ->placeholder('—')
+                            ->weight('semibold'),
+                        TextEntry::make('contact_title')
+                            ->label('Title')
+                            ->placeholder('—'),
+                        TextEntry::make('contact_department')
+                            ->label('Department')
+                            ->placeholder('—'),
+                        TextEntry::make('contact_email')
+                            ->label('Email')
+                            ->placeholder('—')
+                            ->icon('heroicon-o-envelope')
+                            ->url(fn ($record) => $record->contact_email ? 'mailto:' . $record->contact_email : null)
+                            ->color(fn ($record) => $record->contact_email ? 'primary' : null),
+                        TextEntry::make('contact_phone')
+                            ->label('Phone')
+                            ->placeholder('—')
+                            ->icon('heroicon-o-phone')
+                            ->url(fn ($record) => $record->contact_phone ? 'tel:' . preg_replace('/[^0-9+]/', '', $record->contact_phone) : null)
+                            ->color(fn ($record) => $record->contact_phone ? 'primary' : null),
+                    ])
+                    ->collapsible()
+                    ->visible(fn ($record) => filled($record->contact_name) || filled($record->contact_email) || filled($record->contact_phone) || filled($record->contact_title) || filled($record->contact_department)),
+
                 Section::make('Summary')
                     ->schema([
                         TextEntry::make('summary')
@@ -218,10 +248,46 @@ class ViewRfpScreen extends ViewRecord
                 ->label('Re-analyze')
                 ->icon('heroicon-o-arrow-path')
                 ->color('gray')
-                ->requiresConfirmation()
                 ->modalHeading('Re-analyze this RFP?')
-                ->modalDescription('This will send the RFP and any supporting documents back to Claude for a fresh analysis, overwriting the current results.')
-                ->action(fn () => $this->runReanalysis()),
+                ->modalDescription('Optionally upload a new version of the RFP to replace the existing primary document. Leave blank to re-analyze the existing file. Supporting documents will still be included.')
+                ->modalSubmitActionLabel('Re-analyze')
+                ->form([
+                    Forms\Components\FileUpload::make('replacement_file')
+                        ->label('Replace Primary RFP (optional)')
+                        ->directory('rfp-documents')
+                        ->disk('public')
+                        ->acceptedFileTypes([
+                            'application/pdf',
+                            'application/msword',
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            'text/plain',
+                            'text/csv',
+                            'text/markdown',
+                        ])
+                        ->maxSize(20480)
+                        ->helperText('PDF, DOC, DOCX, TXT, CSV, MD (max 20MB). If provided, the existing primary RFP file will be replaced.'),
+                ])
+                ->action(function (array $data) {
+                    $replacement = $data['replacement_file'] ?? null;
+
+                    if (! empty($replacement)) {
+                        $record = $this->record;
+                        $oldPath = $record->file_path;
+
+                        $record->update([
+                            'file_path' => $replacement,
+                            'filename' => basename($replacement),
+                            'original_filename' => basename($replacement),
+                            'file_type' => strtolower(pathinfo($replacement, PATHINFO_EXTENSION)),
+                        ]);
+
+                        if ($oldPath && $oldPath !== $replacement) {
+                            Storage::disk('public')->delete($oldPath);
+                        }
+                    }
+
+                    $this->runReanalysis();
+                }),
             Actions\DeleteAction::make(),
         ];
     }
@@ -233,15 +299,25 @@ class ViewRfpScreen extends ViewRecord
 
         try {
             $service = new ClaudeService();
+            $prompt = $record->prompt;
+            if (! str_contains((string) $prompt, 'contact_name')) {
+                $prompt = RfpScreenResource::getDefaultPrompt();
+            }
+
             $result = $service->analyzeRfp(
                 $record->file_path,
-                $record->prompt,
+                $prompt,
                 $record->attachments()->pluck('file_path')->all(),
             );
 
             $updateData = [
                 'score' => $result['score'],
                 'due_date' => $result['due_date'] ?? $record->due_date,
+                'contact_name' => $result['contact_name'] ?? $record->contact_name,
+                'contact_title' => $result['contact_title'] ?? $record->contact_title,
+                'contact_department' => $result['contact_department'] ?? $record->contact_department,
+                'contact_email' => $result['contact_email'] ?? $record->contact_email,
+                'contact_phone' => $result['contact_phone'] ?? $record->contact_phone,
                 'summary' => $result['summary'],
                 'red_flags' => $result['red_flags'],
                 'requirements' => $result['requirements'],
@@ -278,6 +354,6 @@ class ViewRfpScreen extends ViewRecord
                 ->send();
         }
 
-        $this->refreshFormData(['rfp_name', 'due_date', 'score', 'summary', 'red_flags', 'requirements', 'raw_response', 'status', 'analyzed_at']);
+        $this->refreshFormData(['rfp_name', 'contact_name', 'contact_title', 'contact_department', 'contact_email', 'contact_phone', 'due_date', 'score', 'summary', 'red_flags', 'requirements', 'raw_response', 'status', 'analyzed_at', 'file_path', 'original_filename', 'filename', 'file_type']);
     }
 }

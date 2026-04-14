@@ -7,6 +7,7 @@ use App\Filament\Resources\RfpScreenResource\Pages;
 use App\Filament\Resources\ProposalResource;
 use App\Models\Proposal;
 use App\Models\RfpScreen;
+use App\Models\TermsLibrary;
 use BackedEnum;
 use App\Services\ClaudeService;
 use Filament\Actions\Action;
@@ -67,6 +68,11 @@ RESPOND IN THIS EXACT JSON FORMAT:
 ```json
 {
     "rfp_name": "<short descriptive name for this RFP, e.g. 'City of Austin Website Redesign' or 'DOE Cloud Migration Services'>",
+    "contact_name": "<primary point of contact's full name, or null. Look for 'Contact Person', 'Procurement Officer', 'Submit questions to', etc.>",
+    "contact_title": "<contact's job title, or null>",
+    "contact_department": "<contact's department or division, or null>",
+    "contact_email": "<contact's email address, or null>",
+    "contact_phone": "<contact's phone number including extension if listed, or null>",
     "due_date": "<response/proposal submission due date in YYYY-MM-DD format, or null if not specified. Look for terms like 'proposals due', 'submission deadline', 'responses must be received by'. Use the final submission deadline, not Q&A or intent-to-bid dates.>",
     "score": <0-100 integer, where 100 = perfect fit for a small SaaS company>,
     "summary": "<2-3 sentence executive summary of the RFP and fit assessment>",
@@ -89,11 +95,6 @@ PROMPT;
                 Section::make('Upload RFP Document')
                     ->columnSpanFull()
                     ->schema([
-                        Forms\Components\TextInput::make('rfp_name')
-                            ->label('RFP Name')
-                            ->placeholder('Optional — will be extracted from document if left blank')
-                            ->maxLength(255)
-                            ->columnSpanFull(),
                         Forms\Components\FileUpload::make('file_path')
                             ->label('RFP Document')
                             ->directory('rfp-documents')
@@ -108,7 +109,14 @@ PROMPT;
                             ])
                             ->maxSize(20480)
                             ->required()
+                            ->live()
                             ->helperText('Accepted formats: PDF, DOC, DOCX, TXT, CSV, MD (max 20MB)')
+                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('rfp_name')
+                            ->label('RFP Name')
+                            ->placeholder('Optional — will be extracted from document if left blank')
+                            ->maxLength(255)
+                            ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => filled($get('file_path')))
                             ->columnSpanFull(),
                         Forms\Components\Textarea::make('prompt')
                             ->label('Analysis Prompt')
@@ -215,6 +223,13 @@ PROMPT;
                                 ]);
                             }
 
+                            foreach (TermsLibrary::where('is_active', true)->orderBy('sort_order')->get() as $i => $term) {
+                                $proposal->terms()->create([
+                                    'content' => $term->content,
+                                    'sort_order' => $i,
+                                ]);
+                            }
+
                             Notification::make()
                                 ->success()
                                 ->title('Draft proposal created')
@@ -239,23 +254,66 @@ PROMPT;
                     ->label('Re-analyze')
                     ->icon('heroicon-o-arrow-path')
                     ->color('gray')
-                    ->requiresConfirmation()
                     ->modalHeading('Re-analyze this RFP?')
-                    ->modalDescription('This will send the document back to Claude for a fresh analysis, overwriting the current results.')
-                    ->action(function (RfpScreen $record) {
+                    ->modalDescription('Optionally upload a new version of the RFP to replace the existing primary document. Leave blank to re-analyze the existing file.')
+                    ->modalSubmitActionLabel('Re-analyze')
+                    ->form([
+                        Forms\Components\FileUpload::make('replacement_file')
+                            ->label('Replace Primary RFP (optional)')
+                            ->directory('rfp-documents')
+                            ->disk('public')
+                            ->acceptedFileTypes([
+                                'application/pdf',
+                                'application/msword',
+                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                'text/plain',
+                                'text/csv',
+                                'text/markdown',
+                            ])
+                            ->maxSize(20480)
+                            ->helperText('PDF, DOC, DOCX, TXT, CSV, MD (max 20MB). If provided, the existing primary RFP file will be replaced.'),
+                    ])
+                    ->action(function (RfpScreen $record, array $data) {
+                        $replacement = $data['replacement_file'] ?? null;
+
+                        if (! empty($replacement)) {
+                            $oldPath = $record->file_path;
+
+                            $record->update([
+                                'file_path' => $replacement,
+                                'filename' => basename($replacement),
+                                'original_filename' => basename($replacement),
+                                'file_type' => strtolower(pathinfo($replacement, PATHINFO_EXTENSION)),
+                            ]);
+
+                            if ($oldPath && $oldPath !== $replacement) {
+                                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+                            }
+                        }
+
                         $record->update(['status' => 'analyzing']);
 
                         try {
                             $service = new ClaudeService();
+                            $prompt = $record->prompt;
+                            if (! str_contains((string) $prompt, 'contact_name')) {
+                                $prompt = static::getDefaultPrompt();
+                            }
+
                             $result = $service->analyzeRfp(
                                 $record->file_path,
-                                $record->prompt,
+                                $prompt,
                                 $record->attachments()->pluck('file_path')->all(),
                             );
 
                             $updateData = [
                                 'score' => $result['score'],
-                                'due_date' => $result['due_date'] ?? null,
+                                'due_date' => $result['due_date'] ?? $record->due_date,
+                                'contact_name' => $result['contact_name'] ?? $record->contact_name,
+                                'contact_title' => $result['contact_title'] ?? $record->contact_title,
+                                'contact_department' => $result['contact_department'] ?? $record->contact_department,
+                                'contact_email' => $result['contact_email'] ?? $record->contact_email,
+                                'contact_phone' => $result['contact_phone'] ?? $record->contact_phone,
                                 'summary' => $result['summary'],
                                 'red_flags' => $result['red_flags'],
                                 'requirements' => $result['requirements'],

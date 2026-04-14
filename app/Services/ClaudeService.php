@@ -268,6 +268,11 @@ PROMPT;
         if (is_array($parsed) && isset($parsed['score'])) {
             return [
                 'rfp_name' => $parsed['rfp_name'] ?? null,
+                'contact_name' => $this->cleanContactField($parsed['contact_name'] ?? null),
+                'contact_title' => $this->cleanContactField($parsed['contact_title'] ?? null),
+                'contact_department' => $this->cleanContactField($parsed['contact_department'] ?? null),
+                'contact_email' => $this->cleanContactField($parsed['contact_email'] ?? null),
+                'contact_phone' => $this->cleanContactField($parsed['contact_phone'] ?? null),
                 'due_date' => $this->parseDueDate($parsed['due_date'] ?? null),
                 'score' => (int) max(0, min(100, $parsed['score'])),
                 'summary' => $parsed['summary'] ?? '',
@@ -279,6 +284,11 @@ PROMPT;
 
         // If JSON parsing failed, return raw text with a default structure
         return [
+            'contact_name' => null,
+            'contact_title' => null,
+            'contact_department' => null,
+            'contact_email' => null,
+            'contact_phone' => null,
             'due_date' => null,
             'score' => null,
             'summary' => $rawText,
@@ -286,6 +296,20 @@ PROMPT;
             'requirements' => [],
             'raw_response' => $rawText,
         ];
+    }
+
+    private function cleanContactField(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+        if ($value === '' || strtolower($value) === 'null') {
+            return null;
+        }
+
+        return $value;
     }
 
     private function parseDueDate(mixed $value): ?string
