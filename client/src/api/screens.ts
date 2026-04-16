@@ -1,6 +1,6 @@
 import { apiRequest } from './client';
 
-export type ScoreColor = 'success' | 'warning' | 'danger' | 'gray';
+export type ScoreColor = 'success' | 'warning' | 'info' | 'danger' | 'gray';
 
 export type RfpScreenSummary = {
   id: number;
@@ -75,6 +75,10 @@ export async function rescanScreen(id: number, file?: FilePick): Promise<RfpScre
     formData: form,
   });
   return res.data;
+}
+
+export async function createProposalFromScreen(id: number): Promise<{ proposal_id: number; message: string }> {
+  return apiRequest(`/rfp-screens/${id}/create-proposal`, { method: 'POST', timeoutMs: 120000 });
 }
 
 export async function deleteScreen(id: number): Promise<void> {

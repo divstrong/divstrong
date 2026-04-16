@@ -1,12 +1,11 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Button } from '../../../src/components/Button';
 import { ScoreBadge } from '../../../src/components/ScoreBadge';
-import { deleteScreen, getScreen, rescanScreen, type FilePick, type RfpScreenDetail } from '../../../src/api/screens';
+import { createProposalFromScreen, deleteScreen, getScreen, rescanScreen, type FilePick, type RfpScreenDetail } from '../../../src/api/screens';
 import { theme } from '../../../src/theme';
 import { dueDateState } from '../../../src/utils/dueDate';
 
@@ -25,6 +24,7 @@ export default function ScreenDetail() {
   const [screen, setScreen] = useState<RfpScreenDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [rescanning, setRescanning] = useState(false);
+  const [generatingProposal, setGeneratingProposal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -77,6 +77,30 @@ export default function ScreenDetail() {
     ]);
   }
 
+  async function handleCreateProposal() {
+    Alert.alert(
+      'Create Proposal from RFP',
+      `Generate a draft proposal from "${screen?.rfp_name}"? Claude will write an overview and scope items based on the RFP analysis.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Generate',
+          onPress: async () => {
+            setGeneratingProposal(true);
+            try {
+              const result = await createProposalFromScreen(Number(id));
+              router.push(`/(app)/proposals/${result.proposal_id}`);
+            } catch (e: any) {
+              Alert.alert('Generation failed', e?.message ?? 'Please try again.');
+            } finally {
+              setGeneratingProposal(false);
+            }
+          },
+        },
+      ],
+    );
+  }
+
   if (loading) {
     return (
       <SafeAreaView style={[styles.safe, styles.centered]}>
@@ -96,9 +120,15 @@ export default function ScreenDetail() {
   const due = dueDateState(screen.due_date);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={theme.colors.primary} />
+          <Text style={styles.backText}>Screenah</Text>
+        </Pressable>
         <Text style={styles.title}>{screen.rfp_name || 'Untitled RFP'}</Text>
+      </View>
+      <ScrollView contentContainerStyle={styles.container}>
 
         <View style={styles.badgeRow}>
           <ScoreBadge score={screen.score} label={screen.score_label} color={screen.score_color} />
@@ -171,16 +201,33 @@ export default function ScreenDetail() {
           </Section>
         ) : null}
 
-        {rescanning ? (
+        {rescanning || generatingProposal ? (
           <View style={styles.analyzing}>
             <ActivityIndicator color={theme.colors.primary} />
-            <Text style={styles.analyzingText}>Re-analyzing…</Text>
+            <Text style={styles.analyzingText}>
+              {generatingProposal ? 'Generating proposal with Claude…' : 'Re-analyzing…'}
+            </Text>
           </View>
         ) : (
           <View style={styles.actions}>
-            <Button label="Rescan" onPress={() => handleRescan(false)} variant="secondary" />
-            <Button label="Rescan with New File" onPress={() => handleRescan(true)} variant="secondary" />
-            <Button label="Delete" onPress={confirmDelete} variant="ghost" />
+            {screen.status === 'completed' && (
+              <Pressable style={[styles.actionBtn, { backgroundColor: theme.colors.success }]} onPress={handleCreateProposal}>
+                <Ionicons name="document-text-outline" size={18} color="#fff" />
+                <Text style={[styles.actionLabel, { color: '#fff' }]}>Create Proposal</Text>
+              </Pressable>
+            )}
+            <Pressable style={[styles.actionBtn, { backgroundColor: theme.colors.primary }]} onPress={() => handleRescan(false)}>
+              <Ionicons name="refresh" size={18} color="#fff" />
+              <Text style={[styles.actionLabel, { color: '#fff' }]}>Rescan</Text>
+            </Pressable>
+            <Pressable style={[styles.actionBtn, { backgroundColor: theme.colors.text }]} onPress={() => handleRescan(true)}>
+              <Ionicons name="document-outline" size={18} color="#fff" />
+              <Text style={[styles.actionLabel, { color: '#fff' }]}>Rescan with New File</Text>
+            </Pressable>
+            <Pressable style={[styles.actionBtn, styles.deleteBtn]} onPress={confirmDelete}>
+              <Ionicons name="trash-outline" size={18} color={theme.colors.danger} />
+              <Text style={[styles.actionLabel, { color: theme.colors.danger }]}>Delete</Text>
+            </Pressable>
           </View>
         )}
       </ScrollView>
@@ -205,8 +252,24 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.bg },
   centered: { alignItems: 'center', justifyContent: 'center' },
-  container: { padding: theme.spacing.lg, gap: theme.spacing.md },
+  header: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.md,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+    marginLeft: -6,
+  },
+  backText: {
+    color: theme.colors.primary,
+    fontSize: theme.font.sizes.md,
+    fontWeight: theme.font.weights.medium,
+  },
   title: { fontSize: theme.font.sizes.xxl, fontWeight: theme.font.weights.bold, color: theme.colors.text },
+  container: { padding: theme.spacing.lg, paddingTop: 0, gap: theme.spacing.md },
   badgeRow: { flexDirection: 'row', gap: theme.spacing.sm, alignItems: 'center' },
   statusPill: { backgroundColor: theme.colors.graySoft, paddingHorizontal: theme.spacing.sm, paddingVertical: 2, borderRadius: 999 },
   statusText: { fontSize: theme.font.sizes.xs, color: theme.colors.textMuted, textTransform: 'capitalize' },
@@ -233,7 +296,25 @@ const styles = StyleSheet.create({
   flagRow: { flexDirection: 'row', gap: theme.spacing.sm, alignItems: 'flex-start' },
   bullet: { color: theme.colors.textMuted, fontSize: theme.font.sizes.md, marginTop: 1 },
   link: { color: theme.colors.primary, fontSize: theme.font.sizes.md, fontWeight: theme.font.weights.medium },
-  actions: { gap: theme.spacing.sm, marginTop: theme.spacing.md },
+  actions: { gap: theme.spacing.sm, marginTop: theme.spacing.md, paddingBottom: theme.spacing.xl },
+  actionBtn: {
+    height: 48,
+    borderRadius: theme.radius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  deleteBtn: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.colors.danger,
+  },
+  actionLabel: {
+    fontSize: theme.font.sizes.md,
+    fontWeight: theme.font.weights.semibold,
+  },
   analyzing: {
     flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm,
     padding: theme.spacing.lg, backgroundColor: theme.colors.primarySoft, borderRadius: theme.radius.md,

@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScoreBadge } from '../../../src/components/ScoreBadge';
 import { listScreens, type RfpScreenSummary } from '../../../src/api/screens';
 import { theme } from '../../../src/theme';
 import { dueDateState } from '../../../src/utils/dueDate';
+
+type Filter = null | 'great' | 'good';
 
 export default function ScreenahList() {
   const router = useRouter();
@@ -14,13 +16,14 @@ export default function ScreenahList() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<Filter>(null);
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const data = await listScreens();
-      setItems(data);
+      setItems(await listScreens());
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load RFPs.');
     } finally {
@@ -31,12 +34,71 @@ export default function ScreenahList() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  const greatCount = useMemo(() => items.filter((i) => i.score !== null && i.score >= 85).length, [items]);
+  const goodCount = useMemo(() => items.filter((i) => i.score !== null && i.score >= 75).length, [items]);
+
+  const filtered = useMemo(() => {
+    let result = items;
+    if (filter === 'great') result = result.filter((i) => i.score !== null && i.score >= 85);
+    else if (filter === 'good') result = result.filter((i) => i.score !== null && i.score >= 75);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((i) =>
+        (i.rfp_name ?? '').toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [items, filter, search]);
+
+  function toggleFilter(f: Filter) {
+    setFilter((prev) => (prev === f ? null : f));
+  }
+
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Text style={styles.title}>Screenah</Text>
         <Text style={styles.subtitle}>RFP screening</Text>
       </View>
+
+      {!loading && items.length > 0 && (
+        <>
+          <View style={styles.filterRow}>
+            <Pressable
+              style={[styles.filterBox, filter === 'great' && styles.filterBoxActiveGreat]}
+              onPress={() => toggleFilter('great')}
+            >
+              <Text style={[styles.filterCount, filter === 'great' && styles.filterCountActive]}>{greatCount}</Text>
+              <Text style={[styles.filterLabel, filter === 'great' && styles.filterLabelActive]}>Great (85+)</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.filterBox, filter === 'good' && styles.filterBoxActiveGood]}
+              onPress={() => toggleFilter('good')}
+            >
+              <Text style={[styles.filterCount, filter === 'good' && { color: theme.colors.warning }]}>{goodCount}</Text>
+              <Text style={[styles.filterLabel, filter === 'good' && { color: theme.colors.warning }]}>Good (75+)</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.searchWrap}>
+            <Ionicons name="search" size={18} color={theme.colors.textMuted} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by RFP title…"
+              placeholderTextColor={theme.colors.textSubtle}
+              value={search}
+              onChangeText={setSearch}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {search.length > 0 && (
+              <Pressable onPress={() => setSearch('')}>
+                <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
+              </Pressable>
+            )}
+          </View>
+        </>
+      )}
 
       {loading ? (
         <View style={styles.centered}>
@@ -52,9 +114,15 @@ export default function ScreenahList() {
           <Text style={styles.emptyTitle}>No RFPs screened yet</Text>
           <Text style={styles.emptySub}>Tap the button below to screen your first RFP.</Text>
         </View>
+      ) : filtered.length === 0 ? (
+        <View style={styles.centered}>
+          <Ionicons name="search" size={48} color={theme.colors.textSubtle} />
+          <Text style={styles.emptyTitle}>No results</Text>
+          <Text style={styles.emptySub}>Try a different search or filter.</Text>
+        </View>
       ) : (
         <FlatList
-          data={items}
+          data={filtered}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={styles.list}
           refreshControl={
@@ -119,7 +187,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
   },
   title: {
     fontSize: theme.font.sizes.xxl,
@@ -127,6 +195,65 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   subtitle: { color: theme.colors.textMuted, fontSize: theme.font.sizes.sm, marginTop: 2 },
+  // Filters
+  filterRow: {
+    flexDirection: 'row',
+    paddingHorizontal: theme.spacing.lg,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+  },
+  filterBox: {
+    flex: 1,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    alignItems: 'center',
+  },
+  filterBoxActiveGreat: {
+    backgroundColor: theme.colors.successSoft,
+    borderColor: theme.colors.success,
+  },
+  filterBoxActiveGood: {
+    backgroundColor: theme.colors.warningSoft,
+    borderColor: theme.colors.warning,
+  },
+  filterCount: {
+    fontSize: theme.font.sizes.xl,
+    fontWeight: theme.font.weights.bold,
+    color: theme.colors.text,
+  },
+  filterCountActive: { color: theme.colors.success },
+  filterLabel: {
+    fontSize: theme.font.sizes.xs,
+    color: theme.colors.textMuted,
+    fontWeight: theme.font.weights.medium,
+    marginTop: 2,
+  },
+  filterLabelActive: { color: theme.colors.success },
+  // Search
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.md,
+    height: 44,
+    backgroundColor: theme.colors.surface,
+  },
+  searchIcon: { marginRight: theme.spacing.sm },
+  searchInput: {
+    flex: 1,
+    fontSize: theme.font.sizes.md,
+    color: theme.colors.text,
+    height: '100%',
+  },
+  // Content
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.spacing.xl },
   emptyTitle: {
     marginTop: theme.spacing.md,
@@ -136,7 +263,7 @@ const styles = StyleSheet.create({
   },
   emptySub: { marginTop: 4, color: theme.colors.textMuted, textAlign: 'center' },
   error: { color: theme.colors.danger, textAlign: 'center' },
-  list: { padding: theme.spacing.lg, paddingBottom: 120, gap: theme.spacing.sm },
+  list: { paddingHorizontal: theme.spacing.lg, paddingBottom: 120, gap: theme.spacing.sm },
   card: {
     backgroundColor: theme.colors.surface,
     borderWidth: 1,

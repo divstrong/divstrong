@@ -28,11 +28,12 @@ export const theme = {
   },
 };
 
-export type ScoreColor = 'success' | 'warning' | 'danger' | 'gray';
+export type ScoreColor = 'success' | 'warning' | 'info' | 'danger' | 'gray';
 
 export const scoreColors: Record<ScoreColor, { bg: string; fg: string }> = {
   success: { bg: theme.colors.successSoft, fg: theme.colors.success },
   warning: { bg: theme.colors.warningSoft, fg: theme.colors.warning },
+  info: { bg: '#dbeafe', fg: '#2563eb' },
   danger: { bg: theme.colors.dangerSoft, fg: theme.colors.danger },
   gray: { bg: theme.colors.graySoft, fg: theme.colors.gray },
 };

@@ -12,14 +12,7 @@ export default function AppLayout() {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
         },
-        headerStyle: {
-          backgroundColor: theme.colors.surface,
-        },
-        headerTitleStyle: {
-          color: theme.colors.text,
-          fontWeight: theme.font.weights.semibold,
-        },
-        headerShadowVisible: false,
+        headerShown: false,
       }}
     >
       <Tabs.Screen
@@ -27,7 +20,6 @@ export default function AppLayout() {
         options={{
           title: 'Screenah',
           tabBarIcon: ({ color, size }) => <Ionicons name="funnel-outline" size={size} color={color} />,
-          headerShown: false,
         }}
       />
       <Tabs.Screen

@@ -66,15 +66,17 @@ class RfpScreen extends Model
     public function getScoreBadgeColorAttribute(): string
     {
         if ($this->score === null) return 'gray';
-        if ($this->score >= 80) return 'success';
-        if ($this->score >= 50) return 'warning';
+        if ($this->score >= 85) return 'success';
+        if ($this->score >= 75) return 'warning';
+        if ($this->score >= 50) return 'info';
         return 'danger';
     }
 
     public function getScoreLabelAttribute(): string
     {
         if ($this->score === null) return 'Pending';
-        if ($this->score >= 80) return 'Good Fit';
+        if ($this->score >= 85) return 'Great Fit';
+        if ($this->score >= 75) return 'Good Fit';
         if ($this->score >= 50) return 'Maybe';
         return 'Poor Fit';
     }

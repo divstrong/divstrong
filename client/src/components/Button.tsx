@@ -46,6 +46,9 @@ const styles = StyleSheet.create({
   },
   ghost: {
     backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 999,
   },
   label: {
     fontSize: theme.font.sizes.md,

@@ -3,10 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\ScreenRfp;
+use App\Enums\ProposalStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Proposal;
 use App\Models\RfpScreen;
+use App\Models\TermsLibrary;
+use App\Services\ClaudeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class RfpScreenController extends Controller
@@ -16,7 +22,7 @@ class RfpScreenController extends Controller
     public function index(Request $request): JsonResponse
     {
         $screens = RfpScreen::query()
-            ->where('user_id', $request->user()->id)
+            ->forUser()
             ->orderByRaw('due_date IS NULL')
             ->orderBy('due_date', 'desc')
             ->orderBy('created_at', 'desc')
@@ -77,6 +83,66 @@ class RfpScreenController extends Controller
         }
     }
 
+    public function createProposal(Request $request, RfpScreen $rfpScreen): JsonResponse
+    {
+        $this->authorizeOwnership($request, $rfpScreen);
+        abort_unless($rfpScreen->status === 'completed', 422, 'RFP must be fully analyzed first.');
+
+        try {
+            $service = new ClaudeService();
+            $content = $service->generateProposalContent(
+                $rfpScreen->rfp_name ?? 'Untitled RFP',
+                $rfpScreen->summary ?? '',
+                $rfpScreen->requirements ?? [],
+                $rfpScreen->red_flags ?? [],
+            );
+
+            $proposal = Proposal::create([
+                'user_id' => Auth::id(),
+                'project_title' => $rfpScreen->rfp_name ?? 'Untitled Project',
+                'proposal_date' => now(),
+                'valid_until' => now()->addDays(60),
+                'client_name' => $content['contact_name'] ?? $rfpScreen->contact_name ?? '',
+                'client_email' => $content['contact_email'] ?? $rfpScreen->contact_email ?? '',
+                'client_company' => $content['contact_company'] ?? '',
+                'introduction' => $content['introduction'] ?? '',
+                'status' => ProposalStatus::Draft,
+                'view_count' => 0,
+            ]);
+
+            foreach ($content['scope_items'] ?? [] as $i => $item) {
+                $proposal->scopeItems()->create([
+                    'category' => $item['category'] ?? 'Development',
+                    'title' => $item['title'] ?? '',
+                    'description' => $item['description'] ?? '',
+                    'bullets' => $item['bullets'] ?? [],
+                    'sort_order' => $i,
+                ]);
+            }
+
+            foreach (TermsLibrary::where('is_active', true)->orderBy('sort_order')->get() as $i => $term) {
+                $proposal->terms()->create([
+                    'content' => $term->content,
+                    'sort_order' => $i,
+                ]);
+            }
+
+            return response()->json([
+                'proposal_id' => $proposal->id,
+                'message' => 'Draft proposal created from RFP.',
+            ], 201);
+        } catch (\Throwable $e) {
+            Log::error('Proposal generation from RFP failed', [
+                'rfp_screen_id' => $rfpScreen->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Proposal generation failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function destroy(Request $request, RfpScreen $rfpScreen): JsonResponse
     {
         $this->authorizeOwnership($request, $rfpScreen);
@@ -92,7 +158,7 @@ class RfpScreenController extends Controller
 
     private function authorizeOwnership(Request $request, RfpScreen $screen): void
     {
-        abort_unless($screen->user_id === $request->user()->id, 403);
+        abort_unless($request->user()->isAdmin() || $screen->user_id === $request->user()->id, 403);
     }
 
     private function presentSummary(RfpScreen $s): array

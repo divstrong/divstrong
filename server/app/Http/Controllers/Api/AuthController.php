@@ -30,9 +30,9 @@ class AuthController extends Controller
             ]);
         }
 
-        if (! $user->isAdmin()) {
+        if (! $user->isAdmin() && ! $user->hasPermission('screenah')) {
             throw ValidationException::withMessages([
-                'email' => ['Only administrators can sign in to the mobile app.'],
+                'email' => ['You do not have permission to access the mobile app.'],
             ]);
         }
 

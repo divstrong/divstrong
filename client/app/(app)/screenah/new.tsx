@@ -1,13 +1,14 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../../../src/components/Button';
+import { ScoreBadge } from '../../../src/components/ScoreBadge';
 import { TextField } from '../../../src/components/TextField';
-import { createScreen, type FilePick } from '../../../src/api/screens';
-import { theme } from '../../../src/theme';
+import { createScreen, type FilePick, type RfpScreenDetail } from '../../../src/api/screens';
+import { scoreColors, theme } from '../../../src/theme';
 
 const ACCEPT = [
   'application/pdf',
@@ -24,6 +25,7 @@ export default function NewScreen() {
   const [rfpName, setRfpName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<RfpScreenDetail | null>(null);
 
   async function pickFile() {
     const res = await DocumentPicker.getDocumentAsync({ type: ACCEPT, multiple: false, copyToCacheDirectory: true });
@@ -40,8 +42,8 @@ export default function NewScreen() {
     setError(null);
     setSubmitting(true);
     try {
-      const result = await createScreen(file, rfpName.trim() || undefined);
-      router.replace(`/(app)/screenah/${result.id}`);
+      const r = await createScreen(file, rfpName.trim() || undefined);
+      setResult(r);
     } catch (e: any) {
       setError(e?.message ?? 'Screening failed.');
     } finally {
@@ -91,6 +93,30 @@ export default function NewScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={!!result} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={[styles.scoreCircle, { backgroundColor: result ? scoreColors[result.score_color].bg : theme.colors.graySoft }]}>
+              <Text style={[styles.scoreNum, { color: result ? scoreColors[result.score_color].fg : theme.colors.gray }]}>
+                {result?.score ?? '—'}
+              </Text>
+              <Text style={[styles.scoreOf, { color: result ? scoreColors[result.score_color].fg : theme.colors.gray }]}>/ 100</Text>
+            </View>
+            <ScoreBadge score={result?.score ?? null} label={result?.score_label ?? ''} color={result?.score_color ?? 'gray'} />
+            <Text style={styles.modalTitle}>{result?.rfp_name || 'RFP Screened'}</Text>
+            {result?.summary ? <Text style={styles.modalSummary} numberOfLines={4}>{result.summary}</Text> : null}
+            <Button
+              label="View Details"
+              onPress={() => {
+                const id = result?.id;
+                setResult(null);
+                if (id) router.replace(`/(app)/screenah/${id}`);
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -122,4 +148,47 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.md,
   },
   analyzingText: { flex: 1, color: theme.colors.text, fontSize: theme.font.sizes.sm },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.xl,
+  },
+  modalCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.xl,
+    padding: theme.spacing.xl,
+    width: '100%',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  scoreCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scoreNum: {
+    fontSize: 36,
+    fontWeight: theme.font.weights.bold,
+  },
+  scoreOf: {
+    fontSize: theme.font.sizes.sm,
+    fontWeight: theme.font.weights.medium,
+    marginTop: -4,
+  },
+  modalTitle: {
+    fontSize: theme.font.sizes.lg,
+    fontWeight: theme.font.weights.semibold,
+    color: theme.colors.text,
+    textAlign: 'center',
+  },
+  modalSummary: {
+    fontSize: theme.font.sizes.sm,
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
 });

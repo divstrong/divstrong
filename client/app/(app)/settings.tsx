@@ -8,7 +8,11 @@ export default function Settings() {
   const { user, signOut } = useAuth();
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.subtitle}>Account & preferences</Text>
+      </View>
       <View style={styles.container}>
         <View style={styles.card}>
           <Text style={styles.label}>Signed in as</Text>
@@ -25,6 +29,17 @@ export default function Settings() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.bg },
+  header: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
+  },
+  title: {
+    fontSize: theme.font.sizes.xxl,
+    fontWeight: theme.font.weights.bold,
+    color: theme.colors.text,
+  },
+  subtitle: { color: theme.colors.textMuted, fontSize: theme.font.sizes.sm, marginTop: 2 },
   container: { padding: theme.spacing.lg, gap: theme.spacing.lg },
   card: {
     backgroundColor: theme.colors.surface,
