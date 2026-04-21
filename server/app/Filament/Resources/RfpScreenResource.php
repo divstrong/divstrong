@@ -74,6 +74,8 @@ RESPOND IN THIS EXACT JSON FORMAT:
     "contact_email": "<contact's email address, or null>",
     "contact_phone": "<contact's phone number including extension if listed, or null>",
     "due_date": "<response/proposal submission due date in YYYY-MM-DD format, or null if not specified. Look for terms like 'proposals due', 'submission deadline', 'responses must be received by'. Use the final submission deadline, not Q&A or intent-to-bid dates.>",
+    "pre_bid_conference_date": "<date of any pre-bid / pre-proposal / pre-award conference, Q&A session, or vendor info meeting in YYYY-MM-DD format, or null. These sessions typically happen before the due date and allow vendors to ask questions.>",
+    "pre_bid_conference_details": "<short description of the pre-bid conference including time, format (in-person/virtual), location or meeting link, and whether attendance is mandatory or optional. Null if no conference is listed.>",
     "score": <0-100 integer, where 100 = perfect fit for a small SaaS company>,
     "summary": "<2-3 sentence executive summary of the RFP and fit assessment>",
     "red_flags": [
@@ -81,6 +83,9 @@ RESPOND IN THIS EXACT JSON FORMAT:
     ],
     "requirements": [
         "<key requirement from the RFP that is relevant to our assessment>"
+    ],
+    "submission_requirements": [
+        "<a specific instruction on HOW the proposal must be submitted or formatted — e.g. 'Submit 1 original and 5 hard copies to [address] by [time]', 'Response must not exceed 40 pages', 'Use provided forms in Appendix A', 'Include signed non-collusion affidavit', 'Sealed envelope marked with RFP number'. Extract every submission/formatting/packaging requirement you can find. Many RFPs dedicate an entire section (e.g. 'Proposal Preparation' or 'Response Format') to this — capture those items. Empty array if none specified.>"
     ]
 }
 ```
@@ -319,6 +324,8 @@ PROMPT;
                             $updateData = [
                                 'score' => $result['score'],
                                 'due_date' => $result['due_date'] ?? $record->due_date,
+                                'pre_bid_conference_date' => $result['pre_bid_conference_date'] ?? $record->pre_bid_conference_date,
+                                'pre_bid_conference_details' => $result['pre_bid_conference_details'] ?? $record->pre_bid_conference_details,
                                 'contact_name' => $result['contact_name'] ?? $record->contact_name,
                                 'contact_title' => $result['contact_title'] ?? $record->contact_title,
                                 'contact_department' => $result['contact_department'] ?? $record->contact_department,
@@ -327,6 +334,7 @@ PROMPT;
                                 'summary' => $result['summary'],
                                 'red_flags' => $result['red_flags'],
                                 'requirements' => $result['requirements'],
+                                'submission_requirements' => $result['submission_requirements'] ?? [],
                                 'raw_response' => $result['raw_response'],
                                 'status' => 'completed',
                                 'analyzed_at' => now(),

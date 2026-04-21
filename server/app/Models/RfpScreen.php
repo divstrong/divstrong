@@ -22,11 +22,14 @@ class RfpScreen extends Model
         'contact_email',
         'contact_phone',
         'due_date',
+        'pre_bid_conference_date',
+        'pre_bid_conference_details',
         'prompt',
         'score',
         'summary',
         'red_flags',
         'requirements',
+        'submission_requirements',
         'raw_response',
         'status',
         'analyzed_at',
@@ -37,8 +40,10 @@ class RfpScreen extends Model
         return [
             'red_flags' => 'array',
             'requirements' => 'array',
+            'submission_requirements' => 'array',
             'analyzed_at' => 'datetime',
             'due_date' => 'date',
+            'pre_bid_conference_date' => 'date',
         ];
     }
 
@@ -50,6 +55,11 @@ class RfpScreen extends Model
     public function attachments(): HasMany
     {
         return $this->hasMany(RfpScreenAttachment::class);
+    }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(RfpScreenNote::class);
     }
 
     public function scopeForUser(Builder $query): Builder

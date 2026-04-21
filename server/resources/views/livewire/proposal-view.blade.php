@@ -22,8 +22,8 @@
     <nav x-data="{
             scrolled: false,
             active: '',
-            sections: [@if($proposal->roadmap_enabled) 'roadmap', @endif 'overview', 'scope', 'investment', 'milestones', 'changes', 'terms'],
-            labels: { @if($proposal->roadmap_enabled) roadmap: 'Roadmap', @endif overview: 'Overview', scope: 'Scope', investment: 'Investment', milestones: 'Milestones', changes: 'Changes', terms: 'Terms' },
+            sections: [@if($proposal->roadmap_enabled) 'roadmap', @endif 'overview', @if($proposal->differentiator_enabled) 'why-custom', @endif 'scope', 'investment', 'milestones', 'changes', 'terms'],
+            labels: { @if($proposal->roadmap_enabled) roadmap: 'Roadmap', @endif overview: 'Overview', @if($proposal->differentiator_enabled) 'why-custom': 'Why Custom', @endif scope: 'Scope', investment: 'Investment', milestones: 'Milestones', changes: 'Changes', terms: 'Terms' },
             updateNav() {
                 this.scrolled = window.scrollY > window.innerHeight * 0.6;
                 let current = '';
@@ -785,7 +785,7 @@
     {{-- ========== OVERVIEW SECTION ========== --}}
     @if($proposal->introduction || $isAdmin)
     @php $hasOverviewImage = (bool) $proposal->overview_image; @endphp
-    <section id="overview" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
+    <section id="overview" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="{{ $hasOverviewImage ? 'max-w-6xl' : 'max-w-4xl' }} mx-auto">
             <div class="flex items-center gap-3 mb-10">
                 <h2 class="text-3xl font-bold text-gray-900">Overview</h2>
@@ -890,6 +890,178 @@
                     </div>
                 @endif
             </div>
+        </div>
+    </section>
+    @endif
+
+    {{-- ========== DIFFERENTIATOR SECTION ========== --}}
+    @if($proposal->differentiator_enabled || $isAdmin)
+    @php
+        $diffBg = $proposal->differentiator_background
+            ? (str_starts_with($proposal->differentiator_background, 'images/') ? asset($proposal->differentiator_background) : Storage::url($proposal->differentiator_background))
+            : asset('images/rva-street.png');
+    @endphp
+    <style>
+        @keyframes differentiator-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.82; }
+        }
+        .differentiator-pulse { animation: differentiator-pulse 3.5s ease-in-out infinite; }
+    </style>
+    <section id="why-custom" class="relative py-32 sm:py-44 px-4 sm:px-6 scroll-mt-16 overflow-hidden" style="background-color: #111;">
+        {{-- Background image at 40% opacity for contrast --}}
+        <div class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+             style="background-image: url('{{ $diffBg }}?v={{ $proposal->updated_at?->timestamp }}');"></div>
+
+        <div class="relative max-w-5xl mx-auto">
+
+            {{-- Admin: Toggle + Settings --}}
+            @if($isAdmin)
+            <div class="pdf-hide mb-8 p-4 bg-white/95 backdrop-blur rounded-xl border border-white/30 shadow-lg"
+                 x-data="{
+                    showSettings: false,
+                    showUpload: false,
+                    uploading: false,
+                    progress: 0,
+                    success: false,
+                    error: '',
+                    resetStatus() { this.progress = 0; this.success = false; this.error = ''; },
+                 }"
+                 x-on:livewire-upload-start="uploading = true; resetStatus();"
+                 x-on:livewire-upload-progress="progress = $event.detail.progress"
+                 x-on:livewire-upload-finish="uploading = false; progress = 100; success = true; setTimeout(() => success = false, 4000);"
+                 x-on:livewire-upload-cancel="uploading = false; progress = 0;"
+                 x-on:livewire-upload-error="uploading = false; error = 'Upload failed. Please try a different image (JPG/PNG, under 10MB).';">
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingDifferentiatorEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Include "Why Custom" in Proposal</span>
+                    </label>
+                    <div class="flex items-center gap-2" x-show="$wire.editingDifferentiatorEnabled">
+                        <button @click="showUpload = !showUpload; showSettings = false"
+                                type="button"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm transition cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Background
+                        </button>
+                        <button @click="showSettings = !showSettings; showUpload = false"
+                                type="button"
+                                class="text-xs text-brand hover:text-gray-900 font-medium transition-colors cursor-pointer">
+                            <span x-text="showSettings ? 'Hide Settings' : 'Edit Settings'"></span>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Background uploader --}}
+                <div x-show="showUpload && $wire.editingDifferentiatorEnabled" x-cloak x-collapse class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex items-start gap-4">
+                        {{-- Current preview thumbnail --}}
+                        <div class="shrink-0">
+                            <div class="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+                                <img src="{{ $diffBg }}?v={{ $proposal->updated_at?->timestamp }}"
+                                     alt="Current background"
+                                     class="absolute inset-0 w-full h-full object-cover">
+                            </div>
+                            <p class="mt-1 text-[10px] text-center uppercase tracking-wide text-gray-400">
+                                {{ $proposal->differentiator_background ? 'Custom' : 'Default' }}
+                            </p>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Upload Background Image</label>
+                            <p class="text-xs text-gray-500 mb-2">JPG/PNG, under 10MB. Will be darkened with a red overlay.</p>
+                            <input type="file" wire:model="differentiatorBackground" accept="image/*"
+                                   x-bind:disabled="uploading"
+                                   class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 file:cursor-pointer disabled:opacity-50">
+
+                            {{-- Progress bar --}}
+                            <div x-show="uploading" x-cloak class="mt-3">
+                                <div class="flex items-center justify-between text-xs mb-1.5">
+                                    <span class="text-gray-600 font-medium flex items-center gap-2">
+                                        <svg class="w-3.5 h-3.5 animate-spin text-brand" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                        </svg>
+                                        Uploading…
+                                    </span>
+                                    <span class="text-gray-500 tabular-nums" x-text="progress + '%'"></span>
+                                </div>
+                                <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full bg-brand transition-all duration-150"
+                                         x-bind:style="`width: ${progress}%`"></div>
+                                </div>
+                            </div>
+
+                            {{-- Success message --}}
+                            <div x-show="success" x-cloak
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 class="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                Background updated. Scroll down to see it.
+                            </div>
+
+                            {{-- Error message --}}
+                            <div x-show="error" x-cloak
+                                 class="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
+                                <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"/></svg>
+                                <span x-text="error"></span>
+                            </div>
+
+                            @error('differentiatorBackground')
+                                <div class="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
+                                    <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"/></svg>
+                                    <span>{{ $message }}</span>
+                                </div>
+                            @enderror
+
+                            @if($proposal->differentiator_background)
+                                <button wire:click="removeDifferentiatorBackground"
+                                        x-bind:disabled="uploading"
+                                        class="mt-3 text-xs text-red-500 hover:text-red-700 transition cursor-pointer disabled:opacity-50">
+                                    Reset to default image
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Settings --}}
+                <div x-show="showSettings && $wire.editingDifferentiatorEnabled" x-cloak x-collapse class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Headline</label>
+                            <textarea wire:model.blur="editingDifferentiatorHeadline"
+                                      wire:change="saveDifferentiatorSettings"
+                                      rows="2"
+                                      class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Attribution</label>
+                            <input type="text" wire:model.blur="editingDifferentiatorAttribution"
+                                   wire:change="saveDifferentiatorSettings"
+                                   placeholder="— Almost Every Client"
+                                   class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @if($proposal->differentiator_enabled)
+            <div class="text-center">
+                <h2 class="differentiator-pulse text-[1.7rem] sm:text-[2.7rem] lg:text-[3.4rem] font-semibold text-white leading-tight max-w-4xl mx-auto whitespace-pre-line [text-shadow:0_2px_12px_rgba(0,0,0,0.9)]">{{ $proposal->differentiator_headline ?? '"We should have gone the custom route sooner!"' }}</h2>
+                @if($proposal->differentiator_attribution)
+                    <p class="mt-6 text-base sm:text-lg text-white/70 tracking-wide [text-shadow:0_1px_6px_rgba(0,0,0,0.9)]">{{ $proposal->differentiator_attribution }}</p>
+                @endif
+            </div>
+            @endif
+
         </div>
     </section>
     @endif

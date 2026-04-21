@@ -274,10 +274,13 @@ PROMPT;
                 'contact_email' => $this->cleanContactField($parsed['contact_email'] ?? null),
                 'contact_phone' => $this->cleanContactField($parsed['contact_phone'] ?? null),
                 'due_date' => $this->parseDueDate($parsed['due_date'] ?? null),
+                'pre_bid_conference_date' => $this->parseDueDate($parsed['pre_bid_conference_date'] ?? null),
+                'pre_bid_conference_details' => $this->cleanContactField($parsed['pre_bid_conference_details'] ?? null),
                 'score' => (int) max(0, min(100, $parsed['score'])),
                 'summary' => $parsed['summary'] ?? '',
                 'red_flags' => $parsed['red_flags'] ?? [],
                 'requirements' => $parsed['requirements'] ?? [],
+                'submission_requirements' => $parsed['submission_requirements'] ?? [],
                 'raw_response' => $rawText,
             ];
         }
@@ -290,10 +293,13 @@ PROMPT;
             'contact_email' => null,
             'contact_phone' => null,
             'due_date' => null,
+            'pre_bid_conference_date' => null,
+            'pre_bid_conference_details' => null,
             'score' => null,
             'summary' => $rawText,
             'red_flags' => [],
             'requirements' => [],
+            'submission_requirements' => [],
             'raw_response' => $rawText,
         ];
     }

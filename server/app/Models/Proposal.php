@@ -18,6 +18,7 @@ class Proposal extends Model
         'introduction', 'overview_image', 'cost_notes', 'valid_until',
         'discount_enabled', 'discount_type', 'discount_value',
         'roadmap_enabled', 'roadmap_title', 'roadmap_subtitle', 'roadmap_hours_per_sprint', 'roadmap_months',
+        'differentiator_enabled', 'differentiator_headline', 'differentiator_attribution', 'differentiator_background',
         'status',
         'change_request_content', 'cr_signature_name', 'cr_signature_data', 'cr_signed_at',
         'tc_signature_name', 'tc_signature_data', 'tc_signed_at',
@@ -43,6 +44,7 @@ class Proposal extends Model
             'roadmap_enabled' => 'boolean',
             'roadmap_hours_per_sprint' => 'integer',
             'roadmap_months' => 'integer',
+            'differentiator_enabled' => 'boolean',
         ];
     }
 

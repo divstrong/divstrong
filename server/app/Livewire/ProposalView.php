@@ -58,6 +58,12 @@ class ProposalView extends Component
     public $editingRoadmapHoursPerSprint = 160;
     public $editingRoadmapMonths = 12;
 
+    // Differentiator editing
+    public bool $editingDifferentiatorEnabled = false;
+    public string $editingDifferentiatorHeadline = '';
+    public string $editingDifferentiatorAttribution = '';
+    public $differentiatorBackground = null;
+
     // Discount editing
     public bool $editingDiscountEnabled = false;
     public string $editingDiscountType = 'percent';
@@ -99,6 +105,9 @@ class ProposalView extends Component
             $this->editingRoadmapSubtitle = $this->proposal->roadmap_subtitle ?? '';
             $this->editingRoadmapHoursPerSprint = $this->proposal->roadmap_hours_per_sprint ?? 160;
             $this->editingRoadmapMonths = $this->proposal->roadmap_months ?? 12;
+            $this->editingDifferentiatorEnabled = (bool) $this->proposal->differentiator_enabled;
+            $this->editingDifferentiatorHeadline = $this->proposal->differentiator_headline ?? '"We should have gone the custom route sooner!"';
+            $this->editingDifferentiatorAttribution = $this->proposal->differentiator_attribution ?? '— Almost Every Client';
             $this->editingDiscountEnabled = (bool) $this->proposal->discount_enabled;
             $this->editingDiscountType = $this->proposal->discount_type ?? 'percent';
             $this->editingDiscountValue = (float) ($this->proposal->discount_value ?? 0);
@@ -591,6 +600,58 @@ class ProposalView extends Component
             'roadmap_hours_per_sprint' => max(1, (int) $this->editingRoadmapHoursPerSprint),
             'roadmap_months' => max(1, (int) $this->editingRoadmapMonths),
         ]);
+        $this->proposal->refresh();
+    }
+
+    // ---- Differentiator Methods ----
+
+    public function updatedEditingDifferentiatorEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['differentiator_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function saveDifferentiatorSettings(): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update([
+            'differentiator_headline' => $this->editingDifferentiatorHeadline,
+            'differentiator_attribution' => $this->editingDifferentiatorAttribution,
+        ]);
+        $this->proposal->refresh();
+    }
+
+    public function updatedDifferentiatorBackground(): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->validate([
+            'differentiatorBackground' => 'image|max:10240',
+        ]);
+
+        if ($this->proposal->differentiator_background && ! str_starts_with($this->proposal->differentiator_background, 'images/')) {
+            Storage::disk('public')->delete($this->proposal->differentiator_background);
+        }
+
+        $path = $this->differentiatorBackground->store('proposal-differentiators', 'public');
+
+        $this->proposal->update(['differentiator_background' => $path]);
+        $this->proposal->refresh();
+        $this->differentiatorBackground = null;
+        $this->dispatch('differentiator-background-uploaded');
+    }
+
+    public function removeDifferentiatorBackground(): void
+    {
+        if (! $this->isAdmin) return;
+
+        if ($this->proposal->differentiator_background && ! str_starts_with($this->proposal->differentiator_background, 'images/')) {
+            Storage::disk('public')->delete($this->proposal->differentiator_background);
+        }
+        $this->proposal->update(['differentiator_background' => null]);
         $this->proposal->refresh();
     }
 

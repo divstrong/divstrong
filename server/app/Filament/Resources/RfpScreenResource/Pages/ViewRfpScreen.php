@@ -11,6 +11,7 @@ use App\Models\RfpScreenAttachment;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
+use Filament\Schemas\Components\Livewire;
 use Filament\Schemas\Components\Section;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
@@ -59,6 +60,44 @@ class ViewRfpScreen extends ViewRecord
                         ViewEntry::make('score')
                             ->view('filament.rfp-screen-score')
                             ->columnSpan(4),
+                        TextEntry::make('due_date')
+                            ->label('Due Date')
+                            ->placeholder('—')
+                            ->weight('bold')
+                            ->icon('heroicon-o-calendar-days')
+                            ->formatStateUsing(function ($record) {
+                                if (! $record->due_date) return '—';
+                                $days = (int) now()->startOfDay()->diffInDays($record->due_date, false);
+                                $formatted = $record->due_date->format('M j, Y');
+                                if ($days < 0) return $formatted . ' · ' . abs($days) . ' days overdue';
+                                if ($days === 0) return $formatted . ' · Due today';
+                                return $formatted . ' · in ' . $days . ' days';
+                            })
+                            ->color(function ($record) {
+                                if (! $record->due_date) return 'gray';
+                                $days = now()->startOfDay()->diffInDays($record->due_date, false);
+                                if ($days < 0) return 'danger';
+                                if ($days <= 7) return 'warning';
+                                return 'primary';
+                            })
+                            ->columnSpan(4),
+                        TextEntry::make('pre_bid_conference_date')
+                            ->label('Pre-Bid Conference')
+                            ->placeholder('Not listed')
+                            ->weight('bold')
+                            ->icon('heroicon-o-users')
+                            ->formatStateUsing(function ($record) {
+                                $parts = [];
+                                if ($record->pre_bid_conference_date) {
+                                    $parts[] = $record->pre_bid_conference_date->format('M j, Y');
+                                }
+                                if ($record->pre_bid_conference_details) {
+                                    $parts[] = $record->pre_bid_conference_details;
+                                }
+                                return empty($parts) ? 'Not listed' : implode(' · ', $parts);
+                            })
+                            ->color(fn ($record) => $record->pre_bid_conference_date || $record->pre_bid_conference_details ? 'primary' : 'gray')
+                            ->columnSpan(4),
                         TextEntry::make('status')
                             ->hiddenLabel()
                             ->badge()
@@ -69,7 +108,7 @@ class ViewRfpScreen extends ViewRecord
                                 default => 'gray',
                             })
                             ->formatStateUsing(fn (string $state) => ucfirst($state))
-                            ->columnSpan(8),
+                            ->columnSpan(4),
                         TextEntry::make('file_path')
                             ->label('Original RFP')
                             ->formatStateUsing(fn ($record) => $record->original_filename)
@@ -140,6 +179,29 @@ class ViewRfpScreen extends ViewRecord
                     ->collapsible()
                     ->visible(fn ($record) => !empty($record->requirements)),
 
+                Section::make('Submission Requirements')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->description('How the proposal must be prepared, packaged, and submitted.')
+                    ->schema([
+                        TextEntry::make('submission_requirements')
+                            ->hiddenLabel()
+                            ->listWithLineBreaks()
+                            ->bulleted()
+                            ->placeholder('No specific submission requirements extracted.'),
+                    ])
+                    ->collapsible()
+                    ->visible(fn ($record) => !empty($record->submission_requirements)),
+
+                Section::make('Notes')
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->description('Internal-only notes and supporting context for this RFP screen.')
+                    ->schema([
+                        Livewire::make('rfp-screen-notes', fn ($livewire) => [
+                            'rfpScreenId' => $livewire->getRecord()?->id ?? 0,
+                        ]),
+                    ])
+                    ->collapsible(),
+
                 Section::make('Supporting Documents')
                     ->description('Additional documents uploaded after the initial screen. These are considered in re-analyses.')
                     ->schema([
@@ -207,9 +269,9 @@ class ViewRfpScreen extends ViewRecord
     {
         return [
             Actions\Action::make('addAttachments')
-                ->label('Add Supporting Documents')
+                ->label('Supporting Docs')
                 ->icon('heroicon-o-paper-clip')
-                ->color('primary')
+                ->color('gray')
                 ->form([
                     Forms\Components\FileUpload::make('files')
                         ->label('Supporting Documents')
@@ -313,6 +375,8 @@ class ViewRfpScreen extends ViewRecord
             $updateData = [
                 'score' => $result['score'],
                 'due_date' => $result['due_date'] ?? $record->due_date,
+                'pre_bid_conference_date' => $result['pre_bid_conference_date'] ?? $record->pre_bid_conference_date,
+                'pre_bid_conference_details' => $result['pre_bid_conference_details'] ?? $record->pre_bid_conference_details,
                 'contact_name' => $result['contact_name'] ?? $record->contact_name,
                 'contact_title' => $result['contact_title'] ?? $record->contact_title,
                 'contact_department' => $result['contact_department'] ?? $record->contact_department,
@@ -321,6 +385,7 @@ class ViewRfpScreen extends ViewRecord
                 'summary' => $result['summary'],
                 'red_flags' => $result['red_flags'],
                 'requirements' => $result['requirements'],
+                'submission_requirements' => $result['submission_requirements'] ?? [],
                 'raw_response' => $result['raw_response'],
                 'status' => 'completed',
                 'analyzed_at' => now(),
@@ -354,6 +419,6 @@ class ViewRfpScreen extends ViewRecord
                 ->send();
         }
 
-        $this->refreshFormData(['rfp_name', 'contact_name', 'contact_title', 'contact_department', 'contact_email', 'contact_phone', 'due_date', 'score', 'summary', 'red_flags', 'requirements', 'raw_response', 'status', 'analyzed_at', 'file_path', 'original_filename', 'filename', 'file_type']);
+        $this->refreshFormData(['rfp_name', 'contact_name', 'contact_title', 'contact_department', 'contact_email', 'contact_phone', 'due_date', 'pre_bid_conference_date', 'pre_bid_conference_details', 'score', 'summary', 'red_flags', 'requirements', 'submission_requirements', 'raw_response', 'status', 'analyzed_at', 'file_path', 'original_filename', 'filename', 'file_type']);
     }
 }
