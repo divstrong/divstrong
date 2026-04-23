@@ -9,13 +9,13 @@ use Livewire\Component;
 
 class ClientProposals extends Component
 {
-    public int $clientId;
+    public ?int $clientId = null;
 
     public function render()
     {
-        $proposals = Proposal::where('client_id', $this->clientId)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $proposals = $this->clientId
+            ? Proposal::where('client_id', $this->clientId)->orderBy('created_at', 'desc')->get()
+            : collect();
 
         return view('livewire.client-proposals', [
             'proposals' => $proposals,

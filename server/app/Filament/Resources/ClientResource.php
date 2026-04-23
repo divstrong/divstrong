@@ -188,7 +188,8 @@ class ClientResource extends Resource
                                 Livewire::make(\App\Livewire\ClientProposals::class)
                                     ->data(fn ($record) => [
                                         'clientId' => $record?->id,
-                                    ]),
+                                    ])
+                                    ->lazy(),
                             ])
                             ->visible(fn ($record) => $record !== null),
 
@@ -198,7 +199,8 @@ class ClientResource extends Resource
                                 Livewire::make(\App\Livewire\ClientNotes::class)
                                     ->data(fn ($record) => [
                                         'clientId' => $record?->id,
-                                    ]),
+                                    ])
+                                    ->lazy(),
                             ])
                             ->visible(fn ($record) => $record !== null),
                     ]),

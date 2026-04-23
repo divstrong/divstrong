@@ -5,8 +5,8 @@
 
     $scoreColor = match(true) {
         $score === null => 'gray',
-        $score >= 80 => 'green',
-        $score >= 50 => 'yellow',
+        $score >= 75 => 'green',
+        $score >= 60 => 'yellow',
         default => 'red',
     };
 

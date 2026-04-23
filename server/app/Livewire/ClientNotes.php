@@ -8,12 +8,14 @@ use Livewire\Component;
 
 class ClientNotes extends Component
 {
-    public int $clientId;
+    public ?int $clientId = null;
 
     public string $newNote = '';
 
     public function addNote(): void
     {
+        if (! $this->clientId) return;
+
         $this->validate([
             'newNote' => 'required|min:1',
         ]);
@@ -29,6 +31,8 @@ class ClientNotes extends Component
 
     public function deleteNote(int $noteId): void
     {
+        if (! $this->clientId) return;
+
         ClientNote::where('id', $noteId)
             ->where('client_id', $this->clientId)
             ->delete();
@@ -36,10 +40,9 @@ class ClientNotes extends Component
 
     public function render()
     {
-        $notes = ClientNote::where('client_id', $this->clientId)
-            ->with('user')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $notes = $this->clientId
+            ? ClientNote::where('client_id', $this->clientId)->with('user')->orderBy('created_at', 'desc')->get()
+            : collect();
 
         return view('livewire.client-notes', [
             'notes' => $notes,

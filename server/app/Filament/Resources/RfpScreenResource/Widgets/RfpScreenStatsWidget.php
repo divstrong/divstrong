@@ -20,8 +20,8 @@ class RfpScreenStatsWidget extends StatsOverviewWidget
         $base = fn () => $this->applyDateFilter(RfpScreen::forUser()->where('status', 'completed'));
 
         $great = (clone $base())->where('score', '>=', 75)->count();
-        $good = (clone $base())->whereBetween('score', [50, 74])->count();
-        $notUs = (clone $base())->where('score', '<', 50)->count();
+        $good = (clone $base())->whereBetween('score', [60, 74])->count();
+        $notUs = (clone $base())->where('score', '<', 60)->count();
 
         $filterUrl = fn (string $bucket) => \App\Filament\Resources\RfpScreenResource::getUrl('index', [
             'fit_score' => $bucket,
@@ -34,12 +34,12 @@ class RfpScreenStatsWidget extends StatsOverviewWidget
                 ->color('success')
                 ->url($filterUrl('great')),
             Stat::make('Good Fits', $good)
-                ->description('Score 50–74')
+                ->description('Score 60–74')
                 ->icon('heroicon-o-hand-thumb-up')
                 ->color('warning')
                 ->url($filterUrl('good')),
             Stat::make('Not Us', $notUs)
-                ->description('Score below 50')
+                ->description('Score below 60')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->url($filterUrl('not_us')),

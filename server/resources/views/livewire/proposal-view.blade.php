@@ -787,7 +787,7 @@
     @php $hasOverviewImage = (bool) $proposal->overview_image; @endphp
     <section id="overview" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="{{ $hasOverviewImage ? 'max-w-6xl' : 'max-w-4xl' }} mx-auto">
-            <div class="flex items-center gap-3 mb-10">
+            <div class="flex items-center gap-3 mb-4">
                 <h2 class="text-3xl font-bold text-gray-900">Overview</h2>
                 @if($isAdmin)
                     <div class="ml-auto flex items-center gap-2 pdf-hide"

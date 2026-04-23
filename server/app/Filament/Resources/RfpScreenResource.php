@@ -181,15 +181,15 @@ PROMPT;
                     ->label('Fit Score')
                     ->options([
                         'great' => 'Great Fit (75+)',
-                        'good' => 'Good Fit (50–74)',
-                        'not_us' => 'Not Us (<50)',
+                        'good' => 'Good Fit (60–74)',
+                        'not_us' => 'Not Us (<60)',
                         'pending' => 'Pending',
                     ])
                     ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data) {
                         return match ($data['value'] ?? null) {
                             'great' => $query->where('score', '>=', 75),
-                            'good' => $query->whereBetween('score', [50, 74]),
-                            'not_us' => $query->whereNotNull('score')->where('score', '<', 50),
+                            'good' => $query->whereBetween('score', [60, 74]),
+                            'not_us' => $query->whereNotNull('score')->where('score', '<', 60),
                             'pending' => $query->whereNull('score'),
                             default => $query,
                         };
