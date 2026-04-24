@@ -127,6 +127,10 @@ class ProposalResource extends Resource
                                         Forms\Components\TextInput::make('project_title')
                                             ->required()
                                             ->maxLength(255),
+                                        Forms\Components\TextInput::make('rfp_number')
+                                            ->label('RFP #')
+                                            ->maxLength(100)
+                                            ->placeholder('e.g. RFP-2026-0042'),
                                         Forms\Components\TextInput::make('client_name')
                                             ->required()
                                             ->maxLength(255),

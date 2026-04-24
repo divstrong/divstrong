@@ -6,6 +6,7 @@ use App\Enums\ProposalStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use App\Models\ProposalTerm;
@@ -14,11 +15,14 @@ class Proposal extends Model
 {
     protected $fillable = [
         'uuid', 'user_id', 'estimator_id', 'client_id', 'proposal_date', 'client_name', 'client_email',
-        'client_company', 'client_domain', 'project_title', 'cover_image',
+        'client_company', 'client_domain', 'project_title', 'rfp_number', 'cover_image',
         'introduction', 'overview_image', 'cost_notes', 'valid_until',
         'discount_enabled', 'discount_type', 'discount_value',
         'roadmap_enabled', 'roadmap_title', 'roadmap_subtitle', 'roadmap_hours_per_sprint', 'roadmap_months',
         'differentiator_enabled', 'differentiator_headline', 'differentiator_attribution', 'differentiator_background',
+        'about_enabled',
+        'investment_enabled', 'milestones_enabled', 'changes_enabled', 'terms_enabled',
+        'vpat_enabled', 'performance_enabled', 'references_enabled',
         'status',
         'change_request_content', 'cr_signature_name', 'cr_signature_data', 'cr_signed_at',
         'tc_signature_name', 'tc_signature_data', 'tc_signed_at',
@@ -45,6 +49,14 @@ class Proposal extends Model
             'roadmap_hours_per_sprint' => 'integer',
             'roadmap_months' => 'integer',
             'differentiator_enabled' => 'boolean',
+            'about_enabled' => 'boolean',
+            'investment_enabled' => 'boolean',
+            'milestones_enabled' => 'boolean',
+            'changes_enabled' => 'boolean',
+            'terms_enabled' => 'boolean',
+            'vpat_enabled' => 'boolean',
+            'performance_enabled' => 'boolean',
+            'references_enabled' => 'boolean',
         ];
     }
 
@@ -123,6 +135,22 @@ class Proposal extends Model
     public function roadmapPhases(): HasMany
     {
         return $this->hasMany(ProposalRoadmapPhase::class)->orderBy('sort_order');
+    }
+
+    public function projectReferences(): BelongsToMany
+    {
+        return $this->belongsToMany(ProjectReference::class, 'proposal_project_reference')
+            ->withPivot('sort_order')
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
+    }
+
+    public function portfolioItems(): BelongsToMany
+    {
+        return $this->belongsToMany(PortfolioItem::class, 'portfolio_item_proposal')
+            ->withPivot('sort_order')
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
     }
 
     public function getSubtotalAttribute(): float

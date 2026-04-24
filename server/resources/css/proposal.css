@@ -34,6 +34,16 @@ canvas {
     color: #4b5563;
 }
 
+.prose-light p + p,
+.prose-light p + ul,
+.prose-light p + ol,
+.prose-light ul + p,
+.prose-light ol + p,
+.prose-light p + blockquote,
+.prose-light blockquote + p {
+    margin-top: 1em;
+}
+
 .prose-light h2,
 .prose-light h3,
 .prose-light h4 {

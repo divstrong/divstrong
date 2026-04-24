@@ -22,8 +22,8 @@
     <nav x-data="{
             scrolled: false,
             active: '',
-            sections: [@if($proposal->roadmap_enabled) 'roadmap', @endif 'overview', @if($proposal->differentiator_enabled) 'why-custom', @endif 'scope', 'investment', 'milestones', 'changes', 'terms'],
-            labels: { @if($proposal->roadmap_enabled) roadmap: 'Roadmap', @endif overview: 'Overview', @if($proposal->differentiator_enabled) 'why-custom': 'Why Custom', @endif scope: 'Scope', investment: 'Investment', milestones: 'Milestones', changes: 'Changes', terms: 'Terms' },
+            sections: [@if($proposal->roadmap_enabled) 'roadmap', @endif 'overview', @if($proposal->differentiator_enabled) 'why-custom', @endif 'scope', 'process', @if($proposal->investment_enabled) 'investment', @endif @if($proposal->about_enabled) 'about', @endif @if($proposal->milestones_enabled) 'milestones', @endif @if($proposal->performance_enabled) 'performance', @endif @if($proposal->changes_enabled) 'changes', @endif @if($proposal->references_enabled) 'references', @endif @if($proposal->vpat_enabled) 'vpat', @endif @if($proposal->terms_enabled) 'terms' @endif],
+            labels: { @if($proposal->roadmap_enabled) roadmap: 'Roadmap', @endif overview: 'Overview', @if($proposal->differentiator_enabled) 'why-custom': 'Why Custom', @endif scope: 'Scope', process: 'Process', @if($proposal->investment_enabled) investment: 'Investment', @endif @if($proposal->about_enabled) about: 'About', @endif @if($proposal->milestones_enabled) milestones: 'Milestones', @endif @if($proposal->performance_enabled) performance: 'Past Work', @endif @if($proposal->changes_enabled) changes: 'Changes', @endif @if($proposal->references_enabled) references: 'References', @endif @if($proposal->vpat_enabled) vpat: 'Accessibility', @endif @if($proposal->terms_enabled) terms: 'Terms' @endif },
             updateNav() {
                 this.scrolled = window.scrollY > window.innerHeight * 0.6;
                 let current = '';
@@ -301,9 +301,20 @@
 
         </div>
 
-        {{-- Bottom left: Client name + website (centered on mobile) --}}
+        {{-- Bottom left: Contracting officer + RFP # + website (centered on mobile) --}}
         <div class="absolute bottom-32 sm:bottom-8 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-8 z-10 text-center sm:text-left">
             <p class="text-white font-semibold text-sm">{{ $proposal->client_name }}</p>
+
+            {{-- RFP # --}}
+            @if($isAdmin)
+                <input type="text"
+                       wire:model.blur="editingRfpNumber"
+                       placeholder="RFP #"
+                       class="block bg-transparent border-0 border-b-2 border-dashed border-transparent hover:border-white/30 focus:border-brand focus:ring-0 text-white/80 text-sm font-medium tracking-wider placeholder-white/40 px-0 py-0.5 transition-colors w-auto text-center sm:text-left">
+            @elseif($proposal->rfp_number)
+                <p class="text-white/80 text-sm font-medium tracking-wider">RFP #{{ $proposal->rfp_number }}</p>
+            @endif
+
             @if($proposal->client_domain)
                 <p class="text-white/70 text-sm">{{ $proposal->client_domain }}</p>
             @endif
@@ -1422,10 +1433,167 @@
     </section>
     @endif
 
+    {{-- ========== AGILE PROCESS SECTION ========== --}}
+    <section id="process" class="relative py-12 sm:py-20 px-4 sm:px-6 scroll-mt-16 overflow-hidden bg-neutral-900">
+        {{-- Background image --}}
+        <div class="absolute inset-0 bg-cover bg-center opacity-20 grayscale"
+             style="background-image: url('{{ asset('images/street.png') }}');"></div>
+        {{-- Contrast overlay --}}
+        <div class="absolute inset-0 bg-gradient-to-b from-neutral-900/60 via-neutral-900/40 to-neutral-900/80"></div>
+
+        <div class="relative max-w-6xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand mb-3">Our Process</p>
+                <h2 class="text-3xl sm:text-4xl font-bold text-white leading-tight [text-shadow:0_2px_8px_rgba(0,0,0,0.6)]">Ship early. Ship often.<br class="hidden sm:inline"> Level up together.</h2>
+                <p class="mt-5 text-lg text-gray-300 leading-relaxed">
+                    We don't disappear for six months and hand you a finished product. We deliver something usable at every stage &mdash; you ride it, learn from it, and we iterate toward the end goal together.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-5 gap-8 sm:gap-4">
+                @php
+                    $stages = [
+                        ['label' => 'Skateboard', 'caption' => 'Prove the core idea works'],
+                        ['label' => 'Scooter', 'caption' => 'Faster, easier to steer'],
+                        ['label' => 'Bicycle', 'caption' => 'Real range, real utility'],
+                        ['label' => 'Motorcycle', 'caption' => 'Power and speed at scale'],
+                        ['label' => 'Spaceship', 'caption' => 'The finished vision &mdash; and beyond'],
+                    ];
+                @endphp
+                @foreach($stages as $i => $stage)
+                    <div class="relative flex flex-col items-center text-center group">
+                        {{-- Connector line (desktop only, between cards) --}}
+                        @if(! $loop->last)
+                            <div class="hidden sm:block absolute top-14 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-brand/70 to-brand/20 pointer-events-none" aria-hidden="true"></div>
+                        @endif
+
+                        <div class="relative z-10 w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white shadow-xl ring-1 ring-white/20 flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl">
+                            <div class="w-20 h-14 sm:w-24 sm:h-16">
+                                @switch($i)
+                                    @case(0)
+                                        {{-- Skateboard --}}
+                                        <svg viewBox="0 0 120 80" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M 12 42 Q 12 34 22 34 L 98 34 Q 108 34 108 42 L 108 44 L 12 44 Z" fill="#1F2937"/>
+                                            <rect x="28" y="44" width="3" height="4" fill="#6B7280"/>
+                                            <rect x="89" y="44" width="3" height="4" fill="#6B7280"/>
+                                            <circle cx="29.5" cy="54" r="7" fill="#ed2537"/>
+                                            <circle cx="90.5" cy="54" r="7" fill="#ed2537"/>
+                                            <circle cx="29.5" cy="54" r="2" fill="#fff"/>
+                                            <circle cx="90.5" cy="54" r="2" fill="#fff"/>
+                                        </svg>
+                                        @break
+                                    @case(1)
+                                        {{-- Scooter --}}
+                                        <svg viewBox="0 0 120 80" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="24" cy="62" r="10" fill="#1F2937"/>
+                                            <circle cx="96" cy="62" r="10" fill="#1F2937"/>
+                                            <circle cx="24" cy="62" r="3.5" fill="#ed2537"/>
+                                            <circle cx="96" cy="62" r="3.5" fill="#ed2537"/>
+                                            <rect x="30" y="59" width="60" height="5" rx="2" fill="#1F2937"/>
+                                            <path d="M 96 56 L 96 18" stroke="#1F2937" stroke-width="5" stroke-linecap="round"/>
+                                            <path d="M 82 18 L 110 18" stroke="#1F2937" stroke-width="5" stroke-linecap="round"/>
+                                            <circle cx="82" cy="18" r="2.5" fill="#ed2537"/>
+                                            <circle cx="110" cy="18" r="2.5" fill="#ed2537"/>
+                                        </svg>
+                                        @break
+                                    @case(2)
+                                        {{-- Bicycle --}}
+                                        <svg viewBox="0 0 120 80" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="22" cy="58" r="15" fill="none" stroke="#1F2937" stroke-width="3"/>
+                                            <circle cx="98" cy="58" r="15" fill="none" stroke="#1F2937" stroke-width="3"/>
+                                            <line x1="22" y1="43" x2="22" y2="73" stroke="#9CA3AF" stroke-width="1.2"/>
+                                            <line x1="7" y1="58" x2="37" y2="58" stroke="#9CA3AF" stroke-width="1.2"/>
+                                            <line x1="98" y1="43" x2="98" y2="73" stroke="#9CA3AF" stroke-width="1.2"/>
+                                            <line x1="83" y1="58" x2="113" y2="58" stroke="#9CA3AF" stroke-width="1.2"/>
+                                            <circle cx="22" cy="58" r="2.5" fill="#ed2537"/>
+                                            <circle cx="98" cy="58" r="2.5" fill="#ed2537"/>
+                                            <circle cx="60" cy="58" r="3" fill="#1F2937"/>
+                                            <path d="M 60 58 L 42 30 L 82 30 Z" fill="none" stroke="#1F2937" stroke-width="3" stroke-linejoin="round"/>
+                                            <path d="M 42 30 L 48 20" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
+                                            <path d="M 43 18 L 55 18" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
+                                            <path d="M 82 30 L 98 58" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
+                                            <path d="M 60 58 L 22 58" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
+                                            <path d="M 82 30 L 90 20" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
+                                            <path d="M 86 18 L 98 16" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
+                                        </svg>
+                                        @break
+                                    @case(3)
+                                        {{-- Motorcycle --}}
+                                        <svg viewBox="0 0 120 80" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="24" cy="58" r="14" fill="#1F2937"/>
+                                            <circle cx="96" cy="58" r="14" fill="#1F2937"/>
+                                            <circle cx="24" cy="58" r="6" fill="#6B7280"/>
+                                            <circle cx="96" cy="58" r="6" fill="#6B7280"/>
+                                            <circle cx="24" cy="58" r="2" fill="#ed2537"/>
+                                            <circle cx="96" cy="58" r="2" fill="#ed2537"/>
+                                            <path d="M 30 52 Q 38 36 56 32 L 78 30 Q 92 30 96 48 L 60 50 Q 48 52 40 56 Z" fill="#1F2937"/>
+                                            <path d="M 42 48 L 60 43 L 60 49 Z" fill="#ed2537"/>
+                                            <path d="M 85 32 L 93 20" stroke="#1F2937" stroke-width="4" stroke-linecap="round"/>
+                                            <path d="M 88 20 L 100 18" stroke="#1F2937" stroke-width="4" stroke-linecap="round"/>
+                                            <path d="M 80 58 L 92 62" stroke="#6B7280" stroke-width="4" stroke-linecap="round"/>
+                                            <path d="M 35 52 L 20 48" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
+                                        </svg>
+                                        @break
+                                    @case(4)
+                                        {{-- Spaceship --}}
+                                        <svg viewBox="0 0 120 80" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                                            <defs>
+                                                <linearGradient id="flame" x1="0" x2="1" y1="0" y2="0">
+                                                    <stop offset="0%" stop-color="#FBBF24"/>
+                                                    <stop offset="60%" stop-color="#F97316"/>
+                                                    <stop offset="100%" stop-color="#ed2537"/>
+                                                </linearGradient>
+                                            </defs>
+                                            <path d="M 30 36 L 8 40 L 30 44 Z" fill="url(#flame)"/>
+                                            <path d="M 30 38 L 18 40 L 30 42 Z" fill="#FDE68A"/>
+                                            <path d="M 45 30 L 28 18 L 28 30 Z" fill="#6B7280"/>
+                                            <path d="M 45 50 L 28 62 L 28 50 Z" fill="#6B7280"/>
+                                            <path d="M 28 30 L 80 30 Q 104 30 112 40 Q 104 50 80 50 L 28 50 Z" fill="#1F2937"/>
+                                            <path d="M 80 30 Q 104 30 112 40 Q 104 50 80 50 Z" fill="#374151"/>
+                                            <circle cx="92" cy="40" r="6" fill="#ed2537"/>
+                                            <circle cx="92" cy="40" r="3.5" fill="#fff"/>
+                                            <circle cx="93" cy="39" r="1.2" fill="#ed2537"/>
+                                            <path d="M 50 34 L 75 34" stroke="#ed2537" stroke-width="1.5" opacity="0.8"/>
+                                            <path d="M 50 46 L 75 46" stroke="#ed2537" stroke-width="1.5" opacity="0.8"/>
+                                        </svg>
+                                        @break
+                                @endswitch
+                            </div>
+                            <div class="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center shadow ring-2 ring-white">
+                                {{ $i + 1 }}
+                            </div>
+                        </div>
+
+                        <div class="mt-5 text-base font-semibold text-white">{{ $stage['label'] }}</div>
+                        <div class="mt-1 text-sm text-gray-400 leading-snug px-2">{!! $stage['caption'] !!}</div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </section>
+
     {{-- ========== COST / INVESTMENT SECTION ========== --}}
-    @if($proposal->costItems->count() || $isAdmin)
+    @if(($proposal->investment_enabled && $proposal->costItems->count()) || $isAdmin)
     <section id="investment" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
         <div class="max-w-4xl mx-auto">
+            @if($isAdmin)
+                <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingInvestmentEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Show "Investment" in client proposal</span>
+                    </label>
+                    @if(!$proposal->investment_enabled)
+                        <span class="text-xs text-amber-600 font-medium inline-flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                            Hidden from client view
+                        </span>
+                    @endif
+                </div>
+            @endif
             <div class="flex items-center gap-3 mb-10">
                 <h2 class="text-3xl font-bold text-gray-900">Investment</h2>
 
@@ -1787,10 +1955,120 @@
     </section>
     @endif
 
+    {{-- ========== ABOUT US SECTION ========== --}}
+    @if($proposal->about_enabled || $isAdmin)
+    <section id="about" class="relative scroll-mt-16 @if($proposal->about_enabled) bg-neutral-900 @endif">
+        {{-- Admin toggle bar (shown above section, outside dark bg for legibility) --}}
+        @if($isAdmin)
+            <div class="pdf-hide px-4 sm:px-6 pt-8 bg-white">
+                <div class="max-w-6xl mx-auto p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingAboutEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Include "About Us" in Proposal</span>
+                        <span class="text-xs text-gray-400 ml-auto">Mirrors the divStrong homepage banner</span>
+                    </label>
+                </div>
+            </div>
+        @endif
+
+        @if($proposal->about_enabled)
+            <div class="relative overflow-hidden py-20 sm:py-28 px-4 sm:px-6">
+                {{-- Subtle background image --}}
+                <div class="absolute inset-0 bg-cover bg-center opacity-10"
+                     style="background-image: url('{{ asset('images/rva-street.png') }}');"></div>
+
+                <div class="relative max-w-6xl mx-auto">
+                    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                        <div>
+                            <p class="text-brand font-semibold text-sm tracking-widest uppercase mb-3">About Us</p>
+                            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+                                Building Apps, APIs &amp; MVPs Since 2009
+                            </h2>
+                            <p class="text-base sm:text-lg text-gray-400 leading-relaxed mb-8">
+                                Our AI-enabled team of strategists, designers, and developers create full-stack solutions for organizations seeking to innovate, automate and invest in creating their own digital products.
+                            </p>
+
+                            <div
+                                class="grid grid-cols-3 gap-6 sm:gap-8"
+                                x-data="{ started: false, years: 0, clients: 0, projects: 0 }"
+                                x-init="
+                                    $nextTick(() => {
+                                        const observer = new IntersectionObserver((entries) => {
+                                            if (entries[0].isIntersecting && !started) {
+                                                started = true;
+                                                observer.disconnect();
+                                                const ease = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                                                const animate = (target, setter, duration) => {
+                                                    const start = performance.now();
+                                                    const step = (now) => {
+                                                        const progress = Math.min((now - start) / duration, 1);
+                                                        setter(Math.round(ease(progress) * target));
+                                                        if (progress < 1) requestAnimationFrame(step);
+                                                    };
+                                                    requestAnimationFrame(step);
+                                                };
+                                                animate(17, (v) => years = v, 1800);
+                                                setTimeout(() => animate(500, (v) => clients = v, 2000), 200);
+                                                setTimeout(() => animate(1000, (v) => projects = v, 2200), 400);
+                                            }
+                                        }, { threshold: 0.3, rootMargin: '0px 0px -100px 0px' });
+                                        observer.observe($el);
+                                    });
+                                "
+                            >
+                                <div>
+                                    <p class="text-2xl sm:text-3xl font-extrabold text-brand"><span x-text="years">17</span>+</p>
+                                    <p class="text-xs sm:text-sm text-gray-500 mt-1">Years in Business</p>
+                                </div>
+                                <div>
+                                    <p class="text-2xl sm:text-3xl font-extrabold text-brand"><span x-text="clients">500</span>+</p>
+                                    <p class="text-xs sm:text-sm text-gray-500 mt-1">Clients</p>
+                                </div>
+                                <div>
+                                    <p class="text-2xl sm:text-3xl font-extrabold text-brand"><span x-text="projects.toLocaleString()">1,000</span>+</p>
+                                    <p class="text-xs sm:text-sm text-gray-500 mt-1">Projects Delivered</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="relative">
+                            <div class="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+                                <img src="{{ asset('images/team.gif') }}" alt="divStrong team" class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+    </section>
+    @endif
+
     {{-- ========== MILESTONES SECTION ========== --}}
-    @if($proposal->milestones->count() || $isAdmin)
+    @if(($proposal->milestones_enabled && $proposal->milestones->count()) || $isAdmin)
     <section id="milestones" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="max-w-4xl mx-auto">
+            @if($isAdmin)
+                <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingMilestonesEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Show "Payment Milestones" in client proposal</span>
+                    </label>
+                    @if(!$proposal->milestones_enabled)
+                        <span class="text-xs text-amber-600 font-medium inline-flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                            Hidden from client view
+                        </span>
+                    @endif
+                </div>
+            @endif
             <div class="flex items-center gap-3 mb-10">
                 <h2 class="text-3xl font-bold text-gray-900">Payment Milestones</h2>
 
@@ -1957,9 +2235,158 @@
     </section>
     @endif
 
+    {{-- ========== PAST PERFORMANCE SECTION ========== --}}
+    @if($proposal->performance_enabled || $isAdmin)
+    <section id="performance" class="relative py-12 sm:py-20 px-4 sm:px-6 scroll-mt-16 overflow-hidden bg-neutral-900">
+        {{-- Background image --}}
+        <div class="absolute inset-0 bg-cover bg-center opacity-15 grayscale"
+             style="background-image: url('{{ asset('images/richmond.png') }}');"></div>
+        {{-- Contrast overlay --}}
+        <div class="absolute inset-0 bg-gradient-to-b from-neutral-900/70 via-neutral-900/50 to-neutral-900/80"></div>
+
+        <div class="relative max-w-7xl mx-auto">
+            @if($isAdmin)
+                <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingPerformanceEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Include "Past Performance" in client proposal</span>
+                    </label>
+                    <span class="text-xs text-gray-400">Shows recent portfolio examples from divstrong.com</span>
+                </div>
+            @endif
+
+            @if($proposal->performance_enabled || $isAdmin)
+                <div class="text-center max-w-2xl mx-auto mb-12">
+                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand mb-3">Portfolio</p>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-white leading-tight [text-shadow:0_2px_8px_rgba(0,0,0,0.6)]">Past Performance</h2>
+                    <p class="mt-4 text-base text-gray-300 leading-relaxed">
+                        A sample of recent engagements &mdash; each delivered end-to-end by the divStrong team.
+                    </p>
+                </div>
+
+                @php $attachedPortfolio = $proposal->portfolioItems; @endphp
+
+                @if($attachedPortfolio->count())
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @foreach($attachedPortfolio as $item)
+                            <div class="relative group">
+                                @if($isAdmin)
+                                    <button wire:click="detachPortfolioItem({{ $item->id }})"
+                                            wire:confirm="Remove this portfolio item from the proposal?"
+                                            class="pdf-hide absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-white/95 border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-300 inline-flex items-center justify-center transition-colors cursor-pointer shadow"
+                                            title="Remove from this proposal">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                @endif
+                                <a href="{{ $item->url ?: '#' }}"
+                                   @if($item->url) target="_blank" rel="noopener" @endif
+                                   class="block rounded-2xl overflow-hidden bg-white ring-1 ring-white/10 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+                                    <div class="aspect-[16/10] overflow-hidden bg-gray-100">
+                                        @if($item->image_url)
+                                            <img src="{{ $item->image_url }}"
+                                                 alt="{{ $item->title }}"
+                                                 class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500">
+                                        @else
+                                            <div class="w-full h-full flex items-center justify-center text-gray-300">
+                                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="p-5">
+                                        <div class="flex items-start justify-between gap-2 mb-2">
+                                            <h3 class="text-base font-bold text-gray-900 group-hover:text-brand transition-colors">{{ $item->title }}</h3>
+                                            @if($item->url)
+                                                <svg class="shrink-0 w-4 h-4 text-gray-300 group-hover:text-brand transition-colors mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                            @endif
+                                        </div>
+                                        @if($item->description)
+                                            <p class="text-sm text-gray-500 leading-relaxed">{{ $item->description }}</p>
+                                        @endif
+                                        @if($item->technologies)
+                                            <p class="mt-3 text-[11px] uppercase tracking-wider text-gray-400 font-medium">{{ $item->technologies }}</p>
+                                        @endif
+                                    </div>
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    @if($isAdmin)
+                        <div class="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-10 text-center">
+                            <svg class="w-10 h-10 mx-auto text-white/30 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <p class="text-gray-300 text-sm">No portfolio items attached yet. Pick from the library below &mdash; or <a href="/admin/portfolio-items/create" class="text-brand hover:text-brand-light font-medium">add a new project</a>.</p>
+                        </div>
+                    @else
+                        <p class="text-center text-gray-400 italic">Portfolio examples available on request.</p>
+                    @endif
+                @endif
+
+                {{-- Admin portfolio picker --}}
+                @if($isAdmin)
+                    @php $availablePortfolio = $this->portfolioLibrary->whereNotIn('id', $attachedPortfolio->pluck('id')); @endphp
+                    @if($availablePortfolio->count())
+                        <div class="pdf-hide mt-8 p-5 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm"
+                             x-data="{ open: {{ $attachedPortfolio->count() === 0 ? 'true' : 'false' }} }">
+                            <button type="button" @click="open = !open"
+                                    class="flex items-center justify-between w-full text-left cursor-pointer">
+                                <span class="text-sm font-semibold text-white flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    Attach a Portfolio Item
+                                    <span class="text-xs text-gray-400 font-normal">({{ $availablePortfolio->count() }} available)</span>
+                                </span>
+                                <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="open" x-collapse x-cloak class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                @foreach($availablePortfolio as $item)
+                                    <button type="button"
+                                            wire:click="attachPortfolioItem({{ $item->id }})"
+                                            class="text-left p-3 rounded-lg bg-white hover:ring-2 hover:ring-brand transition cursor-pointer flex gap-3 items-center">
+                                        @if($item->image_url)
+                                            <img src="{{ $item->image_url }}" alt="" class="w-12 h-12 object-cover rounded shrink-0">
+                                        @else
+                                            <div class="w-12 h-12 rounded bg-gray-100 shrink-0"></div>
+                                        @endif
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-semibold text-gray-900 truncate">{{ $item->title }}</p>
+                                            <p class="text-xs text-gray-500 truncate">{{ $item->url ?: ($item->technologies ?: '—') }}</p>
+                                        </div>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                @endif
+            @endif
+        </div>
+    </section>
+    @endif
+
     {{-- ========== CHANGE REQUESTS SECTION ========== --}}
+    @if($proposal->changes_enabled || $isAdmin)
     <section id="changes" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
         <div class="max-w-4xl mx-auto">
+            @if($isAdmin)
+                <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingChangesEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Show "Change Requests" in client proposal</span>
+                    </label>
+                    @if(!$proposal->changes_enabled)
+                        <span class="text-xs text-amber-600 font-medium inline-flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                            Hidden from client view
+                        </span>
+                    @endif
+                </div>
+            @endif
             <div class="flex items-center gap-3 mb-10">
                 <h2 class="text-3xl font-bold text-gray-900">Change Requests</h2>
             </div>
@@ -1983,10 +2410,271 @@
 
         </div>
     </section>
+    @endif
+
+    {{-- ========== REFERENCES SECTION ========== --}}
+    @if($proposal->references_enabled || $isAdmin)
+    <section id="references" class="relative py-12 sm:py-20 px-4 sm:px-6 scroll-mt-16 overflow-hidden bg-neutral-900">
+        {{-- Background image --}}
+        <div class="absolute inset-0 bg-cover bg-center opacity-15 grayscale"
+             style="background-image: url('{{ asset('images/church-hill.png') }}');"></div>
+        {{-- Contrast overlay --}}
+        <div class="absolute inset-0 bg-gradient-to-b from-neutral-900/70 via-neutral-900/50 to-neutral-900/80"></div>
+
+        <div class="relative max-w-6xl mx-auto">
+            @if($isAdmin)
+                <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingReferencesEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Include "References" in client proposal</span>
+                    </label>
+                    <span class="text-xs text-gray-400">
+                        Manage the reference library in
+                        <a href="/admin/project-references" class="text-brand hover:text-brand-dark font-medium">admin &rsaquo; References</a>
+                    </span>
+                </div>
+            @endif
+
+            @if($proposal->references_enabled || $isAdmin)
+                <div class="text-center max-w-2xl mx-auto mb-10">
+                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand mb-3">References</p>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-white leading-tight [text-shadow:0_2px_8px_rgba(0,0,0,0.6)]">Client References</h2>
+                    <p class="mt-4 text-base text-gray-300 leading-relaxed">
+                        Representative clients who can speak to the quality of our engagements and delivery.
+                    </p>
+                </div>
+
+                @php $attachedRefs = $proposal->projectReferences; @endphp
+
+                @if($attachedRefs->count())
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @foreach($attachedRefs as $ref)
+                            <div class="relative rounded-2xl bg-white ring-1 ring-white/10 p-6 shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300">
+                                @if($isAdmin)
+                                    <button wire:click="detachReference({{ $ref->id }})"
+                                            wire:confirm="Remove this reference from the proposal?"
+                                            class="pdf-hide absolute top-3 right-3 w-7 h-7 rounded-full bg-white border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 inline-flex items-center justify-center transition-colors cursor-pointer"
+                                            title="Remove from this proposal">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                @endif
+
+                                <div class="flex items-start gap-3 mb-3">
+                                    <div class="shrink-0 w-11 h-11 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold text-sm">
+                                        {{ collect(explode(' ', $ref->name))->filter()->take(2)->map(fn($w) => mb_substr($w, 0, 1))->implode('') ?: '•' }}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="font-bold text-gray-900 leading-tight">{{ $ref->name }}</p>
+                                        @if($ref->title || $ref->company)
+                                            <p class="text-sm text-gray-500 leading-tight mt-0.5">
+                                                {{ $ref->title }}@if($ref->title && $ref->company) <span class="text-gray-300">&middot;</span> @endif{{ $ref->company }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                @if($ref->project_description)
+                                    <p class="text-sm text-gray-600 leading-relaxed mb-4">{{ $ref->project_description }}</p>
+                                @endif
+
+                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 pt-3 border-t border-gray-100">
+                                    @if($ref->email)
+                                        <a href="mailto:{{ $ref->email }}" class="inline-flex items-center gap-1 hover:text-brand transition-colors">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                            {{ $ref->email }}
+                                        </a>
+                                    @endif
+                                    @if($ref->phone)
+                                        <a href="tel:{{ $ref->phone }}" class="inline-flex items-center gap-1 hover:text-brand transition-colors">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h2.28a1 1 0 01.95.68l1.5 4.49a1 1 0 01-.5 1.21l-2.26 1.13a11 11 0 005.52 5.52l1.13-2.26a1 1 0 011.21-.5l4.49 1.5a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.82 21 3 14.18 3 6V5z"/></svg>
+                                            {{ $ref->phone }}
+                                        </a>
+                                    @endif
+                                    @if($ref->year_completed)
+                                        <span class="inline-flex items-center gap-1 ml-auto">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                            Completed {{ $ref->year_completed }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    @if($isAdmin)
+                        <div class="rounded-2xl border-2 border-dashed border-white/20 bg-white/5 p-10 text-center">
+                            <svg class="w-10 h-10 mx-auto text-white/30 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-3-3h-2M9 20H4v-2a3 3 0 013-3h2m3-4a4 4 0 110-8 4 4 0 010 8zm6 8a3 3 0 00-6 0"/></svg>
+                            <p class="text-gray-300 text-sm">No references attached yet. Pick from the library below &mdash; or <a href="/admin/project-references/create" class="text-brand hover:text-brand-light font-medium">add a new reference</a>.</p>
+                        </div>
+                    @else
+                        <p class="text-center text-gray-400 italic">References available on request.</p>
+                    @endif
+                @endif
+
+                {{-- Admin reference picker --}}
+                @if($isAdmin)
+                    @php $availableRefs = $this->referenceLibrary->whereNotIn('id', $attachedRefs->pluck('id')); @endphp
+                    @if($availableRefs->count())
+                        <div class="pdf-hide mt-8 p-5 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm"
+                             x-data="{ open: {{ $attachedRefs->count() === 0 ? 'true' : 'false' }} }">
+                            <button type="button" @click="open = !open"
+                                    class="flex items-center justify-between w-full text-left cursor-pointer">
+                                <span class="text-sm font-semibold text-white flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    Attach a Reference
+                                    <span class="text-xs text-gray-400 font-normal">({{ $availableRefs->count() }} available)</span>
+                                </span>
+                                <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="open" x-collapse x-cloak class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                @foreach($availableRefs as $ref)
+                                    <button type="button"
+                                            wire:click="attachReference({{ $ref->id }})"
+                                            class="text-left p-3 rounded-lg bg-white hover:ring-2 hover:ring-brand transition cursor-pointer">
+                                        <p class="text-sm font-semibold text-gray-900">{{ $ref->name }}</p>
+                                        <p class="text-xs text-gray-500 mt-0.5">
+                                            {{ $ref->title }}@if($ref->title && $ref->company) &middot; @endif{{ $ref->company }}
+                                            @if($ref->year_completed) <span class="text-gray-400">&middot; {{ $ref->year_completed }}</span>@endif
+                                        </p>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                @endif
+            @endif
+        </div>
+    </section>
+    @endif
+
+    {{-- ========== VPAT / ACCESSIBILITY SECTION ========== --}}
+    @if($proposal->vpat_enabled || $isAdmin)
+    <section id="vpat" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
+        <div class="max-w-4xl mx-auto">
+            @if($isAdmin)
+                <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingVpatEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Include "Accessibility / VPAT" in client proposal</span>
+                    </label>
+                    <span class="text-xs text-gray-400">Include when responding to government / accessibility-mandated RFPs</span>
+                </div>
+            @endif
+
+            @if($proposal->vpat_enabled)
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand/10 text-brand text-xs font-semibold uppercase tracking-wider">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        Compliance Statement
+                    </span>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-900 mb-3">Accessibility &amp; VPAT</h2>
+                <p class="text-gray-500 mb-10 leading-relaxed">
+                    Voluntary Product Accessibility Template statement describing how our products and services conform to recognized accessibility standards.
+                </p>
+
+                <div class="prose-light max-w-none text-base leading-relaxed space-y-5">
+                    <p>
+                        divStrong is committed to designing and delivering digital products that are usable by people of all abilities. Our engineering practice aligns with the internationally recognized <strong>Web Content Accessibility Guidelines (WCAG) 2.1 Level AA</strong>, <strong>Section 508 of the Rehabilitation Act</strong>, and the accessibility standards set forth in the State of Colorado Office of Information Technology Rules <strong>8 CCR 1501-11</strong>.
+                    </p>
+                    <p>
+                        Because each of our engagements results in a custom software build rather than a shrink-wrapped product, a final, engagement-specific VPAT (ITI / Revised Section 508 format) is produced at project completion and updated as features evolve. This proposal captures the standards, practices, and controls we build into every project from day one.
+                    </p>
+                </div>
+
+                {{-- Standards we align to --}}
+                <div class="mt-10">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Standards We Align To</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                            <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-brand/10 text-brand mb-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/></svg>
+                            </div>
+                            <p class="text-sm font-semibold text-gray-900">WCAG 2.1 Level AA</p>
+                            <p class="mt-1 text-xs text-gray-500 leading-relaxed">W3C Web Content Accessibility Guidelines &mdash; the baseline we design and test against.</p>
+                        </div>
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                            <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-brand/10 text-brand mb-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z"/></svg>
+                            </div>
+                            <p class="text-sm font-semibold text-gray-900">Section 508</p>
+                            <p class="mt-1 text-xs text-gray-500 leading-relaxed">Revised Section 508 (36 CFR 1194) of the U.S. Rehabilitation Act, aligned with WCAG 2.0 AA.</p>
+                        </div>
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                            <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-brand/10 text-brand mb-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1118 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 13a3 3 0 100-6 3 3 0 000 6z"/></svg>
+                            </div>
+                            <p class="text-sm font-semibold text-gray-900">Colorado 8 CCR 1501-11</p>
+                            <p class="mt-1 text-xs text-gray-500 leading-relaxed">Colorado OIT accessibility rules for technology provided to, or on behalf of, state entities.</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Our practices --}}
+                <div class="mt-10">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Practices Built Into Every Engagement</h3>
+                    <ul class="space-y-3">
+                        @foreach([
+                            ['Semantic HTML &amp; ARIA', 'Proper landmark regions, heading structure, form labels, and ARIA attributes so assistive technology can interpret every interface.'],
+                            ['Keyboard &amp; Screen-Reader Support', 'All interactive elements are reachable and operable via keyboard, and tested against NVDA, JAWS, and VoiceOver.'],
+                            ['Color &amp; Contrast', 'Minimum 4.5:1 contrast for body text, 3:1 for large text and UI components, with non-color status indicators.'],
+                            ['Responsive &amp; Zoomable', 'Layouts reflow at 200% zoom, support text resizing, and adapt to desktop, tablet, and mobile viewports.'],
+                            ['Media &amp; Imagery', 'Alt text for meaningful images, captions and transcripts for video, no auto-playing audio.'],
+                            ['Automated &amp; Manual Testing', 'axe-core, Lighthouse, and Pa11y run in CI, complemented by manual screen-reader and keyboard walkthroughs before release.'],
+                        ] as [$title, $body])
+                            <li class="flex gap-3">
+                                <svg class="shrink-0 w-5 h-5 text-brand mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                <div>
+                                    <p class="font-semibold text-gray-900">{!! $title !!}</p>
+                                    <p class="text-sm text-gray-600 leading-relaxed">{!! $body !!}</p>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+
+                {{-- Delivery commitment --}}
+                <div class="mt-10 rounded-xl border-l-4 border-brand bg-brand/5 p-5 sm:p-6">
+                    <h3 class="text-base font-semibold text-gray-900 mb-2">Project-Specific VPAT on Delivery</h3>
+                    <p class="text-sm text-gray-700 leading-relaxed">
+                        At the conclusion of development divStrong will produce a completed <strong>VPAT 2.5 (Revised Section 508 edition)</strong> documenting conformance by success criterion (Supports / Partially Supports / Does Not Support / Not Applicable), along with any remediation commitments. We will work collaboratively with your team to resolve any standards gaps identified during the engagement.
+                    </p>
+                </div>
+            @endif
+        </div>
+    </section>
+    @endif
 
     {{-- ========== TERMS & CONDITIONS SECTION ========== --}}
+    @if($proposal->terms_enabled || $isAdmin)
     <section id="terms" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="max-w-4xl mx-auto">
+            @if($isAdmin)
+                <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingTermsEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Show "Terms &amp; Conditions" in client proposal</span>
+                    </label>
+                    @if(!$proposal->terms_enabled)
+                        <span class="text-xs text-amber-600 font-medium inline-flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                            Hidden from client view
+                        </span>
+                    @endif
+                </div>
+            @endif
             <div class="flex items-center gap-3 mb-10">
                 <h2 class="text-3xl font-bold text-gray-900">Terms & Conditions</h2>
 
@@ -2504,6 +3192,7 @@
             @endif
         </div>
     </section>
+    @endif
 
     {{-- ========== FOOTER ========== --}}
     <footer class="py-8 px-6 bg-white border-t border-gray-200">

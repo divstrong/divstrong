@@ -9,6 +9,8 @@ use App\Models\Client;
 use App\Models\Proposal;
 use App\Models\ProposalRoadmapPhase;
 use App\Models\ProposalScopeItem;
+use App\Models\PortfolioItem;
+use App\Models\ProjectReference;
 use App\Models\ProposalTerm;
 use App\Models\ScopeLibrary;
 use Illuminate\Database\Eloquent\Collection;
@@ -43,6 +45,7 @@ class ProposalView extends Component
     public bool $isAdmin = false;
     public ?int $editingClientId = null;
     public string $editingProjectTitle = '';
+    public string $editingRfpNumber = '';
     public string $editingProposalDate = '';
     public string $editingIntroduction = '';
     public $coverImage = null;
@@ -64,6 +67,24 @@ class ProposalView extends Component
     public string $editingDifferentiatorAttribution = '';
     public $differentiatorBackground = null;
 
+    // About Us toggle
+    public bool $editingAboutEnabled = false;
+
+    // Section visibility toggles (default true preserves prior behavior)
+    public bool $editingInvestmentEnabled = true;
+    public bool $editingMilestonesEnabled = true;
+    public bool $editingChangesEnabled = true;
+    public bool $editingTermsEnabled = true;
+
+    // VPAT / accessibility statement toggle (opt-in, default off)
+    public bool $editingVpatEnabled = false;
+
+    // Past Performance / portfolio toggle (opt-in, default off)
+    public bool $editingPerformanceEnabled = false;
+
+    // References toggle (opt-in, default off)
+    public bool $editingReferencesEnabled = false;
+
     // Discount editing
     public bool $editingDiscountEnabled = false;
     public string $editingDiscountType = 'percent';
@@ -82,7 +103,7 @@ class ProposalView extends Component
     public function mount(string $uuid): void
     {
         $this->proposal = Proposal::where('uuid', $uuid)
-            ->with(['scopeItems', 'costItems', 'milestones', 'terms', 'client', 'roadmapPhases'])
+            ->with(['scopeItems', 'costItems', 'milestones', 'terms', 'client', 'roadmapPhases', 'projectReferences', 'portfolioItems'])
             ->firstOrFail();
 
         $this->accepted = $this->proposal->status === ProposalStatus::Accepted;
@@ -95,6 +116,7 @@ class ProposalView extends Component
         if ($this->isAdmin) {
             $this->editingClientId = $this->proposal->client_id;
             $this->editingProjectTitle = $this->proposal->project_title ?? '';
+            $this->editingRfpNumber = $this->proposal->rfp_number ?? '';
             $this->editingProposalDate = $this->proposal->proposal_date?->format('Y-m-d') ?? '';
             $this->editingIntroduction = $this->proposal->introduction ?? '';
             $this->editingCostNotes = $this->proposal->cost_notes ?? '';
@@ -108,6 +130,14 @@ class ProposalView extends Component
             $this->editingDifferentiatorEnabled = (bool) $this->proposal->differentiator_enabled;
             $this->editingDifferentiatorHeadline = $this->proposal->differentiator_headline ?? '"We should have gone the custom route sooner!"';
             $this->editingDifferentiatorAttribution = $this->proposal->differentiator_attribution ?? '— Almost Every Client';
+            $this->editingAboutEnabled = (bool) $this->proposal->about_enabled;
+            $this->editingInvestmentEnabled = (bool) $this->proposal->investment_enabled;
+            $this->editingMilestonesEnabled = (bool) $this->proposal->milestones_enabled;
+            $this->editingChangesEnabled = (bool) $this->proposal->changes_enabled;
+            $this->editingTermsEnabled = (bool) $this->proposal->terms_enabled;
+            $this->editingVpatEnabled = (bool) $this->proposal->vpat_enabled;
+            $this->editingPerformanceEnabled = (bool) $this->proposal->performance_enabled;
+            $this->editingReferencesEnabled = (bool) $this->proposal->references_enabled;
             $this->editingDiscountEnabled = (bool) $this->proposal->discount_enabled;
             $this->editingDiscountType = $this->proposal->discount_type ?? 'percent';
             $this->editingDiscountValue = (float) ($this->proposal->discount_value ?? 0);
@@ -137,6 +167,14 @@ class ProposalView extends Component
         if (! $this->isAdmin || blank($value)) return;
 
         $this->proposal->update(['project_title' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function updatedEditingRfpNumber($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['rfp_number' => $value ?: null]);
         $this->proposal->refresh();
     }
 
@@ -611,6 +649,142 @@ class ProposalView extends Component
 
         $this->proposal->update(['differentiator_enabled' => $value]);
         $this->proposal->refresh();
+    }
+
+    public function updatedEditingAboutEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['about_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function updatedEditingInvestmentEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['investment_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function updatedEditingMilestonesEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['milestones_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function updatedEditingChangesEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['changes_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function updatedEditingTermsEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['terms_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function updatedEditingVpatEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['vpat_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function updatedEditingPerformanceEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['performance_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function updatedEditingReferencesEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['references_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function getReferenceLibraryProperty(): Collection
+    {
+        if (! $this->isAdmin) {
+            return new Collection();
+        }
+
+        return ProjectReference::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function attachReference(int $referenceId): void
+    {
+        if (! $this->isAdmin) return;
+
+        $ref = ProjectReference::find($referenceId);
+        if (! $ref) return;
+
+        $maxSort = (int) \Illuminate\Support\Facades\DB::table('proposal_project_reference')
+            ->where('proposal_id', $this->proposal->id)
+            ->max('sort_order');
+        $this->proposal->projectReferences()->syncWithoutDetaching([
+            $referenceId => ['sort_order' => $maxSort + 1],
+        ]);
+        $this->proposal->load('projectReferences');
+    }
+
+    public function detachReference(int $referenceId): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->projectReferences()->detach($referenceId);
+        $this->proposal->load('projectReferences');
+    }
+
+    public function getPortfolioLibraryProperty(): Collection
+    {
+        if (! $this->isAdmin) {
+            return new Collection();
+        }
+
+        return PortfolioItem::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('title')
+            ->get();
+    }
+
+    public function attachPortfolioItem(int $itemId): void
+    {
+        if (! $this->isAdmin) return;
+
+        $item = PortfolioItem::find($itemId);
+        if (! $item) return;
+
+        $maxSort = (int) \Illuminate\Support\Facades\DB::table('portfolio_item_proposal')
+            ->where('proposal_id', $this->proposal->id)
+            ->max('sort_order');
+        $this->proposal->portfolioItems()->syncWithoutDetaching([
+            $itemId => ['sort_order' => $maxSort + 1],
+        ]);
+        $this->proposal->load('portfolioItems');
+    }
+
+    public function detachPortfolioItem(int $itemId): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->portfolioItems()->detach($itemId);
+        $this->proposal->load('portfolioItems');
     }
 
     public function saveDifferentiatorSettings(): void
