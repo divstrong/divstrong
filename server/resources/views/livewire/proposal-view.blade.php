@@ -22,8 +22,8 @@
     <nav x-data="{
             scrolled: false,
             active: '',
-            sections: [@if($proposal->roadmap_enabled) 'roadmap', @endif 'overview', @if($proposal->differentiator_enabled) 'why-custom', @endif 'scope', 'process', @if($proposal->investment_enabled) 'investment', @endif @if($proposal->about_enabled) 'about', @endif @if($proposal->milestones_enabled) 'milestones', @endif @if($proposal->performance_enabled) 'performance', @endif @if($proposal->changes_enabled) 'changes', @endif @if($proposal->references_enabled) 'references', @endif @if($proposal->vpat_enabled) 'vpat', @endif @if($proposal->terms_enabled) 'terms' @endif],
-            labels: { @if($proposal->roadmap_enabled) roadmap: 'Roadmap', @endif overview: 'Overview', @if($proposal->differentiator_enabled) 'why-custom': 'Why Custom', @endif scope: 'Scope', process: 'Process', @if($proposal->investment_enabled) investment: 'Investment', @endif @if($proposal->about_enabled) about: 'About', @endif @if($proposal->milestones_enabled) milestones: 'Milestones', @endif @if($proposal->performance_enabled) performance: 'Past Work', @endif @if($proposal->changes_enabled) changes: 'Changes', @endif @if($proposal->references_enabled) references: 'References', @endif @if($proposal->vpat_enabled) vpat: 'Accessibility', @endif @if($proposal->terms_enabled) terms: 'Terms' @endif },
+            sections: [@if($proposal->roadmap_enabled) 'roadmap', @endif 'overview', @if($proposal->differentiator_enabled) 'why-custom', @endif 'scope', 'process', @if($proposal->investment_enabled) 'investment', @endif @if($proposal->about_enabled) 'about', @endif @if($proposal->milestones_enabled) 'milestones', @endif @if($proposal->performance_enabled) 'performance', @endif @if($proposal->team_enabled) 'team', @endif @if($proposal->changes_enabled) 'changes', @endif @if($proposal->references_enabled) 'references', @endif @if($proposal->vpat_enabled) 'vpat', @endif @if($proposal->terms_enabled) 'terms' @endif],
+            labels: { @if($proposal->roadmap_enabled) roadmap: 'Roadmap', @endif overview: 'Overview', @if($proposal->differentiator_enabled) 'why-custom': 'Why Custom', @endif scope: 'Scope', process: 'Process', @if($proposal->investment_enabled) investment: 'Investment', @endif @if($proposal->about_enabled) about: 'About', @endif @if($proposal->milestones_enabled) milestones: 'Milestones', @endif @if($proposal->performance_enabled) performance: 'Past Work', @endif @if($proposal->team_enabled) team: 'Team', @endif @if($proposal->changes_enabled) changes: 'Changes', @endif @if($proposal->references_enabled) references: 'References', @endif @if($proposal->vpat_enabled) vpat: 'Accessibility', @endif @if($proposal->terms_enabled) terms: 'Terms' @endif },
             updateNav() {
                 this.scrolled = window.scrollY > window.innerHeight * 0.6;
                 let current = '';
@@ -1434,33 +1434,166 @@
     @endif
 
     {{-- ========== AGILE PROCESS SECTION ========== --}}
+    @if($proposal->process_enabled || $isAdmin)
+    @php
+        $processBg = $proposal->process_background
+            ? (str_starts_with($proposal->process_background, 'images/') ? asset($proposal->process_background) : Storage::url($proposal->process_background))
+            : asset('images/street.png');
+        $processStages = $proposal->process_stages_resolved;
+        $processEyebrow = $proposal->process_eyebrow ?? 'Our Process';
+        $processHeading = $proposal->process_heading ?? 'Ship early. Ship often. Level up together.';
+        $processSubheading = $proposal->process_subheading ?? "We don't disappear for six months and hand you a finished product. We deliver something usable at every stage — you ride it, learn from it, and we iterate toward the end goal together.";
+    @endphp
     <section id="process" class="relative py-12 sm:py-20 px-4 sm:px-6 scroll-mt-16 overflow-hidden bg-neutral-900">
         {{-- Background image --}}
         <div class="absolute inset-0 bg-cover bg-center opacity-20 grayscale"
-             style="background-image: url('{{ asset('images/street.png') }}');"></div>
+             style="background-image: url('{{ $processBg }}?v={{ $proposal->updated_at?->timestamp }}');"></div>
         {{-- Contrast overlay --}}
         <div class="absolute inset-0 bg-gradient-to-b from-neutral-900/60 via-neutral-900/40 to-neutral-900/80"></div>
 
         <div class="relative max-w-6xl mx-auto">
+            {{-- Admin: Toggle + Settings --}}
+            @if($isAdmin)
+            <div class="pdf-hide mb-8 p-4 bg-white/95 backdrop-blur rounded-xl border border-white/30 shadow-lg"
+                 x-data="{
+                    showSettings: false,
+                    showUpload: false,
+                    uploading: false,
+                    progress: 0,
+                    success: false,
+                    error: '',
+                    resetStatus() { this.progress = 0; this.success = false; this.error = ''; },
+                 }"
+                 x-on:livewire-upload-start="uploading = true; resetStatus();"
+                 x-on:livewire-upload-progress="progress = $event.detail.progress"
+                 x-on:livewire-upload-finish="uploading = false; progress = 100; success = true; setTimeout(() => success = false, 4000);"
+                 x-on:livewire-upload-cancel="uploading = false; progress = 0;"
+                 x-on:livewire-upload-error="uploading = false; error = 'Upload failed. Please try a different image (JPG/PNG, under 10MB).';">
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingProcessEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Include "Our Process" in Proposal</span>
+                    </label>
+                    <div class="flex items-center gap-2" x-show="$wire.editingProcessEnabled">
+                        <button @click="showUpload = !showUpload; showSettings = false"
+                                type="button"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm transition cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Background
+                        </button>
+                        <button @click="showSettings = !showSettings; showUpload = false"
+                                type="button"
+                                class="text-xs text-brand hover:text-gray-900 font-medium transition-colors cursor-pointer">
+                            <span x-text="showSettings ? 'Hide Settings' : 'Edit Settings'"></span>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Background uploader --}}
+                <div x-show="showUpload && $wire.editingProcessEnabled" x-cloak x-collapse class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex items-start gap-4">
+                        <div class="shrink-0">
+                            <div class="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+                                <img src="{{ $processBg }}?v={{ $proposal->updated_at?->timestamp }}"
+                                     alt="Current background"
+                                     class="absolute inset-0 w-full h-full object-cover">
+                            </div>
+                            <p class="mt-1 text-[10px] text-center uppercase tracking-wide text-gray-400">
+                                {{ $proposal->process_background ? 'Custom' : 'Default' }}
+                            </p>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Upload Background Image</label>
+                            <p class="text-xs text-gray-500 mb-2">JPG/PNG, under 10MB. Will be desaturated and dimmed for contrast.</p>
+                            <input type="file" wire:model="processBackground" accept="image/*"
+                                   x-bind:disabled="uploading"
+                                   class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 file:cursor-pointer disabled:opacity-50">
+
+                            <div x-show="uploading" x-cloak class="mt-3">
+                                <div class="flex items-center justify-between text-xs mb-1.5">
+                                    <span class="text-gray-600 font-medium">Uploading…</span>
+                                    <span class="text-gray-500 tabular-nums" x-text="progress + '%'"></span>
+                                </div>
+                                <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full bg-brand transition-all duration-150"
+                                         x-bind:style="`width: ${progress}%`"></div>
+                                </div>
+                            </div>
+
+                            <div x-show="success" x-cloak class="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                Background updated.
+                            </div>
+
+                            <div x-show="error" x-cloak class="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
+                                <span x-text="error"></span>
+                            </div>
+
+                            @error('processBackground')
+                                <div class="mt-3 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">{{ $message }}</div>
+                            @enderror
+
+                            @if($proposal->process_background)
+                                <button wire:click="removeProcessBackground"
+                                        x-bind:disabled="uploading"
+                                        class="mt-3 text-xs text-red-500 hover:text-red-700 transition cursor-pointer disabled:opacity-50">
+                                    Reset to default image
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Settings: header text --}}
+                <div x-show="showSettings && $wire.editingProcessEnabled" x-cloak x-collapse class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Eyebrow</label>
+                            <input type="text" wire:model.blur="editingProcessEyebrow"
+                                   wire:change="saveProcessSettings"
+                                   placeholder="Our Process"
+                                   class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Heading</label>
+                            <textarea wire:model.blur="editingProcessHeading"
+                                      wire:change="saveProcessSettings"
+                                      rows="2"
+                                      class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Subheading</label>
+                            <textarea wire:model.blur="editingProcessSubheading"
+                                      wire:change="saveProcessSettings"
+                                      rows="3"
+                                      class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none resize-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @if($proposal->process_enabled)
             <div class="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand mb-3">Our Process</p>
-                <h2 class="text-3xl sm:text-4xl font-bold text-white leading-tight [text-shadow:0_2px_8px_rgba(0,0,0,0.6)]">Ship early. Ship often.<br class="hidden sm:inline"> Level up together.</h2>
+                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand mb-3">{{ $processEyebrow }}</p>
+                <h2 class="text-3xl sm:text-4xl font-bold text-white leading-tight [text-shadow:0_2px_8px_rgba(0,0,0,0.6)]">{{ $processHeading }}</h2>
                 <p class="mt-5 text-lg text-gray-300 leading-relaxed">
-                    We don't disappear for six months and hand you a finished product. We deliver something usable at every stage &mdash; you ride it, learn from it, and we iterate toward the end goal together.
+                    {{ $processSubheading }}
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-5 gap-8 sm:gap-4">
-                @php
-                    $stages = [
-                        ['label' => 'Skateboard', 'caption' => 'Prove the core idea works'],
-                        ['label' => 'Scooter', 'caption' => 'Faster, easier to steer'],
-                        ['label' => 'Bicycle', 'caption' => 'Real range, real utility'],
-                        ['label' => 'Motorcycle', 'caption' => 'Power and speed at scale'],
-                        ['label' => 'Spaceship', 'caption' => 'The finished vision &mdash; and beyond'],
-                    ];
-                @endphp
-                @foreach($stages as $i => $stage)
+            <div class="grid grid-cols-1 sm:grid-cols-5 gap-8 sm:gap-4"
+                 @if($isAdmin) x-data="{ editingStage: null, editLabel: '', editCaption: '' }" @endif>
+                @foreach($processStages as $i => $stage)
+                    @php
+                        $stageImg = str_starts_with($stage['image'], 'images/')
+                            ? asset($stage['image'])
+                            : Storage::url($stage['image']);
+                    @endphp
                     <div class="relative flex flex-col items-center text-center group">
                         {{-- Connector line (desktop only, between cards) --}}
                         @if(! $loop->last)
@@ -1468,109 +1601,103 @@
                         @endif
 
                         <div class="relative z-10 w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white shadow-xl ring-1 ring-white/20 flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl">
-                            <div class="w-20 h-14 sm:w-24 sm:h-16">
-                                @switch($i)
-                                    @case(0)
-                                        {{-- Skateboard --}}
-                                        <svg viewBox="0 0 120 80" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M 12 42 Q 12 34 22 34 L 98 34 Q 108 34 108 42 L 108 44 L 12 44 Z" fill="#1F2937"/>
-                                            <rect x="28" y="44" width="3" height="4" fill="#6B7280"/>
-                                            <rect x="89" y="44" width="3" height="4" fill="#6B7280"/>
-                                            <circle cx="29.5" cy="54" r="7" fill="#ed2537"/>
-                                            <circle cx="90.5" cy="54" r="7" fill="#ed2537"/>
-                                            <circle cx="29.5" cy="54" r="2" fill="#fff"/>
-                                            <circle cx="90.5" cy="54" r="2" fill="#fff"/>
-                                        </svg>
-                                        @break
-                                    @case(1)
-                                        {{-- Scooter --}}
-                                        <svg viewBox="0 0 120 80" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                                            <circle cx="24" cy="62" r="10" fill="#1F2937"/>
-                                            <circle cx="96" cy="62" r="10" fill="#1F2937"/>
-                                            <circle cx="24" cy="62" r="3.5" fill="#ed2537"/>
-                                            <circle cx="96" cy="62" r="3.5" fill="#ed2537"/>
-                                            <rect x="30" y="59" width="60" height="5" rx="2" fill="#1F2937"/>
-                                            <path d="M 96 56 L 96 18" stroke="#1F2937" stroke-width="5" stroke-linecap="round"/>
-                                            <path d="M 82 18 L 110 18" stroke="#1F2937" stroke-width="5" stroke-linecap="round"/>
-                                            <circle cx="82" cy="18" r="2.5" fill="#ed2537"/>
-                                            <circle cx="110" cy="18" r="2.5" fill="#ed2537"/>
-                                        </svg>
-                                        @break
-                                    @case(2)
-                                        {{-- Bicycle --}}
-                                        <svg viewBox="0 0 120 80" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                                            <circle cx="22" cy="58" r="15" fill="none" stroke="#1F2937" stroke-width="3"/>
-                                            <circle cx="98" cy="58" r="15" fill="none" stroke="#1F2937" stroke-width="3"/>
-                                            <line x1="22" y1="43" x2="22" y2="73" stroke="#9CA3AF" stroke-width="1.2"/>
-                                            <line x1="7" y1="58" x2="37" y2="58" stroke="#9CA3AF" stroke-width="1.2"/>
-                                            <line x1="98" y1="43" x2="98" y2="73" stroke="#9CA3AF" stroke-width="1.2"/>
-                                            <line x1="83" y1="58" x2="113" y2="58" stroke="#9CA3AF" stroke-width="1.2"/>
-                                            <circle cx="22" cy="58" r="2.5" fill="#ed2537"/>
-                                            <circle cx="98" cy="58" r="2.5" fill="#ed2537"/>
-                                            <circle cx="60" cy="58" r="3" fill="#1F2937"/>
-                                            <path d="M 60 58 L 42 30 L 82 30 Z" fill="none" stroke="#1F2937" stroke-width="3" stroke-linejoin="round"/>
-                                            <path d="M 42 30 L 48 20" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
-                                            <path d="M 43 18 L 55 18" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
-                                            <path d="M 82 30 L 98 58" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
-                                            <path d="M 60 58 L 22 58" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
-                                            <path d="M 82 30 L 90 20" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
-                                            <path d="M 86 18 L 98 16" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
-                                        </svg>
-                                        @break
-                                    @case(3)
-                                        {{-- Motorcycle --}}
-                                        <svg viewBox="0 0 120 80" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                                            <circle cx="24" cy="58" r="14" fill="#1F2937"/>
-                                            <circle cx="96" cy="58" r="14" fill="#1F2937"/>
-                                            <circle cx="24" cy="58" r="6" fill="#6B7280"/>
-                                            <circle cx="96" cy="58" r="6" fill="#6B7280"/>
-                                            <circle cx="24" cy="58" r="2" fill="#ed2537"/>
-                                            <circle cx="96" cy="58" r="2" fill="#ed2537"/>
-                                            <path d="M 30 52 Q 38 36 56 32 L 78 30 Q 92 30 96 48 L 60 50 Q 48 52 40 56 Z" fill="#1F2937"/>
-                                            <path d="M 42 48 L 60 43 L 60 49 Z" fill="#ed2537"/>
-                                            <path d="M 85 32 L 93 20" stroke="#1F2937" stroke-width="4" stroke-linecap="round"/>
-                                            <path d="M 88 20 L 100 18" stroke="#1F2937" stroke-width="4" stroke-linecap="round"/>
-                                            <path d="M 80 58 L 92 62" stroke="#6B7280" stroke-width="4" stroke-linecap="round"/>
-                                            <path d="M 35 52 L 20 48" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
-                                        </svg>
-                                        @break
-                                    @case(4)
-                                        {{-- Spaceship --}}
-                                        <svg viewBox="0 0 120 80" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                                            <defs>
-                                                <linearGradient id="flame" x1="0" x2="1" y1="0" y2="0">
-                                                    <stop offset="0%" stop-color="#FBBF24"/>
-                                                    <stop offset="60%" stop-color="#F97316"/>
-                                                    <stop offset="100%" stop-color="#ed2537"/>
-                                                </linearGradient>
-                                            </defs>
-                                            <path d="M 30 36 L 8 40 L 30 44 Z" fill="url(#flame)"/>
-                                            <path d="M 30 38 L 18 40 L 30 42 Z" fill="#FDE68A"/>
-                                            <path d="M 45 30 L 28 18 L 28 30 Z" fill="#6B7280"/>
-                                            <path d="M 45 50 L 28 62 L 28 50 Z" fill="#6B7280"/>
-                                            <path d="M 28 30 L 80 30 Q 104 30 112 40 Q 104 50 80 50 L 28 50 Z" fill="#1F2937"/>
-                                            <path d="M 80 30 Q 104 30 112 40 Q 104 50 80 50 Z" fill="#374151"/>
-                                            <circle cx="92" cy="40" r="6" fill="#ed2537"/>
-                                            <circle cx="92" cy="40" r="3.5" fill="#fff"/>
-                                            <circle cx="93" cy="39" r="1.2" fill="#ed2537"/>
-                                            <path d="M 50 34 L 75 34" stroke="#ed2537" stroke-width="1.5" opacity="0.8"/>
-                                            <path d="M 50 46 L 75 46" stroke="#ed2537" stroke-width="1.5" opacity="0.8"/>
-                                        </svg>
-                                        @break
-                                @endswitch
-                            </div>
+                            <img src="{{ $stageImg }}?v={{ $proposal->updated_at?->timestamp }}"
+                                 alt="{{ $stage['label'] }}"
+                                 class="w-20 h-20 sm:w-24 sm:h-24 object-contain">
                             <div class="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center shadow ring-2 ring-white">
                                 {{ $i + 1 }}
                             </div>
+
+                            {{-- Admin per-stage controls --}}
+                            @if($isAdmin)
+                            <div class="pdf-hide absolute -top-2 -right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                                 x-data="{
+                                    uploading: false,
+                                    progress: 0,
+                                    error: '',
+                                 }"
+                                 x-on:livewire-upload-start="uploading = true; progress = 0; error = '';"
+                                 x-on:livewire-upload-progress="progress = $event.detail.progress"
+                                 x-on:livewire-upload-finish="uploading = false; progress = 100;"
+                                 x-on:livewire-upload-error="uploading = false; error = 'Upload failed';">
+                                <label title="Upload image"
+                                       class="p-1.5 bg-white rounded-full text-gray-600 hover:text-brand transition-colors cursor-pointer shadow-md">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <input type="file" wire:model="stageImages.{{ $i }}" accept="image/*" class="hidden">
+                                </label>
+                                @if(! str_starts_with($stage['image'], 'images/'))
+                                    <button wire:click="removeStageImage({{ $i }})"
+                                            title="Reset to default"
+                                            class="p-1.5 bg-white rounded-full text-gray-600 hover:text-red-500 transition-colors cursor-pointer shadow-md">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    </button>
+                                @endif
+                                <div x-show="uploading" x-cloak class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-white bg-neutral-800/90 px-2 py-0.5 rounded whitespace-nowrap">
+                                    <span x-text="progress + '%'"></span>
+                                </div>
+                            </div>
+                            @endif
                         </div>
 
-                        <div class="mt-5 text-base font-semibold text-white">{{ $stage['label'] }}</div>
-                        <div class="mt-1 text-sm text-gray-400 leading-snug px-2">{!! $stage['caption'] !!}</div>
+                        @if($isAdmin)
+                            <button @click="editingStage = {{ $i }}; editLabel = @js($stage['label']); editCaption = @js($stage['caption']);"
+                                    type="button"
+                                    class="pdf-hide mt-5 text-base font-semibold text-white hover:text-brand transition-colors cursor-pointer border-b border-dashed border-transparent hover:border-brand">
+                                {{ $stage['label'] }}
+                            </button>
+                            <button @click="editingStage = {{ $i }}; editLabel = @js($stage['label']); editCaption = @js($stage['caption']);"
+                                    type="button"
+                                    class="pdf-hide mt-1 text-sm text-gray-400 leading-snug px-2 hover:text-gray-200 transition-colors cursor-pointer text-center">
+                                {!! $stage['caption'] !!}
+                            </button>
+                        @else
+                            <div class="mt-5 text-base font-semibold text-white">{{ $stage['label'] }}</div>
+                            <div class="mt-1 text-sm text-gray-400 leading-snug px-2">{!! $stage['caption'] !!}</div>
+                        @endif
                     </div>
                 @endforeach
+
+                @if($isAdmin)
+                {{-- Edit Stage Modal --}}
+                <div x-show="editingStage !== null" x-cloak
+                     x-transition.opacity
+                     @keydown.escape.window="editingStage = null"
+                     class="pdf-hide fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                    <div @click.outside="editingStage = null"
+                         class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+                        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                            <h3 class="text-lg font-bold text-gray-900">Edit Stage <span x-text="editingStage !== null ? editingStage + 1 : ''"></span></h3>
+                            <button @click="editingStage = null" class="p-1 text-gray-400 hover:text-gray-600 transition cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Label</label>
+                                <input type="text" x-model="editLabel"
+                                       class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Caption</label>
+                                <textarea x-model="editCaption" rows="2"
+                                          class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none resize-none"></textarea>
+                                <p class="mt-1 text-[11px] text-gray-400">HTML allowed (e.g. <code class="text-gray-500">&amp;mdash;</code> for em-dash).</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                            <button @click="editingStage = null"
+                                    class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">Cancel</button>
+                            <button @click="$wire.updateProcessStage(editingStage, editLabel, editCaption); editingStage = null;"
+                                    class="px-5 py-2.5 text-sm font-medium text-white bg-brand rounded-lg hover:bg-gray-900 transition-colors cursor-pointer shadow-sm">Save</button>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
+            @endif
         </div>
     </section>
+    @endif
 
     {{-- ========== COST / INVESTMENT SECTION ========== --}}
     @if(($proposal->investment_enabled && $proposal->costItems->count()) || $isAdmin)
@@ -2353,6 +2480,126 @@
                                         <div class="min-w-0">
                                             <p class="text-sm font-semibold text-gray-900 truncate">{{ $item->title }}</p>
                                             <p class="text-xs text-gray-500 truncate">{{ $item->url ?: ($item->technologies ?: '—') }}</p>
+                                        </div>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                @endif
+            @endif
+        </div>
+    </section>
+    @endif
+
+    {{-- ========== PROJECT TEAM SECTION ========== --}}
+    @if($proposal->team_enabled || $isAdmin)
+    <section id="team" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
+        <div class="max-w-6xl mx-auto">
+            @if($isAdmin)
+                <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingTeamEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Include "Project Team" in client proposal</span>
+                    </label>
+                    <span class="text-xs text-gray-400">
+                        Manage the team library in
+                        <a href="/admin/team-members" class="text-brand hover:text-brand-dark font-medium">admin &rsaquo; Team</a>
+                    </span>
+                </div>
+            @endif
+
+            @if($proposal->team_enabled || $isAdmin)
+                <div class="text-center max-w-2xl mx-auto mb-12">
+                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand mb-3">The People</p>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">Project Team</h2>
+                    <p class="mt-4 text-base text-gray-500 leading-relaxed">
+                        The folks who'll actually be sitting at the table with you &mdash; not a sales handoff.
+                    </p>
+                </div>
+
+                @php $attachedTeam = $proposal->teamMembers; @endphp
+
+                @if($attachedTeam->count())
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @foreach($attachedTeam as $member)
+                            <div class="relative group">
+                                @if($isAdmin)
+                                    <button wire:click="detachTeamMember({{ $member->id }})"
+                                            wire:confirm="Remove this team member from the proposal?"
+                                            class="pdf-hide absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-white/95 border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-300 inline-flex items-center justify-center transition-colors cursor-pointer shadow"
+                                            title="Remove from this proposal">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                @endif
+                                <div class="h-full flex flex-col items-center text-center bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-8">
+                                    <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-gray-100 ring-4 ring-white shadow-md mb-5">
+                                        @if($member->avatar_url)
+                                            <img src="{{ $member->avatar_url }}"
+                                                 alt="{{ $member->name }}"
+                                                 class="w-full h-full object-cover">
+                                        @else
+                                            <div class="w-full h-full flex items-center justify-center text-gray-300">
+                                                <svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <h3 class="text-lg font-bold text-gray-900 leading-tight">{{ $member->name }}</h3>
+                                    @if($member->title)
+                                        <p class="mt-1 text-sm font-medium text-brand uppercase tracking-wide">{{ $member->title }}</p>
+                                    @endif
+                                    @if($member->description)
+                                        <p class="mt-4 text-sm text-gray-500 leading-relaxed">{{ $member->description }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    @if($isAdmin)
+                        <div class="rounded-2xl border-2 border-dashed border-gray-300 bg-white p-10 text-center">
+                            <svg class="w-10 h-10 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5.13a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                            <p class="text-gray-500 text-sm">No team members attached yet. Pick from the library below &mdash; or <a href="/admin/team-members/create" class="text-brand hover:text-brand-dark font-medium">add a new team member</a>.</p>
+                        </div>
+                    @else
+                        <p class="text-center text-gray-400 italic">Team details available on request.</p>
+                    @endif
+                @endif
+
+                {{-- Admin team picker --}}
+                @if($isAdmin)
+                    @php $availableTeam = $this->teamLibrary->whereNotIn('id', $attachedTeam->pluck('id')); @endphp
+                    @if($availableTeam->count())
+                        <div class="pdf-hide mt-8 p-5 rounded-xl border border-gray-200 bg-white shadow-sm"
+                             x-data="{ open: {{ $attachedTeam->count() === 0 ? 'true' : 'false' }} }">
+                            <button type="button" @click="open = !open"
+                                    class="flex items-center justify-between w-full text-left cursor-pointer">
+                                <span class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    Attach a Team Member
+                                    <span class="text-xs text-gray-400 font-normal">({{ $availableTeam->count() }} available)</span>
+                                </span>
+                                <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="open" x-collapse x-cloak class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                @foreach($availableTeam as $member)
+                                    <button type="button"
+                                            wire:click="attachTeamMember({{ $member->id }})"
+                                            class="text-left p-3 rounded-lg bg-gray-50 hover:bg-white hover:ring-2 hover:ring-brand transition cursor-pointer flex gap-3 items-center">
+                                        @if($member->avatar_url)
+                                            <img src="{{ $member->avatar_url }}" alt="" class="w-12 h-12 object-cover rounded-full shrink-0">
+                                        @else
+                                            <div class="w-12 h-12 rounded-full bg-gray-200 shrink-0 flex items-center justify-center text-gray-400">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                            </div>
+                                        @endif
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-semibold text-gray-900 truncate">{{ $member->name }}</p>
+                                            <p class="text-xs text-gray-500 truncate">{{ $member->title ?: '—' }}</p>
                                         </div>
                                     </button>
                                 @endforeach

@@ -22,7 +22,9 @@ class Proposal extends Model
         'differentiator_enabled', 'differentiator_headline', 'differentiator_attribution', 'differentiator_background',
         'about_enabled',
         'investment_enabled', 'milestones_enabled', 'changes_enabled', 'terms_enabled',
-        'vpat_enabled', 'performance_enabled', 'references_enabled',
+        'vpat_enabled', 'performance_enabled', 'references_enabled', 'team_enabled',
+        'process_enabled', 'process_eyebrow', 'process_heading', 'process_subheading',
+        'process_background', 'process_stages',
         'status',
         'change_request_content', 'cr_signature_name', 'cr_signature_data', 'cr_signed_at',
         'tc_signature_name', 'tc_signature_data', 'tc_signed_at',
@@ -57,6 +59,9 @@ class Proposal extends Model
             'vpat_enabled' => 'boolean',
             'performance_enabled' => 'boolean',
             'references_enabled' => 'boolean',
+            'team_enabled' => 'boolean',
+            'process_enabled' => 'boolean',
+            'process_stages' => 'array',
         ];
     }
 
@@ -153,6 +158,14 @@ class Proposal extends Model
             ->orderByPivot('sort_order');
     }
 
+    public function teamMembers(): BelongsToMany
+    {
+        return $this->belongsToMany(TeamMember::class, 'proposal_team_member')
+            ->withPivot('sort_order')
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
+    }
+
     public function getSubtotalAttribute(): float
     {
         return (float) $this->costItems->sum('amount');
@@ -179,5 +192,38 @@ class Proposal extends Model
     public function getPublicUrlAttribute(): string
     {
         return url("/proposal/{$this->uuid}");
+    }
+
+    public static function defaultProcessStages(): array
+    {
+        return [
+            ['label' => 'Skateboard',  'caption' => 'Prove the core idea works',           'image' => 'images/skateboard.png'],
+            ['label' => 'Bicycle',     'caption' => 'Faster, easier to steer',             'image' => 'images/bicycle.png'],
+            ['label' => 'Vespa',       'caption' => 'Real range, real utility',            'image' => 'images/vespa.png'],
+            ['label' => 'Motorcycle',  'caption' => 'Power and speed at scale',            'image' => 'images/motorcycle.png'],
+            ['label' => 'Batmobile',   'caption' => 'The finished vision &mdash; and beyond', 'image' => 'images/batmobile.png'],
+        ];
+    }
+
+    public function getProcessStagesResolvedAttribute(): array
+    {
+        $stored = $this->process_stages;
+        $defaults = static::defaultProcessStages();
+
+        if (! is_array($stored) || empty($stored)) {
+            return $defaults;
+        }
+
+        $resolved = [];
+        foreach ($defaults as $i => $default) {
+            $entry = $stored[$i] ?? [];
+            $resolved[] = [
+                'label'   => $entry['label']   ?? $default['label'],
+                'caption' => $entry['caption'] ?? $default['caption'],
+                'image'   => $entry['image']   ?? $default['image'],
+            ];
+        }
+
+        return $resolved;
     }
 }

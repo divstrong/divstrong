@@ -13,6 +13,7 @@ use App\Models\PortfolioItem;
 use App\Models\ProjectReference;
 use App\Models\ProposalTerm;
 use App\Models\ScopeLibrary;
+use App\Models\TeamMember;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -85,6 +86,18 @@ class ProposalView extends Component
     // References toggle (opt-in, default off)
     public bool $editingReferencesEnabled = false;
 
+    // Team toggle (opt-in, default off)
+    public bool $editingTeamEnabled = false;
+
+    // Process section editing
+    public bool $editingProcessEnabled = true;
+    public string $editingProcessEyebrow = '';
+    public string $editingProcessHeading = '';
+    public string $editingProcessSubheading = '';
+    public $processBackground = null;
+    public array $editingProcessStages = [];
+    public array $stageImages = [null, null, null, null, null];
+
     // Discount editing
     public bool $editingDiscountEnabled = false;
     public string $editingDiscountType = 'percent';
@@ -103,7 +116,7 @@ class ProposalView extends Component
     public function mount(string $uuid): void
     {
         $this->proposal = Proposal::where('uuid', $uuid)
-            ->with(['scopeItems', 'costItems', 'milestones', 'terms', 'client', 'roadmapPhases', 'projectReferences', 'portfolioItems'])
+            ->with(['scopeItems', 'costItems', 'milestones', 'terms', 'client', 'roadmapPhases', 'projectReferences', 'portfolioItems', 'teamMembers'])
             ->firstOrFail();
 
         $this->accepted = $this->proposal->status === ProposalStatus::Accepted;
@@ -138,6 +151,12 @@ class ProposalView extends Component
             $this->editingVpatEnabled = (bool) $this->proposal->vpat_enabled;
             $this->editingPerformanceEnabled = (bool) $this->proposal->performance_enabled;
             $this->editingReferencesEnabled = (bool) $this->proposal->references_enabled;
+            $this->editingTeamEnabled = (bool) $this->proposal->team_enabled;
+            $this->editingProcessEnabled = (bool) $this->proposal->process_enabled;
+            $this->editingProcessEyebrow = $this->proposal->process_eyebrow ?? 'Our Process';
+            $this->editingProcessHeading = $this->proposal->process_heading ?? 'Ship early. Ship often. Level up together.';
+            $this->editingProcessSubheading = $this->proposal->process_subheading ?? "We don't disappear for six months and hand you a finished product. We deliver something usable at every stage — you ride it, learn from it, and we iterate toward the end goal together.";
+            $this->editingProcessStages = $this->proposal->process_stages_resolved;
             $this->editingDiscountEnabled = (bool) $this->proposal->discount_enabled;
             $this->editingDiscountType = $this->proposal->discount_type ?? 'percent';
             $this->editingDiscountValue = (float) ($this->proposal->discount_value ?? 0);
@@ -787,6 +806,50 @@ class ProposalView extends Component
         $this->proposal->load('portfolioItems');
     }
 
+    public function updatedEditingTeamEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['team_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function getTeamLibraryProperty(): Collection
+    {
+        if (! $this->isAdmin) {
+            return new Collection();
+        }
+
+        return TeamMember::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function attachTeamMember(int $memberId): void
+    {
+        if (! $this->isAdmin) return;
+
+        $member = TeamMember::find($memberId);
+        if (! $member) return;
+
+        $maxSort = (int) \Illuminate\Support\Facades\DB::table('proposal_team_member')
+            ->where('proposal_id', $this->proposal->id)
+            ->max('sort_order');
+        $this->proposal->teamMembers()->syncWithoutDetaching([
+            $memberId => ['sort_order' => $maxSort + 1],
+        ]);
+        $this->proposal->load('teamMembers');
+    }
+
+    public function detachTeamMember(int $memberId): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->teamMembers()->detach($memberId);
+        $this->proposal->load('teamMembers');
+    }
+
     public function saveDifferentiatorSettings(): void
     {
         if (! $this->isAdmin) return;
@@ -827,6 +890,119 @@ class ProposalView extends Component
         }
         $this->proposal->update(['differentiator_background' => null]);
         $this->proposal->refresh();
+    }
+
+    // ---- Process Section Methods ----
+
+    public function updatedEditingProcessEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['process_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
+    public function saveProcessSettings(): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update([
+            'process_eyebrow' => $this->editingProcessEyebrow ?: null,
+            'process_heading' => $this->editingProcessHeading ?: null,
+            'process_subheading' => $this->editingProcessSubheading ?: null,
+        ]);
+        $this->proposal->refresh();
+    }
+
+    public function updateProcessStage(int $index, string $label, string $caption): void
+    {
+        if (! $this->isAdmin) return;
+        if ($index < 0 || $index > 4) return;
+
+        $stages = $this->proposal->process_stages_resolved;
+        $stages[$index]['label'] = $label;
+        $stages[$index]['caption'] = $caption;
+
+        $this->proposal->update(['process_stages' => array_values($stages)]);
+        $this->proposal->refresh();
+        $this->editingProcessStages = $this->proposal->process_stages_resolved;
+    }
+
+    public function updatedProcessBackground(): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->validate([
+            'processBackground' => 'image|max:10240',
+        ]);
+
+        if ($this->proposal->process_background && ! str_starts_with($this->proposal->process_background, 'images/')) {
+            Storage::disk('public')->delete($this->proposal->process_background);
+        }
+
+        $path = $this->processBackground->store('proposal-process', 'public');
+
+        $this->proposal->update(['process_background' => $path]);
+        $this->proposal->refresh();
+        $this->processBackground = null;
+        $this->dispatch('process-background-uploaded');
+    }
+
+    public function removeProcessBackground(): void
+    {
+        if (! $this->isAdmin) return;
+
+        if ($this->proposal->process_background && ! str_starts_with($this->proposal->process_background, 'images/')) {
+            Storage::disk('public')->delete($this->proposal->process_background);
+        }
+        $this->proposal->update(['process_background' => null]);
+        $this->proposal->refresh();
+    }
+
+    public function updatedStageImages($value, $key): void
+    {
+        if (! $this->isAdmin) return;
+
+        $index = (int) $key;
+        if ($index < 0 || $index > 4) return;
+
+        $this->validate([
+            "stageImages.$index" => 'image|max:5120',
+        ]);
+
+        $stages = $this->proposal->process_stages_resolved;
+        $current = $stages[$index]['image'] ?? null;
+        if ($current && ! str_starts_with($current, 'images/')) {
+            Storage::disk('public')->delete($current);
+        }
+
+        $path = $this->stageImages[$index]->store('proposal-process-stages', 'public');
+        $stages[$index]['image'] = $path;
+
+        $this->proposal->update(['process_stages' => array_values($stages)]);
+        $this->proposal->refresh();
+        $this->stageImages[$index] = null;
+        $this->editingProcessStages = $this->proposal->process_stages_resolved;
+        $this->dispatch('process-stage-image-uploaded', index: $index);
+    }
+
+    public function removeStageImage(int $index): void
+    {
+        if (! $this->isAdmin) return;
+        if ($index < 0 || $index > 4) return;
+
+        $stages = $this->proposal->process_stages_resolved;
+        $current = $stages[$index]['image'] ?? null;
+        if ($current && ! str_starts_with($current, 'images/')) {
+            Storage::disk('public')->delete($current);
+        }
+
+        $defaults = Proposal::defaultProcessStages();
+        $stages[$index]['image'] = $defaults[$index]['image'];
+
+        $this->proposal->update(['process_stages' => array_values($stages)]);
+        $this->proposal->refresh();
+        $this->editingProcessStages = $this->proposal->process_stages_resolved;
     }
 
     public function addRoadmapPhase(): void

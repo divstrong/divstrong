@@ -62,6 +62,12 @@ class ProjectReferenceResource extends Resource
                 Section::make('Engagement')
                     ->columns(2)
                     ->schema([
+                        Forms\Components\TextInput::make('project_name')
+                            ->maxLength(255)
+                            ->placeholder('e.g. LUMA Citizen Management Portal'),
+                        Forms\Components\TextInput::make('project_location')
+                            ->maxLength(255)
+                            ->placeholder('e.g. Town of Bridgewater, VA'),
                         Forms\Components\Textarea::make('project_description')
                             ->rows(4)
                             ->placeholder('Brief description of the project divStrong delivered for this reference...')
@@ -85,16 +91,22 @@ class ProjectReferenceResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                Tables\Columns\TextColumn::make('project_name')
+                    ->label('Project')
                     ->searchable()
                     ->sortable()
                     ->weight('semibold'),
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Contact')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('company')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('email')
                     ->copyable()
                     ->toggleable(),

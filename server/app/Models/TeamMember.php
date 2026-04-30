@@ -5,12 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class ProjectReference extends Model
+class TeamMember extends Model
 {
     protected $fillable = [
-        'name', 'title', 'company', 'email', 'phone',
-        'project_name', 'project_location',
-        'project_description', 'year_completed',
+        'name', 'title', 'avatar', 'description',
         'is_active', 'sort_order',
     ];
 
@@ -18,14 +16,22 @@ class ProjectReference extends Model
     {
         return [
             'is_active' => 'boolean',
-            'year_completed' => 'integer',
         ];
     }
 
     public function proposals(): BelongsToMany
     {
-        return $this->belongsToMany(Proposal::class, 'proposal_project_reference')
+        return $this->belongsToMany(Proposal::class, 'proposal_team_member')
             ->withPivot('sort_order')
             ->withTimestamps();
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (! $this->avatar) return null;
+        if (str_starts_with($this->avatar, 'images/')) {
+            return asset($this->avatar);
+        }
+        return \Illuminate\Support\Facades\Storage::url($this->avatar);
     }
 }
