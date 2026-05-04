@@ -784,7 +784,7 @@
             {{-- Footer tagline --}}
             @if($phases->count() > 0)
             <div class="text-center mt-10 text-sm text-gray-400 italic">
-                Iterative Sprints &bull; Testing & Feedback Between Phases &bull; Continuous Improvement
+                Iterative Sprints + Testing & Feedback = Continuous Improvement
             </div>
             @endif
             @endif
@@ -1595,18 +1595,20 @@
                             : Storage::url($stage['image']);
                     @endphp
                     <div class="relative flex flex-col items-center text-center group">
-                        {{-- Connector line (desktop only, between cards) --}}
+                        {{-- Connector arrow (desktop only, between cards) --}}
                         @if(! $loop->last)
-                            <div class="hidden sm:block absolute top-14 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-brand/70 to-brand/20 pointer-events-none" aria-hidden="true"></div>
+                            <div class="hidden sm:flex absolute top-16 left-[60%] w-[80%] -translate-y-1/2 items-center pointer-events-none" aria-hidden="true">
+                                <div class="flex-1 h-0.5 bg-gradient-to-r from-brand/80 to-brand/50"></div>
+                                <svg class="w-3.5 h-3.5 text-brand flex-shrink-0 -ml-px" fill="currentColor" viewBox="0 0 10 10">
+                                    <polygon points="0,0 10,5 0,10" />
+                                </svg>
+                            </div>
                         @endif
 
                         <div class="relative z-10 w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white shadow-xl ring-1 ring-white/20 flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl">
                             <img src="{{ $stageImg }}?v={{ $proposal->updated_at?->timestamp }}"
                                  alt="{{ $stage['label'] }}"
                                  class="w-20 h-20 sm:w-24 sm:h-24 object-contain">
-                            <div class="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center shadow ring-2 ring-white">
-                                {{ $i + 1 }}
-                            </div>
 
                             {{-- Admin per-stage controls --}}
                             @if($isAdmin)
@@ -2508,7 +2510,7 @@
                     </label>
                     <span class="text-xs text-gray-400">
                         Manage the team library in
-                        <a href="/admin/team-members" class="text-brand hover:text-brand-dark font-medium">admin &rsaquo; Team</a>
+                        <a href="/admin/team-members" class="text-brand hover:text-brand-dark font-medium">admin &rsaquo; Teams</a>
                     </span>
                 </div>
             @endif
@@ -2714,12 +2716,28 @@
                                     <div class="shrink-0 w-11 h-11 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold text-sm">
                                         {{ collect(explode(' ', $ref->name))->filter()->take(2)->map(fn($w) => mb_substr($w, 0, 1))->implode('') ?: '•' }}
                                     </div>
-                                    <div class="min-w-0">
+                                    <div class="min-w-0 flex-1">
                                         <p class="font-bold text-gray-900 leading-tight">{{ $ref->name }}</p>
                                         @if($ref->title || $ref->company)
                                             <p class="text-sm text-gray-500 leading-tight mt-0.5">
                                                 {{ $ref->title }}@if($ref->title && $ref->company) <span class="text-gray-300">&middot;</span> @endif{{ $ref->company }}
                                             </p>
+                                        @endif
+                                        @if($ref->email || $ref->phone)
+                                            <div class="flex flex-col items-start gap-1 text-xs text-gray-500 mt-2">
+                                                @if($ref->email)
+                                                    <a href="mailto:{{ $ref->email }}" class="inline-flex items-center gap-1 hover:text-brand transition-colors">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                                        {{ $ref->email }}
+                                                    </a>
+                                                @endif
+                                                @if($ref->phone)
+                                                    <a href="tel:{{ $ref->phone }}" class="inline-flex items-center gap-1 hover:text-brand transition-colors">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h2.28a1 1 0 01.95.68l1.5 4.49a1 1 0 01-.5 1.21l-2.26 1.13a11 11 0 005.52 5.52l1.13-2.26a1 1 0 011.21-.5l4.49 1.5a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.82 21 3 14.18 3 6V5z"/></svg>
+                                                        {{ $ref->phone }}
+                                                    </a>
+                                                @endif
+                                            </div>
                                         @endif
                                     </div>
                                 </div>
@@ -2728,26 +2746,14 @@
                                     <p class="text-sm text-gray-600 leading-relaxed mb-4">{{ $ref->project_description }}</p>
                                 @endif
 
-                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 pt-3 border-t border-gray-100">
-                                    @if($ref->email)
-                                        <a href="mailto:{{ $ref->email }}" class="inline-flex items-center gap-1 hover:text-brand transition-colors">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                                            {{ $ref->email }}
-                                        </a>
-                                    @endif
-                                    @if($ref->phone)
-                                        <a href="tel:{{ $ref->phone }}" class="inline-flex items-center gap-1 hover:text-brand transition-colors">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h2.28a1 1 0 01.95.68l1.5 4.49a1 1 0 01-.5 1.21l-2.26 1.13a11 11 0 005.52 5.52l1.13-2.26a1 1 0 011.21-.5l4.49 1.5a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.82 21 3 14.18 3 6V5z"/></svg>
-                                            {{ $ref->phone }}
-                                        </a>
-                                    @endif
-                                    @if($ref->year_completed)
-                                        <span class="inline-flex items-center gap-1 ml-auto">
+                                @if($ref->year_completed)
+                                    <div class="pt-3 border-t border-gray-100">
+                                        <span class="inline-flex items-center gap-1 text-xs font-bold text-gray-700">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                             Completed {{ $ref->year_completed }}
                                         </span>
-                                    @endif
-                                </div>
+                                    </div>
+                                @endif
                             </div>
                         @endforeach
                     </div>

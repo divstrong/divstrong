@@ -29,7 +29,7 @@ class TeamMemberResource extends Resource
 
     protected static ?string $navigationParentItem = 'Proposals';
 
-    protected static ?string $navigationLabel = 'Team';
+    protected static ?string $navigationLabel = 'Teams';
 
     protected static ?string $modelLabel = 'Team Member';
 
