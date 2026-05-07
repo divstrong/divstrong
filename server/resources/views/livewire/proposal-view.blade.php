@@ -1091,9 +1091,91 @@
             <div class="flex items-center gap-3 mb-12">
                 <h2 class="text-3xl font-bold text-gray-900">Scope of Work</h2>
 
-                {{-- Add Item button --}}
+                {{-- Import + Add Item buttons --}}
                 @if($isAdmin)
-                    <div class="ml-auto" x-data="{ open: false, selected: [] }">
+                <div class="ml-auto flex items-center gap-4">
+                    {{-- Import scope from another proposal --}}
+                    <div x-data="{
+                             importOpen: false,
+                             importUuid: '',
+                             importBusy: false,
+                             importError: '',
+                             importSuccess: '',
+                             async runImport() {
+                                 this.importError = '';
+                                 this.importSuccess = '';
+                                 if (! this.importUuid.trim()) { this.importError = 'Enter a proposal identifier.'; return; }
+                                 this.importBusy = true;
+                                 try {
+                                     const result = await $wire.importScopeFromProposal(this.importUuid.trim());
+                                     if (result?.ok) {
+                                         this.importSuccess = result.message;
+                                         this.importUuid = '';
+                                         setTimeout(() => { this.importOpen = false; this.importSuccess = ''; }, 1400);
+                                     } else {
+                                         this.importError = result?.message || 'Import failed.';
+                                     }
+                                 } catch (e) {
+                                     this.importError = 'Something went wrong. Please try again.';
+                                 } finally {
+                                     this.importBusy = false;
+                                 }
+                             }
+                         }">
+                        {{-- Import link --}}
+                        <button @click="importOpen = true"
+                                class="text-sm font-medium text-brand hover:text-gray-900 transition-colors cursor-pointer">
+                            Import
+                        </button>
+
+                        {{-- Import modal --}}
+                        <div x-show="importOpen" x-cloak
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100"
+                             x-transition:leave-end="opacity-0"
+                             class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                             @keydown.escape.window="importOpen = false; importError = ''; importSuccess = '';">
+                            <div @click.outside="importOpen = false; importError = ''; importSuccess = '';"
+                                 class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+                                <div class="p-6 border-b border-gray-100">
+                                    <h3 class="text-lg font-bold text-gray-900">Import Scope from Another Proposal</h3>
+                                    <p class="text-sm text-gray-500 mt-1">Paste the source proposal's identifier (the hex UUID from its URL). All of its scope items will be appended below the existing ones.</p>
+                                </div>
+                                <div class="p-6 space-y-3">
+                                    <label class="block">
+                                        <span class="text-xs font-medium text-gray-700">Proposal identifier</span>
+                                        <input type="text" x-model="importUuid"
+                                               @keydown.enter.prevent="if(!importBusy) runImport()"
+                                               placeholder="e.g. 8f3a7c92-1b4d-4e6f-a0c1-9d2e8b3f5a17"
+                                               class="mt-1 block w-full text-sm font-mono bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none"
+                                               x-bind:disabled="importBusy">
+                                    </label>
+                                    <p x-show="importError" x-text="importError" x-cloak
+                                       class="text-sm text-red-600"></p>
+                                    <p x-show="importSuccess" x-text="importSuccess" x-cloak
+                                       class="text-sm text-emerald-600"></p>
+                                </div>
+                                <div class="p-6 border-t border-gray-100 flex items-center justify-end gap-3">
+                                    <button @click="importOpen = false; importError = ''; importSuccess = '';"
+                                            x-bind:disabled="importBusy"
+                                            class="text-sm text-gray-500 hover:text-gray-700 cursor-pointer disabled:opacity-50">Cancel</button>
+                                    <button @click="runImport()"
+                                            x-bind:disabled="importBusy"
+                                            class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-60 disabled:cursor-wait cursor-pointer">
+                                        <svg x-show="importBusy" x-cloak class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
+                                            <path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                        </svg>
+                                        <span x-text="importBusy ? 'Importing…' : 'Import Scope'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div x-data="{ open: false, selected: [] }">
                         <button @click="open = !open"
                                 class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand border border-brand/30 rounded-lg hover:bg-brand hover:text-white transition-colors cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -1153,6 +1235,7 @@
                             </div>
                         </div>
                     </div>
+                </div>
                 @endif
             </div>
 

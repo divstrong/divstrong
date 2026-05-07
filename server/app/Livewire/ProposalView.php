@@ -392,6 +392,62 @@ class ProposalView extends Component
         $this->proposal->load('scopeItems');
     }
 
+    public function importScopeFromProposal(string $uuid): array
+    {
+        if (! $this->isAdmin) {
+            return ['ok' => false, 'message' => 'Not authorized.'];
+        }
+
+        $uuid = trim($uuid);
+
+        // Accept 32-char hex without dashes by re-formatting to standard UUID
+        if (preg_match('/^[0-9a-f]{32}$/i', $uuid)) {
+            $uuid = substr($uuid, 0, 8) . '-' . substr($uuid, 8, 4) . '-' . substr($uuid, 12, 4)
+                . '-' . substr($uuid, 16, 4) . '-' . substr($uuid, 20, 12);
+        }
+
+        if (! preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $uuid)) {
+            return ['ok' => false, 'message' => 'That doesn\'t look like a valid proposal identifier.'];
+        }
+
+        if (strcasecmp($uuid, (string) $this->proposal->uuid) === 0) {
+            return ['ok' => false, 'message' => 'You can\'t import scope from the same proposal.'];
+        }
+
+        $source = Proposal::where('uuid', $uuid)->with('scopeItems')->first();
+        if (! $source) {
+            return ['ok' => false, 'message' => 'No proposal found with that identifier.'];
+        }
+
+        $items = $source->scopeItems()->orderBy('sort_order')->get();
+        if ($items->isEmpty()) {
+            return ['ok' => false, 'message' => 'That proposal has no scope items to import.'];
+        }
+
+        $maxSort = $this->proposal->scopeItems()->max('sort_order') ?? 0;
+
+        foreach ($items as $item) {
+            $maxSort++;
+            $this->proposal->scopeItems()->create([
+                'category' => $item->category,
+                'title' => $item->title,
+                'description' => $item->description,
+                'bullets' => $item->bullets,
+                'sort_order' => $maxSort,
+            ]);
+        }
+
+        $this->proposal->load('scopeItems');
+
+        $count = $items->count();
+        $sourceLabel = $source->project_title ?: ($source->client_company ?: 'proposal');
+
+        return [
+            'ok' => true,
+            'message' => "Imported {$count} scope item" . ($count === 1 ? '' : 's') . " from {$sourceLabel}.",
+        ];
+    }
+
     public function updateScopeItem(int $id, string $title, string $description = '', array $bullets = []): void
     {
         if (! $this->isAdmin) return;

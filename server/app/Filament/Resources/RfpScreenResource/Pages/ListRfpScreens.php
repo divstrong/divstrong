@@ -5,20 +5,14 @@ namespace App\Filament\Resources\RfpScreenResource\Pages;
 use App\Filament\Resources\RfpScreenResource;
 use App\Filament\Resources\RfpScreenResource\Widgets\RfpScreenStatsWidget;
 use App\Filament\Resources\RfpScreenResource\Widgets\ScreenahDateRange;
-use App\Mail\RfpAnalysisComplete;
-use App\Models\RfpScreen;
-use App\Services\ClaudeService;
 use Filament\Actions;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class ListRfpScreens extends ListRecords
 {
@@ -103,74 +97,14 @@ class ListRfpScreens extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
+            Actions\Action::make('screenNewRfp')
                 ->label('Screen New RFP')
+                ->icon('heroicon-o-plus')
                 ->modalHeading('Screen RFP')
-                ->createAnother(false)
-                ->modalSubmitActionLabel('Screen')
+                ->modalContent(fn () => view('filament.rfp-screen-create-modal-host'))
                 ->modalWidth(\Filament\Support\Enums\Width::FiveExtraLarge)
-                ->mutateFormDataUsing(function (array $data): array {
-                    $data['user_id'] = auth()->id();
-                    $filePath = $data['file_path'];
-                    $data['original_filename'] = basename($filePath);
-                    $data['filename'] = basename($filePath);
-                    $data['file_type'] = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-                    $data['status'] = 'analyzing';
-
-                    return $data;
-                })
-                ->after(function (RfpScreen $record) {
-                    try {
-                        $service = new ClaudeService();
-                        $result = $service->analyzeRfp($record->file_path, $record->prompt);
-
-                        $updateData = [
-                            'score' => $result['score'],
-                            'due_date' => $result['due_date'] ?? null,
-                            'contact_name' => $result['contact_name'] ?? null,
-                            'contact_title' => $result['contact_title'] ?? null,
-                            'contact_department' => $result['contact_department'] ?? null,
-                            'contact_email' => $result['contact_email'] ?? null,
-                            'contact_phone' => $result['contact_phone'] ?? null,
-                            'summary' => $result['summary'],
-                            'red_flags' => $result['red_flags'],
-                            'requirements' => $result['requirements'],
-                            'raw_response' => $result['raw_response'],
-                            'status' => 'completed',
-                            'analyzed_at' => now(),
-                        ];
-
-                        if (empty($record->rfp_name) && !empty($result['rfp_name'])) {
-                            $updateData['rfp_name'] = $result['rfp_name'];
-                        }
-
-                        $record->update($updateData);
-
-                        $label = $record->score_label;
-                        Notification::make()
-                            ->title("RFP Analysis Complete — {$record->score}/100 ({$label})")
-                            ->success()
-                            ->send();
-
-                        Mail::to('jim@divstrong.com')->queue(new RfpAnalysisComplete($record));
-                    } catch (\Throwable $e) {
-                        Log::error('RFP screening failed', [
-                            'rfp_screen_id' => $record->id,
-                            'error' => $e->getMessage(),
-                        ]);
-
-                        $record->update([
-                            'status' => 'failed',
-                            'raw_response' => $e->getMessage(),
-                        ]);
-
-                        Notification::make()
-                            ->title('RFP Analysis Failed')
-                            ->body($e->getMessage())
-                            ->danger()
-                            ->send();
-                    }
-                }),
+                ->modalSubmitAction(false)
+                ->modalCancelAction(false),
         ];
     }
 }
