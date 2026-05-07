@@ -38,6 +38,11 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->darkMode()
             ->renderHook(
+                PanelsRenderHook::PAGE_END,
+                fn (): string => view('filament.rfp-screen-progress')->render(),
+                scopes: \App\Filament\Resources\RfpScreenResource\Pages\ListRfpScreens::class,
+            )
+            ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn (): string => Blade::render('
                     <style>

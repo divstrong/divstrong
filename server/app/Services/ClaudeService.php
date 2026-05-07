@@ -19,6 +19,11 @@ class ClaudeService
         $this->maxTokens = config('claude.max_tokens');
     }
 
+    public function getModel(): string
+    {
+        return $this->model;
+    }
+
     public function analyzeRfp(string $filePath, string $prompt, array $attachmentPaths = []): array
     {
         $content = $this->buildMultiDocContent($filePath, $prompt, $attachmentPaths);

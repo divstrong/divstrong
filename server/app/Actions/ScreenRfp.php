@@ -62,7 +62,7 @@ class ScreenRfp
     {
         try {
             $prompt = $screen->prompt;
-            if (! str_contains((string) $prompt, 'contact_name')) {
+            if (! str_contains((string) $prompt, 'contact_name') || ! str_contains((string) $prompt, 'COTS')) {
                 $prompt = RfpScreenResource::getDefaultPrompt();
             }
 
@@ -86,6 +86,7 @@ class ScreenRfp
                 'raw_response' => $result['raw_response'],
                 'status' => 'completed',
                 'analyzed_at' => now(),
+                'scanned_with_model' => $this->claude->getModel(),
             ];
 
             if (empty($screen->rfp_name) && ! empty($result['rfp_name'])) {

@@ -9,7 +9,6 @@ use App\Models\Proposal;
 use App\Models\RfpScreen;
 use App\Models\TermsLibrary;
 use BackedEnum;
-use App\Services\ClaudeService;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -17,11 +16,9 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -50,11 +47,12 @@ class RfpScreenResource extends Resource
     public static function getDefaultPrompt(): string
     {
         return <<<'PROMPT'
-You are an RFP screening analyst for a small, boutique SaaS company. Analyze the following RFP document and determine if it is a good fit for our company to respond to.
+You are an RFP screening analyst for divStrong, a small custom web & SaaS development consultancy. We BUILD custom solutions per engagement; we do NOT sell, license, or resell a shelf software product.
 
 We are a small team without enterprise-level resources. Flag any requirements that suggest this RFP is intended for larger firms.
 
 RED FLAGS to look for (score each as present or not):
+- COTS / Commercial Off-The-Shelf required — flag ONLY if the RFP explicitly uses the term "COTS" or "Commercial Off-The-Shelf" AND lists it as a requirement. Do NOT infer from generic phrases like "provide software", "describe the software", or "software solution" — those apply to custom builds too. If COTS is offered as one option among others (custom or shelf), do not flag.
 - 24/7 support or on-call requirements
 - Audited financials or SOC 2/SOC 3 compliance requirements
 - Deep insurance requirements (high liability minimums, cyber insurance, E&O)
@@ -123,12 +121,19 @@ PROMPT;
                             ->maxLength(255)
                             ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => filled($get('file_path')))
                             ->columnSpanFull(),
+                    ]),
+                Section::make('Analysis Prompt')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->collapsed()
+                    ->description('Customize the prompt sent to Claude. Leave as-is for the standard RFP screening analysis.')
+                    ->schema([
                         Forms\Components\Textarea::make('prompt')
-                            ->label('Analysis Prompt')
+                            ->hiddenLabel()
                             ->default(static::getDefaultPrompt())
                             ->rows(12)
                             ->required()
-                            ->helperText('Customize the prompt sent to Claude for analyzing this RFP. The document contents will be appended automatically.')
+                            ->helperText('The document contents will be appended automatically.')
                             ->columnSpanFull(),
                     ]),
             ]);
@@ -171,6 +176,7 @@ PROMPT;
                     ->badge()
                     ->color(fn (RfpScreen $record) => $record->score_badge_color)
                     ->formatStateUsing(fn (RfpScreen $record) => $record->score !== null ? "{$record->score}/100 — {$record->score_label}" : 'Pending')
+                    ->description(fn (RfpScreen $record) => $record->scanned_with_model_label ? 'Scanned with ' . $record->scanned_with_model_label : null)
                     ->sortable()
                     ->toggleable(),
             ])
@@ -196,178 +202,16 @@ PROMPT;
                     }),
             ])
             ->actions([
-                Action::make('createProposal')
-                    ->label('Proposal')
-                    ->icon('heroicon-o-document-plus')
-                    ->color('success')
-                    ->visible(fn (RfpScreen $record) => $record->status === 'completed')
-                    ->requiresConfirmation()
-                    ->modalHeading('Create Proposal from RFP')
-                    ->modalDescription(fn (RfpScreen $record) => "Generate a draft proposal from \"{$record->rfp_name}\"? Claude will write an overview and scope items based on the RFP analysis.")
-                    ->modalSubmitActionLabel('Generate Proposal')
-                    ->action(function (RfpScreen $record) {
-                        try {
-                            $service = new ClaudeService();
-                            $content = $service->generateProposalContent(
-                                $record->rfp_name ?? 'Untitled RFP',
-                                $record->summary ?? '',
-                                $record->requirements ?? [],
-                                $record->red_flags ?? [],
-                            );
-
-                            $proposal = Proposal::create([
-                                'user_id' => Auth::id(),
-                                'project_title' => $record->rfp_name ?? 'Untitled Project',
-                                'proposal_date' => now(),
-                                'valid_until' => now()->addDays(60),
-                                'client_name' => $content['contact_name'] ?? '',
-                                'client_email' => $content['contact_email'] ?? '',
-                                'client_company' => $content['contact_company'] ?? '',
-                                'introduction' => $content['introduction'] ?? '',
-                                'status' => ProposalStatus::Draft,
-                                'view_count' => 0,
-                            ]);
-
-                            foreach ($content['scope_items'] ?? [] as $i => $item) {
-                                $proposal->scopeItems()->create([
-                                    'category' => $item['category'] ?? 'Development',
-                                    'title' => $item['title'] ?? '',
-                                    'description' => $item['description'] ?? '',
-                                    'bullets' => $item['bullets'] ?? [],
-                                    'sort_order' => $i,
-                                ]);
-                            }
-
-                            foreach (TermsLibrary::where('is_active', true)->orderBy('sort_order')->get() as $i => $term) {
-                                $proposal->terms()->create([
-                                    'content' => $term->content,
-                                    'sort_order' => $i,
-                                ]);
-                            }
-
-                            Notification::make()
-                                ->success()
-                                ->title('Draft proposal created')
-                                ->body("Review and refine the generated content.")
-                                ->send();
-
-                            return redirect(ProposalResource::getUrl('edit', ['record' => $proposal]));
-                        } catch (\Throwable $e) {
-                            Log::error('Proposal generation from RFP failed', [
-                                'rfp_screen_id' => $record->id,
-                                'error' => $e->getMessage(),
-                            ]);
-
-                            Notification::make()
-                                ->danger()
-                                ->title('Proposal generation failed')
-                                ->body($e->getMessage())
-                                ->send();
-                        }
-                    }),
                 Action::make('reanalyze')
                     ->label('Rescan')
                     ->icon('heroicon-o-arrow-path')
                     ->color('gray')
                     ->modalHeading('Rescan this RFP?')
-                    ->modalDescription('Optionally upload a new version of the RFP to replace the existing primary document. Leave blank to re-analyze the existing file.')
-                    ->modalSubmitActionLabel('Rescan')
-                    ->form([
-                        Forms\Components\FileUpload::make('replacement_file')
-                            ->label('Replace Primary RFP (optional)')
-                            ->directory('rfp-documents')
-                            ->disk('public')
-                            ->acceptedFileTypes([
-                                'application/pdf',
-                                'application/msword',
-                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                                'text/plain',
-                                'text/csv',
-                                'text/markdown',
-                            ])
-                            ->maxSize(20480)
-                            ->helperText('PDF, DOC, DOCX, TXT, CSV, MD (max 20MB). If provided, the existing primary RFP file will be replaced.'),
-                    ])
-                    ->action(function (RfpScreen $record, array $data) {
-                        $replacement = $data['replacement_file'] ?? null;
-
-                        if (! empty($replacement)) {
-                            $oldPath = $record->file_path;
-
-                            $record->update([
-                                'file_path' => $replacement,
-                                'filename' => basename($replacement),
-                                'original_filename' => basename($replacement),
-                                'file_type' => strtolower(pathinfo($replacement, PATHINFO_EXTENSION)),
-                            ]);
-
-                            if ($oldPath && $oldPath !== $replacement) {
-                                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
-                            }
-                        }
-
-                        $record->update(['status' => 'analyzing']);
-
-                        try {
-                            $service = new ClaudeService();
-                            $prompt = $record->prompt;
-                            if (! str_contains((string) $prompt, 'contact_name')) {
-                                $prompt = static::getDefaultPrompt();
-                            }
-
-                            $result = $service->analyzeRfp(
-                                $record->file_path,
-                                $prompt,
-                                $record->attachments()->pluck('file_path')->all(),
-                            );
-
-                            $updateData = [
-                                'score' => $result['score'],
-                                'due_date' => $result['due_date'] ?? $record->due_date,
-                                'pre_bid_conference_date' => $result['pre_bid_conference_date'] ?? $record->pre_bid_conference_date,
-                                'pre_bid_conference_details' => $result['pre_bid_conference_details'] ?? $record->pre_bid_conference_details,
-                                'contact_name' => $result['contact_name'] ?? $record->contact_name,
-                                'contact_title' => $result['contact_title'] ?? $record->contact_title,
-                                'contact_department' => $result['contact_department'] ?? $record->contact_department,
-                                'contact_email' => $result['contact_email'] ?? $record->contact_email,
-                                'contact_phone' => $result['contact_phone'] ?? $record->contact_phone,
-                                'summary' => $result['summary'],
-                                'red_flags' => $result['red_flags'],
-                                'requirements' => $result['requirements'],
-                                'submission_requirements' => $result['submission_requirements'] ?? [],
-                                'raw_response' => $result['raw_response'],
-                                'status' => 'completed',
-                                'analyzed_at' => now(),
-                            ];
-
-                            if (empty($record->rfp_name) && !empty($result['rfp_name'])) {
-                                $updateData['rfp_name'] = $result['rfp_name'];
-                            }
-
-                            $record->update($updateData);
-
-                            Notification::make()
-                                ->title("Rescan Complete — {$record->score}/100")
-                                ->success()
-                                ->send();
-                        } catch (\Throwable $e) {
-                            Log::error('RFP re-screening failed', [
-                                'rfp_screen_id' => $record->id,
-                                'error' => $e->getMessage(),
-                            ]);
-
-                            $record->update([
-                                'status' => 'failed',
-                                'raw_response' => $e->getMessage(),
-                            ]);
-
-                            Notification::make()
-                                ->title('Rescan Failed')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
-                        }
-                    }),
+                    ->modalContent(fn (RfpScreen $record) => view('filament.rfp-rescan-modal-host', [
+                        'screenId' => $record->id,
+                    ]))
+                    ->modalSubmitAction(false)
+                    ->modalCancelAction(false),
                 ViewAction::make(),
                 DeleteAction::make(),
             ])

@@ -2,15 +2,22 @@
 
 namespace App\Filament\Resources\RfpScreenResource\Pages;
 
+use App\Enums\ProposalStatus;
+use App\Filament\Resources\ProposalResource;
 use App\Filament\Resources\RfpScreenResource;
+use App\Models\Proposal;
+use App\Models\TermsLibrary;
 use App\Services\ClaudeService;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Forms;
 use App\Models\RfpScreenAttachment;
+use Illuminate\Support\Facades\Auth;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
+use Filament\Schemas\Components\Actions as SchemaActions;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Livewire;
 use Filament\Schemas\Components\Section;
 use Filament\Notifications\Notification;
@@ -31,123 +38,158 @@ class ViewRfpScreen extends ViewRecord
                 Section::make()
                     ->columns(12)
                     ->schema([
-                        TextEntry::make('rfp_name')
-                            ->label('RFP Name')
-                            ->placeholder('Untitled RFP')
-                            ->weight('bold')
-                            ->size('2xl')
-                            ->columnSpan(8)
-                            ->hintAction(
-                                Action::make('editName')
-                                    ->icon('heroicon-o-pencil-square')
-                                    ->color('gray')
-                                    ->tooltip('Edit RFP Name')
-                                    ->form([
-                                        Forms\Components\TextInput::make('rfp_name')
-                                            ->label('RFP Name')
-                                            ->required()
-                                            ->maxLength(255)
-                                            ->default(fn ($record) => $record->rfp_name),
-                                    ])
-                                    ->action(function (array $data, $record) {
-                                        $record->update(['rfp_name' => $data['rfp_name']]);
-                                        Notification::make()
-                                            ->title('RFP name updated')
-                                            ->success()
-                                            ->send();
-                                    })
-                            ),
                         ViewEntry::make('score')
                             ->view('filament.rfp-screen-score')
-                            ->columnSpan(4),
-                        TextEntry::make('due_date')
-                            ->label('Due Date')
-                            ->placeholder('—')
-                            ->weight('bold')
-                            ->icon('heroicon-o-calendar-days')
-                            ->formatStateUsing(function ($record) {
-                                if (! $record->due_date) return '—';
-                                $days = (int) now()->startOfDay()->diffInDays($record->due_date, false);
-                                $formatted = $record->due_date->format('M j, Y');
-                                if ($days < 0) return $formatted . ' · ' . abs($days) . ' days overdue';
-                                if ($days === 0) return $formatted . ' · Due today';
-                                return $formatted . ' · in ' . $days . ' days';
-                            })
-                            ->color(function ($record) {
-                                if (! $record->due_date) return 'gray';
-                                $days = now()->startOfDay()->diffInDays($record->due_date, false);
-                                if ($days < 0) return 'danger';
-                                if ($days <= 7) return 'warning';
-                                return 'primary';
-                            })
-                            ->columnSpan(4),
-                        TextEntry::make('pre_bid_conference_date')
-                            ->label('Pre-Bid Conference')
-                            ->placeholder('Not listed')
-                            ->weight('bold')
-                            ->icon('heroicon-o-users')
-                            ->formatStateUsing(function ($record) {
-                                $parts = [];
-                                if ($record->pre_bid_conference_date) {
-                                    $parts[] = $record->pre_bid_conference_date->format('M j, Y');
-                                }
-                                if ($record->pre_bid_conference_details) {
-                                    $parts[] = $record->pre_bid_conference_details;
-                                }
-                                return empty($parts) ? 'Not listed' : implode(' · ', $parts);
-                            })
-                            ->color(fn ($record) => $record->pre_bid_conference_date || $record->pre_bid_conference_details ? 'primary' : 'gray')
-                            ->columnSpan(4),
-                        TextEntry::make('status')
-                            ->hiddenLabel()
-                            ->badge()
-                            ->color(fn (string $state) => match ($state) {
-                                'completed' => 'success',
-                                'analyzing' => 'warning',
-                                'failed' => 'danger',
-                                default => 'gray',
-                            })
-                            ->formatStateUsing(fn (string $state) => ucfirst($state))
-                            ->columnSpan(4),
-                        TextEntry::make('file_path')
-                            ->label('Original RFP')
-                            ->formatStateUsing(fn ($record) => $record->original_filename)
-                            ->url(fn ($record) => Storage::disk('public')->url($record->file_path))
-                            ->openUrlInNewTab()
-                            ->icon('heroicon-o-arrow-top-right-on-square')
-                            ->color('primary')
-                            ->columnSpan(8),
-                    ]),
-
-                Section::make('Contact Person')
-                    ->icon('heroicon-o-user')
-                    ->columns(2)
-                    ->schema([
+                            ->columnSpan(2),
+                        Group::make()
+                            ->columnSpan(8)
+                            ->schema([
+                                TextEntry::make('rfp_name')
+                                    ->hiddenLabel()
+                                    ->placeholder('Untitled RFP')
+                                    ->html()
+                                    ->formatStateUsing(fn ($state) => '<span style="font-size: 1.875rem; font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; display: block;">' . e($state ?: 'Untitled RFP') . '</span>'),
+                                TextEntry::make('due_date')
+                                    ->hiddenLabel()
+                                    ->html()
+                                    ->formatStateUsing(fn ($record) => '<strong>DUE:</strong> ' . ($record->due_date ? e($record->due_date->format('M j, Y')) : '—')),
+                            ]),
+                        SchemaActions::make([
+                            Action::make('editDetails')
+                                ->label('Edit Details')
+                                ->icon('heroicon-o-pencil-square')
+                                ->color('gray')
+                                ->modalHeading('Edit RFP Details')
+                                ->modalWidth('2xl')
+                                ->fillForm(fn ($record) => [
+                                    'rfp_name' => $record->rfp_name,
+                                    'due_date' => $record->due_date?->format('Y-m-d'),
+                                    'pre_bid_conference_date' => $record->pre_bid_conference_date?->format('Y-m-d'),
+                                    'pre_bid_conference_details' => $record->pre_bid_conference_details,
+                                    'contact_name' => $record->contact_name,
+                                    'contact_title' => $record->contact_title,
+                                    'contact_department' => $record->contact_department,
+                                    'contact_email' => $record->contact_email,
+                                    'contact_phone' => $record->contact_phone,
+                                ])
+                                ->form([
+                                    Section::make('RFP')
+                                        ->columns(2)
+                                        ->schema([
+                                            Forms\Components\TextInput::make('rfp_name')
+                                                ->label('RFP Name')
+                                                ->required()
+                                                ->maxLength(255)
+                                                ->columnSpanFull(),
+                                            Forms\Components\DatePicker::make('due_date')
+                                                ->label('Due Date')
+                                                ->native(false),
+                                            Forms\Components\DatePicker::make('pre_bid_conference_date')
+                                                ->label('Pre-Bid Conference Date')
+                                                ->native(false),
+                                            Forms\Components\Textarea::make('pre_bid_conference_details')
+                                                ->label('Pre-Bid Conference Details')
+                                                ->placeholder('Time, location or meeting link, in-person/virtual, mandatory or optional…')
+                                                ->rows(3)
+                                                ->columnSpanFull(),
+                                        ]),
+                                    Section::make('Contact Person')
+                                        ->columns(2)
+                                        ->schema([
+                                            Forms\Components\TextInput::make('contact_name')
+                                                ->label('Name')
+                                                ->maxLength(255),
+                                            Forms\Components\TextInput::make('contact_title')
+                                                ->label('Title')
+                                                ->maxLength(255),
+                                            Forms\Components\TextInput::make('contact_department')
+                                                ->label('Department')
+                                                ->maxLength(255)
+                                                ->columnSpanFull(),
+                                            Forms\Components\TextInput::make('contact_email')
+                                                ->label('Email')
+                                                ->email()
+                                                ->maxLength(255),
+                                            Forms\Components\TextInput::make('contact_phone')
+                                                ->label('Phone')
+                                                ->tel()
+                                                ->maxLength(50),
+                                        ]),
+                                ])
+                                ->modalSubmitActionLabel('Save Changes')
+                                ->action(function (array $data, $record) {
+                                    $record->update($data);
+                                    Notification::make()
+                                        ->title('RFP details updated')
+                                        ->success()
+                                        ->send();
+                                }),
+                        ])
+                            ->columnSpan(2)
+                            ->alignment('end'),
                         TextEntry::make('contact_name')
-                            ->label('Name')
-                            ->placeholder('—')
-                            ->weight('semibold'),
-                        TextEntry::make('contact_title')
-                            ->label('Title')
-                            ->placeholder('—'),
-                        TextEntry::make('contact_department')
-                            ->label('Department')
-                            ->placeholder('—'),
-                        TextEntry::make('contact_email')
-                            ->label('Email')
-                            ->placeholder('—')
-                            ->icon('heroicon-o-envelope')
-                            ->url(fn ($record) => $record->contact_email ? 'mailto:' . $record->contact_email : null)
-                            ->color(fn ($record) => $record->contact_email ? 'primary' : null),
-                        TextEntry::make('contact_phone')
-                            ->label('Phone')
-                            ->placeholder('—')
-                            ->icon('heroicon-o-phone')
-                            ->url(fn ($record) => $record->contact_phone ? 'tel:' . preg_replace('/[^0-9+]/', '', $record->contact_phone) : null)
-                            ->color(fn ($record) => $record->contact_phone ? 'primary' : null),
-                    ])
-                    ->collapsible()
-                    ->visible(fn ($record) => filled($record->contact_name) || filled($record->contact_email) || filled($record->contact_phone) || filled($record->contact_title) || filled($record->contact_department)),
+                            ->hiddenLabel()
+                            ->html()
+                            ->extraAttributes(['style' => 'margin-top: 2rem;'])
+                            ->formatStateUsing(function ($record) {
+                                $label = '<div style="font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.06em; color: #000; margin-bottom: 0.5rem;">CONTACT</div>';
+                                $lines = [];
+                                if (filled($record->contact_name)) {
+                                    $name = e($record->contact_name);
+                                    if (filled($record->contact_title)) {
+                                        $lines[] = $name . ', <em>' . e($record->contact_title) . '</em>';
+                                    } else {
+                                        $lines[] = $name;
+                                    }
+                                } elseif (filled($record->contact_title)) {
+                                    $lines[] = '<em>' . e($record->contact_title) . '</em>';
+                                }
+                                if (filled($record->contact_department)) {
+                                    $lines[] = e($record->contact_department);
+                                }
+                                if (filled($record->contact_email)) {
+                                    $email = e($record->contact_email);
+                                    $lines[] = '<a href="mailto:' . $email . '" class="hover:underline">' . $email . '</a>';
+                                }
+                                if (filled($record->contact_phone)) {
+                                    $cleaned = preg_replace('/[^0-9+]/', '', $record->contact_phone);
+                                    $lines[] = '<a href="tel:' . $cleaned . '" class="hover:underline">' . e($record->contact_phone) . '</a>';
+                                }
+                                $body = empty($lines) ? '—' : implode('<br>', $lines);
+                                return $label . '<div>' . $body . '</div>';
+                            })
+                            ->columnSpan(4)
+                            ->columnStart(3),
+                        Group::make()
+                            ->columnSpan(5)
+                            ->extraAttributes(['style' => 'margin-top: 2rem;'])
+                            ->schema([
+                                TextEntry::make('pre_bid_conference_date')
+                                    ->hiddenLabel()
+                                    ->html()
+                                    ->formatStateUsing(function ($record) {
+                                        $label = '<div style="font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.06em; color: #000; margin-bottom: 0.5rem;">PREBID</div>';
+                                        $parts = [];
+                                        if ($record->pre_bid_conference_date) {
+                                            $parts[] = e($record->pre_bid_conference_date->format('M j, Y'));
+                                        }
+                                        if ($record->pre_bid_conference_details) {
+                                            $parts[] = e($record->pre_bid_conference_details);
+                                        }
+                                        $body = empty($parts) ? 'Not listed' : implode(' · ', $parts);
+                                        return $label . '<div>' . $body . '</div>';
+                                    }),
+                                TextEntry::make('file_path')
+                                    ->hiddenLabel()
+                                    ->html()
+                                    ->formatStateUsing(function ($record) {
+                                        $label = '<div style="font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.06em; color: #000; margin-bottom: 0.5rem;">RFP</div>';
+                                        $url = e(Storage::disk('public')->url($record->file_path));
+                                        $name = e($record->original_filename);
+                                        return $label . '<a href="' . $url . '" target="_blank" rel="noopener" class="underline" style="color: #ed2537; white-space: nowrap;">' . $name . '</a>';
+                                    }),
+                            ]),
+                    ]),
 
                 Section::make('Summary')
                     ->schema([
@@ -268,6 +310,94 @@ class ViewRfpScreen extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('createProposal')
+                ->label('Create Proposal')
+                ->icon('heroicon-o-document-plus')
+                ->color('gray')
+                ->visible(fn ($record) => $record->status === 'completed' && $record->proposal_id === null)
+                ->requiresConfirmation()
+                ->modalHeading('Create Proposal from RFP')
+                ->modalDescription(fn ($record) => "Generate a draft proposal from \"{$record->rfp_name}\"? Claude will write an overview and scope items based on the RFP analysis.")
+                ->modalSubmitActionLabel('Generate Proposal')
+                ->action(function () {
+                    $record = $this->record;
+
+                    if ($record->proposal_id !== null) {
+                        Notification::make()
+                            ->warning()
+                            ->title('Proposal already exists')
+                            ->body('A proposal has already been generated from this RFP.')
+                            ->send();
+                        return;
+                    }
+
+                    try {
+                        $service = new ClaudeService();
+                        $content = $service->generateProposalContent(
+                            $record->rfp_name ?? 'Untitled RFP',
+                            $record->summary ?? '',
+                            $record->requirements ?? [],
+                            $record->red_flags ?? [],
+                        );
+
+                        $proposal = Proposal::create([
+                            'user_id' => Auth::id(),
+                            'project_title' => $record->rfp_name ?? 'Untitled Project',
+                            'proposal_date' => now(),
+                            'valid_until' => now()->addDays(60),
+                            'client_name' => $content['contact_name'] ?? '',
+                            'client_email' => $content['contact_email'] ?? '',
+                            'client_company' => $content['contact_company'] ?? '',
+                            'introduction' => $content['introduction'] ?? '',
+                            'status' => ProposalStatus::Draft,
+                            'view_count' => 0,
+                        ]);
+
+                        foreach ($content['scope_items'] ?? [] as $i => $item) {
+                            $proposal->scopeItems()->create([
+                                'category' => $item['category'] ?? 'Development',
+                                'title' => $item['title'] ?? '',
+                                'description' => $item['description'] ?? '',
+                                'bullets' => $item['bullets'] ?? [],
+                                'sort_order' => $i,
+                            ]);
+                        }
+
+                        foreach (TermsLibrary::where('is_active', true)->orderBy('sort_order')->get() as $i => $term) {
+                            $proposal->terms()->create([
+                                'content' => $term->content,
+                                'sort_order' => $i,
+                            ]);
+                        }
+
+                        $record->update(['proposal_id' => $proposal->id]);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Draft proposal created')
+                            ->body('Review and refine the generated content.')
+                            ->send();
+
+                        return redirect(ProposalResource::getUrl('edit', ['record' => $proposal]));
+                    } catch (\Throwable $e) {
+                        Log::error('Proposal generation from RFP failed', [
+                            'rfp_screen_id' => $record->id,
+                            'error' => $e->getMessage(),
+                        ]);
+
+                        Notification::make()
+                            ->danger()
+                            ->title('Proposal generation failed')
+                            ->body($e->getMessage())
+                            ->send();
+                    }
+                }),
+            Actions\Action::make('viewProposal')
+                ->label('View Proposal')
+                ->icon('heroicon-o-document-text')
+                ->color('gray')
+                ->visible(fn ($record) => $record->proposal_id !== null)
+                ->url(fn ($record) => ProposalResource::getUrl('edit', ['record' => $record->proposal_id])),
             Actions\Action::make('addAttachments')
                 ->label('Supporting Docs')
                 ->icon('heroicon-o-paper-clip')

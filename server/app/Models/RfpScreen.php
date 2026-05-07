@@ -11,6 +11,7 @@ class RfpScreen extends Model
 {
     protected $fillable = [
         'user_id',
+        'proposal_id',
         'filename',
         'original_filename',
         'file_path',
@@ -33,6 +34,7 @@ class RfpScreen extends Model
         'raw_response',
         'status',
         'analyzed_at',
+        'scanned_with_model',
     ];
 
     protected function casts(): array
@@ -50,6 +52,11 @@ class RfpScreen extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function proposal(): BelongsTo
+    {
+        return $this->belongsTo(Proposal::class);
     }
 
     public function attachments(): HasMany
@@ -87,5 +94,26 @@ class RfpScreen extends Model
         if ($this->score >= 75) return 'Great Fit';
         if ($this->score >= 60) return 'Good Fit';
         return 'Not Us';
+    }
+
+    public function getScannedWithModelLabelAttribute(): ?string
+    {
+        $id = $this->scanned_with_model;
+        if (! $id) return null;
+
+        return match (true) {
+            str_contains($id, 'opus-4-7') => 'Opus 4.7',
+            str_contains($id, 'opus-4-6') => 'Opus 4.6',
+            str_contains($id, 'opus-4') => 'Opus 4',
+            str_contains($id, 'sonnet-4-6') => 'Sonnet 4.6',
+            str_contains($id, 'sonnet-4-5') => 'Sonnet 4.5',
+            str_contains($id, 'sonnet-4') => 'Sonnet 4',
+            str_contains($id, 'haiku-4-5') => 'Haiku 4.5',
+            str_contains($id, 'haiku-4') => 'Haiku 4',
+            str_contains($id, 'opus-3') => 'Opus 3',
+            str_contains($id, 'sonnet-3') => 'Sonnet 3',
+            str_contains($id, 'haiku-3') => 'Haiku 3',
+            default => $id,
+        };
     }
 }

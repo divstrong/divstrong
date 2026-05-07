@@ -25,16 +25,20 @@
     };
 @endphp
 
-<div style="display: flex; justify-content: flex-end;">
+<div style="display: inline-flex; flex-direction: column; align-items: stretch; gap: 0.5rem;">
     <div style="border-radius: 0.75rem; border: 1px solid; padding: 1rem 1.75rem; text-align: center; {{ $scoreBg }}">
-        <p style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.25rem 0; {{ $scoreText }} opacity: 0.7;">
-            Fit Score
-        </p>
         <p style="font-size: 3rem; font-weight: 800; line-height: 1; margin: 0; {{ $scoreText }}">
             {{ $score !== null ? $score : '—' }}<span style="font-size: 1.125rem; font-weight: 500;">/100</span>
         </p>
-        <p style="font-size: 0.875rem; font-weight: 600; margin: 0.25rem 0 0 0; {{ $scoreText }} opacity: 0.8;">
+    </div>
+    <div style="border-radius: 0.5rem; border: 1px solid; padding: 0.375rem 0.875rem; text-align: center; {{ $scoreBg }}">
+        <p style="font-size: 0.875rem; font-weight: 700; margin: 0; {{ $scoreText }}">
             {{ $score !== null ? $label : 'Pending' }}
         </p>
     </div>
+    @if($record->scanned_with_model_label)
+        <p style="font-size: 0.75rem; color: #9ca3af; margin: 0; text-align: center;">
+            Scanned with {{ $record->scanned_with_model_label }}
+        </p>
+    @endif
 </div>
