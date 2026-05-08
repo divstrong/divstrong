@@ -11,7 +11,6 @@ use App\Models\TermsLibrary;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -74,6 +73,10 @@ RESPOND IN THIS EXACT JSON FORMAT:
     "due_date": "<response/proposal submission due date in YYYY-MM-DD format, or null if not specified. Look for terms like 'proposals due', 'submission deadline', 'responses must be received by'. Use the final submission deadline, not Q&A or intent-to-bid dates.>",
     "pre_bid_conference_date": "<date of any pre-bid / pre-proposal / pre-award conference, Q&A session, or vendor info meeting in YYYY-MM-DD format, or null. These sessions typically happen before the due date and allow vendors to ask questions.>",
     "pre_bid_conference_details": "<short description of the pre-bid conference including time, format (in-person/virtual), location or meeting link, and whether attendance is mandatory or optional. Null if no conference is listed.>",
+    "locality_city": "<the city/town/village name of the issuing municipality (e.g., 'Wheat Ridge', 'Austin'), or null if a county/state agency or unclear. Just the place name, no 'City of' prefix.>",
+    "locality_state": "<the U.S. state or territory of the issuing entity, as the standard 2-letter code (e.g., 'CO', 'TX', 'NY'), or null.>",
+    "locality_county": "<the county name if the issuer is a county government or county-level agency, or null. Just the county name, no 'County' suffix.>",
+    "target_department": "<the specific department, division, or program the RFP is for, if narrower than the whole municipality (e.g., 'Library', 'Sheriff', 'Public Works', 'Parks & Recreation', 'Information Technology'). Use the most specific/canonical name. Null if the RFP is enterprise-wide or department is not stated.>",
     "score": <0-100 integer, where 100 = perfect fit for a small SaaS company>,
     "summary": "<2-3 sentence executive summary of the RFP and fit assessment>",
     "red_flags": [
@@ -213,7 +216,6 @@ PROMPT;
                     ->modalSubmitAction(false)
                     ->modalCancelAction(false),
                 ViewAction::make(),
-                DeleteAction::make(),
             ])
             ->bulkActions([
                 BulkActionGroup::make([

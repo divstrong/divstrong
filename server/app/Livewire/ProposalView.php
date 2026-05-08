@@ -265,6 +265,22 @@ class ProposalView extends Component
         $this->proposal->refresh();
     }
 
+    public function toggleNavSection(string $id): void
+    {
+        if (! $this->isAdmin) return;
+
+        $hidden = $this->proposal->nav_hidden_sections ?? [];
+
+        if (in_array($id, $hidden, true)) {
+            $hidden = array_values(array_diff($hidden, [$id]));
+        } else {
+            $hidden[] = $id;
+        }
+
+        $this->proposal->update(['nav_hidden_sections' => $hidden]);
+        $this->proposal->refresh();
+    }
+
     public function updatedCoverImage(): void
     {
         if (! $this->isAdmin) return;
@@ -398,19 +414,14 @@ class ProposalView extends Component
             return ['ok' => false, 'message' => 'Not authorized.'];
         }
 
-        $uuid = trim($uuid);
+        $uuid = strtoupper(trim($uuid));
 
-        // Accept 32-char hex without dashes by re-formatting to standard UUID
-        if (preg_match('/^[0-9a-f]{32}$/i', $uuid)) {
-            $uuid = substr($uuid, 0, 8) . '-' . substr($uuid, 8, 4) . '-' . substr($uuid, 12, 4)
-                . '-' . substr($uuid, 16, 4) . '-' . substr($uuid, 20, 12);
+        // Proposal codes are 6-char uppercase alphanumeric (see Proposal::booted())
+        if (! preg_match('/^[A-Z0-9]{6}$/', $uuid)) {
+            return ['ok' => false, 'message' => 'Proposal codes are 6 letters/numbers (e.g. IGAK96).'];
         }
 
-        if (! preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $uuid)) {
-            return ['ok' => false, 'message' => 'That doesn\'t look like a valid proposal identifier.'];
-        }
-
-        if (strcasecmp($uuid, (string) $this->proposal->uuid) === 0) {
+        if ($uuid === strtoupper((string) $this->proposal->uuid)) {
             return ['ok' => false, 'message' => 'You can\'t import scope from the same proposal.'];
         }
 

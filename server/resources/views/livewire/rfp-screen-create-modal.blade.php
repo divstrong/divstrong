@@ -54,16 +54,6 @@
                     </span>
                 </div>
 
-                {{-- RFP Name (optional) --}}
-                <div>
-                    <label for="rfp-name" style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
-                        RFP Name
-                    </label>
-                    <input id="rfp-name" type="text" wire:model="rfpName"
-                           placeholder="Optional &mdash; will be extracted from document if left blank"
-                           style="display: block; width: 100%; font-size: 0.875rem; color: #374151; padding: 0.5rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; background-color: #ffffff;">
-                </div>
-
                 {{-- Analysis Prompt (collapsible) --}}
                 <details style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem 1rem; background-color: #f9fafb;">
                     <summary style="cursor: pointer; font-size: 0.875rem; font-weight: 600; color: #374151;">

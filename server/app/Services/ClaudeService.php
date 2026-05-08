@@ -26,6 +26,9 @@ class ClaudeService
 
     public function analyzeRfp(string $filePath, string $prompt, array $attachmentPaths = []): array
     {
+        // Claude analysis can take 30-90s; raise PHP's execution-time cap for this request.
+        @set_time_limit(0);
+
         $content = $this->buildMultiDocContent($filePath, $prompt, $attachmentPaths);
 
         $response = $this->sendWithRetry($content);
@@ -196,6 +199,8 @@ class ClaudeService
 
     public function generateProposalContent(string $rfpName, string $summary, array $requirements, array $redFlags): array
     {
+        @set_time_limit(0);
+
         $requirementsList = collect($requirements)->map(fn ($r, $i) => ($i + 1) . ". {$r}")->implode("\n");
         $redFlagsList = collect($redFlags)->map(fn ($r) => "- {$r}")->implode("\n");
 
@@ -281,6 +286,10 @@ PROMPT;
                 'due_date' => $this->parseDueDate($parsed['due_date'] ?? null),
                 'pre_bid_conference_date' => $this->parseDueDate($parsed['pre_bid_conference_date'] ?? null),
                 'pre_bid_conference_details' => $this->cleanContactField($parsed['pre_bid_conference_details'] ?? null),
+                'locality_city' => $this->cleanContactField($parsed['locality_city'] ?? null),
+                'locality_state' => $this->cleanContactField($parsed['locality_state'] ?? null),
+                'locality_county' => $this->cleanContactField($parsed['locality_county'] ?? null),
+                'target_department' => $this->cleanContactField($parsed['target_department'] ?? null),
                 'score' => (int) max(0, min(100, $parsed['score'])),
                 'summary' => $parsed['summary'] ?? '',
                 'red_flags' => $parsed['red_flags'] ?? [],

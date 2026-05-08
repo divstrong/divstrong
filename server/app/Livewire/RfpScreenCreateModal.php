@@ -18,7 +18,6 @@ class RfpScreenCreateModal extends Component
     public string $state = 'form';
 
     public $file = null;
-    public ?string $rfpName = null;
     public string $prompt = '';
 
     public ?int $score = null;
@@ -36,7 +35,6 @@ class RfpScreenCreateModal extends Component
     {
         return [
             'file' => 'required|file|max:20480|mimes:pdf,doc,docx,txt,csv,md',
-            'rfpName' => 'nullable|string|max:255',
             'prompt' => 'required|string',
         ];
     }
@@ -57,7 +55,7 @@ class RfpScreenCreateModal extends Component
                 Auth::user(),
                 $this->file,
                 $this->prompt,
-                $this->rfpName ?: null,
+                null,
             );
 
             try {
@@ -85,7 +83,7 @@ class RfpScreenCreateModal extends Component
 
     public function reset_(): void
     {
-        $this->reset(['state', 'file', 'rfpName', 'score', 'scoreLabel', 'modelLabel', 'viewUrl', 'errorMessage']);
+        $this->reset(['state', 'file', 'score', 'scoreLabel', 'modelLabel', 'viewUrl', 'errorMessage']);
         $this->prompt = RfpScreenResource::getDefaultPrompt();
         $this->state = 'form';
     }

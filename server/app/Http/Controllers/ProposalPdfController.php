@@ -13,6 +13,8 @@ class ProposalPdfController extends Controller
 {
     public function download(string $uuid): Response
     {
+        @set_time_limit(0);
+
         $proposal = Proposal::where('uuid', $uuid)->firstOrFail();
 
         $url = route('proposal.view', ['uuid' => $uuid]) . '?pdf=1';

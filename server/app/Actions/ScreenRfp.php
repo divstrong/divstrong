@@ -62,7 +62,10 @@ class ScreenRfp
     {
         try {
             $prompt = $screen->prompt;
-            if (! str_contains((string) $prompt, 'contact_name') || ! str_contains((string) $prompt, 'COTS')) {
+            if (! str_contains((string) $prompt, 'contact_name')
+                || ! str_contains((string) $prompt, 'COTS')
+                || ! str_contains((string) $prompt, 'locality_city')
+                || ! str_contains((string) $prompt, 'target_department')) {
                 $prompt = RfpScreenResource::getDefaultPrompt();
             }
 
@@ -80,6 +83,10 @@ class ScreenRfp
                 'contact_department' => $result['contact_department'] ?? $screen->contact_department,
                 'contact_email' => $result['contact_email'] ?? $screen->contact_email,
                 'contact_phone' => $result['contact_phone'] ?? $screen->contact_phone,
+                'locality_city' => $result['locality_city'] ?? $screen->locality_city,
+                'locality_state' => $result['locality_state'] ?? $screen->locality_state,
+                'locality_county' => $result['locality_county'] ?? $screen->locality_county,
+                'target_department' => $result['target_department'] ?? $screen->target_department,
                 'summary' => $result['summary'],
                 'red_flags' => $result['red_flags'],
                 'requirements' => $result['requirements'],

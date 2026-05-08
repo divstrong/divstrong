@@ -56,7 +56,7 @@ class ViewRfpScreen extends ViewRecord
                             ]),
                         SchemaActions::make([
                             Action::make('editDetails')
-                                ->label('Edit Details')
+                                ->label('Edit')
                                 ->icon('heroicon-o-pencil-square')
                                 ->color('gray')
                                 ->modalHeading('Edit RFP Details')
@@ -199,6 +199,19 @@ class ViewRfpScreen extends ViewRecord
                     ])
                     ->collapsible(),
 
+                Section::make('Budget')
+                    ->description(fn ($record) => $record->budget_intel_at
+                        ? 'Snapshot from public budget data, run ' . $record->budget_intel_at->diffForHumans()
+                        : null)
+                    ->schema([
+                        ViewEntry::make('budget_intel')
+                            ->hiddenLabel()
+                            ->view('filament.rfp-budget-summary'),
+                    ])
+                    ->collapsible()
+                    ->collapsed()
+                    ->visible(fn ($record) => ! empty($record->budget_intel)),
+
                 Section::make('Red Flags')
                     ->schema([
                         TextEntry::make('red_flags')
@@ -310,6 +323,18 @@ class ViewRfpScreen extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('budgetIntel')
+                ->label('Budget Intel')
+                ->icon('heroicon-o-banknotes')
+                ->color('gray')
+                ->visible(fn ($record) => $record->score !== null && $record->score >= 60)
+                ->modalHeading(fn ($record) => 'Budget Intel — ' . ($record->locality_label ?: 'Unknown locality'))
+                ->modalWidth(\Filament\Support\Enums\Width::FourExtraLarge)
+                ->modalContent(fn ($record) => view('filament.budget-intel-modal-host', [
+                    'screenId' => $record->id,
+                ]))
+                ->modalSubmitAction(false)
+                ->modalCancelAction(false),
             Actions\Action::make('createProposal')
                 ->label('Create Proposal')
                 ->icon('heroicon-o-document-plus')

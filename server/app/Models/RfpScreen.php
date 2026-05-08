@@ -35,6 +35,13 @@ class RfpScreen extends Model
         'status',
         'analyzed_at',
         'scanned_with_model',
+        'locality_city',
+        'locality_state',
+        'locality_county',
+        'target_department',
+        'budget_intel',
+        'budget_intel_at',
+        'budget_intel_model',
     ];
 
     protected function casts(): array
@@ -46,7 +53,20 @@ class RfpScreen extends Model
             'analyzed_at' => 'datetime',
             'due_date' => 'date',
             'pre_bid_conference_date' => 'date',
+            'budget_intel' => 'array',
+            'budget_intel_at' => 'datetime',
         ];
+    }
+
+    public function getLocalityLabelAttribute(): ?string
+    {
+        $parts = array_filter([
+            $this->locality_city,
+            $this->locality_county ? ($this->locality_county . ' County') : null,
+            $this->locality_state,
+        ]);
+
+        return empty($parts) ? null : implode(', ', $parts);
     }
 
     public function user(): BelongsTo

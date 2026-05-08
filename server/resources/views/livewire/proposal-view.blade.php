@@ -26,41 +26,154 @@
 
     {{-- ========== STICKY NAV BAR ========== --}}
     @unless($isPdfMode)
+    @php
+        $navSections = $proposal->nav_sections;
+        $navCandidates = $proposal->nav_candidates;
+        $navHidden = $proposal->nav_hidden_sections ?? [];
+    @endphp
     <nav x-data="{
             scrolled: false,
             active: '',
-            sections: [@if($proposal->roadmap_enabled) 'roadmap', @endif 'overview', @if($proposal->differentiator_enabled) 'why-custom', @endif 'scope', @if($proposal->investment_enabled) 'investment', @endif @if($proposal->about_enabled) 'about', @endif @if($proposal->team_enabled) 'team', @endif 'process', @if($proposal->milestones_enabled) 'milestones', @endif @if($proposal->changes_enabled) 'changes', @endif @if($proposal->vpat_enabled) 'vpat', @endif @if($proposal->performance_enabled) 'performance', @endif @if($proposal->references_enabled) 'references', @endif @if($proposal->terms_enabled) 'terms' @endif],
-            labels: { @if($proposal->roadmap_enabled) roadmap: 'Roadmap', @endif overview: 'Overview', @if($proposal->differentiator_enabled) 'why-custom': 'Why Custom', @endif scope: 'Scope', @if($proposal->investment_enabled) investment: 'Investment', @endif @if($proposal->about_enabled) about: 'About', @endif @if($proposal->team_enabled) team: 'Team', @endif process: 'Process', @if($proposal->milestones_enabled) milestones: 'Milestones', @endif @if($proposal->changes_enabled) changes: 'Changes', @endif @if($proposal->vpat_enabled) vpat: 'Accessibility', @endif @if($proposal->performance_enabled) performance: 'Past Work', @endif @if($proposal->references_enabled) references: 'References', @endif @if($proposal->terms_enabled) terms: 'Terms' @endif },
+            menuOpen: false,
+            useHamburger: false,
             updateNav() {
                 this.scrolled = window.scrollY > window.innerHeight * 0.6;
                 let current = '';
-                for (const id of this.sections) {
+                const links = this.$refs.items?.querySelectorAll('[data-section-id]') || [];
+                for (const link of links) {
+                    const id = link.dataset.sectionId;
                     const el = document.getElementById(id);
                     if (el && el.getBoundingClientRect().top <= 100) current = id;
                 }
                 this.active = current;
+            },
+            measureFit() {
+                if (window.innerWidth < 640) { this.useHamburger = true; return; }
+                const items = this.$refs.items;
+                const container = this.$refs.container;
+                if (!items || !container) return;
+                const safetyMargin = 240; // logo + approve button + side padding
+                this.useHamburger = items.scrollWidth > (container.clientWidth - safetyMargin);
+            },
+            jumpTo(id) {
+                this.menuOpen = false;
+                document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
             }
          }"
-         x-init="updateNav()"
+         x-init="
+            updateNav();
+            $nextTick(() => measureFit());
+            new ResizeObserver(() => measureFit()).observe($refs.container);
+         "
          @scroll.window.throttle.50ms="updateNav()"
+         @resize.window.debounce.150ms="measureFit()"
          class="fixed top-0 left-0 right-0 z-50 transition-all duration-500"
          :class="scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100 translate-y-0' : '-translate-y-full'"
     >
-        <div class="max-w-6xl mx-auto px-3 sm:px-6 flex items-center h-14 gap-2 sm:gap-0 sm:justify-center relative">
+        <div x-ref="container" class="max-w-6xl mx-auto px-3 sm:px-6 flex items-center h-14 gap-2 relative">
             <a href="https://www.divstrong.com" target="_blank" rel="noopener" class="hidden sm:block absolute left-6 flex-shrink-0">
                 <img src="{{ asset('images/logo.png') }}" alt="DivStrong" class="h-6">
             </a>
-            <div class="flex items-center gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide flex-1 sm:flex-none sm:justify-center">
-                <template x-for="id in sections" :key="id">
-                    <a :href="'#' + id"
-                       class="px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-medium rounded-full transition-colors duration-200 whitespace-nowrap flex-shrink-0"
-                       :class="active === id ? 'bg-brand text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'"
-                       x-text="labels[id]"
-                       @click.prevent="document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })"
-                    ></a>
-                </template>
+
+            {{-- Inline pills (visible when items fit) --}}
+            <div x-ref="items"
+                 x-show="!useHamburger"
+                 class="hidden sm:flex items-center gap-1 mx-auto whitespace-nowrap">
+                @foreach($navSections as $section)
+                    <a href="#{{ $section['id'] }}"
+                       data-section-id="{{ $section['id'] }}"
+                       class="px-3 py-1.5 text-xs font-medium rounded-full transition-colors duration-200 flex-shrink-0"
+                       :class="active === '{{ $section['id'] }}' ? 'bg-brand text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'"
+                       @click.prevent="jumpTo('{{ $section['id'] }}')"
+                    >{{ $section['label'] }}</a>
+                @endforeach
             </div>
-            <div class="hidden sm:block sm:absolute sm:right-6">
+
+            {{-- Hamburger (mobile + when desktop pills overflow) --}}
+            <div class="flex sm:hidden items-center" :class="{ 'sm:flex': useHamburger }">
+                <button @click="menuOpen = !menuOpen"
+                        class="p-2 -ml-1 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+                        aria-label="Open navigation menu">
+                    <svg x-show="!menuOpen" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    <svg x-show="menuOpen" x-cloak class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+
+                {{-- Hamburger dropdown --}}
+                <div x-show="menuOpen" x-cloak
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-100"
+                     x-transition:leave-start="opacity-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 -translate-y-1"
+                     @click.outside="menuOpen = false"
+                     @keydown.escape.window="menuOpen = false"
+                     class="absolute top-full left-3 right-3 sm:left-auto sm:right-6 sm:max-w-xs mt-2 bg-white rounded-xl shadow-lg border border-gray-200 py-2 max-h-[70vh] overflow-y-auto">
+                    @foreach($navSections as $section)
+                        <a href="#{{ $section['id'] }}"
+                           class="block px-4 py-2 text-sm font-medium transition-colors"
+                           :class="active === '{{ $section['id'] }}' ? 'bg-brand/10 text-brand' : 'text-gray-700 hover:bg-gray-50'"
+                           @click.prevent="jumpTo('{{ $section['id'] }}')"
+                        >{{ $section['label'] }}</a>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="hidden sm:flex items-center gap-2 sm:absolute sm:right-6">
+                @if($isAdmin)
+                    {{-- Admin: Customize Nav gear --}}
+                    <div x-data="{ customizeOpen: false }">
+                        <button @click="customizeOpen = true"
+                                class="pdf-hide p-1.5 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer rounded-full hover:bg-gray-100"
+                                title="Customize nav">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        </button>
+
+                        {{-- Customize modal (teleported to body to escape the nav's transform context) --}}
+                        <template x-teleport="body">
+                        <div x-show="customizeOpen" x-cloak
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100"
+                             x-transition:leave-end="opacity-0"
+                             class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                             @keydown.escape.window="customizeOpen = false">
+                            <div @click.outside="customizeOpen = false"
+                                 class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
+                                <div class="p-6 border-b border-gray-100">
+                                    <h3 class="text-lg font-bold text-gray-900">Customize Navigation</h3>
+                                    <p class="text-sm text-gray-500 mt-1">Choose which enabled sections appear in the sticky nav. Hidden sections still render in the proposal &mdash; they just don't get a nav link.</p>
+                                </div>
+                                <div class="p-6 overflow-y-auto flex-1 space-y-1">
+                                    @foreach($navCandidates as $section)
+                                        @php $isHidden = in_array($section['id'], $navHidden, true); @endphp
+                                        <label class="flex items-center justify-between gap-3 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                            <span class="text-sm font-medium text-gray-900">{{ $section['label'] }}</span>
+                                            <span class="relative inline-flex">
+                                                <input type="checkbox"
+                                                       wire:click="toggleNavSection('{{ $section['id'] }}')"
+                                                       @if(! $isHidden) checked @endif
+                                                       class="sr-only peer">
+                                                <span class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></span>
+                                                <span class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></span>
+                                            </span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                                <div class="p-6 border-t border-gray-100 flex items-center justify-end">
+                                    <button @click="customizeOpen = false"
+                                            class="inline-flex items-center gap-2 px-5 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors cursor-pointer">
+                                        Done
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        </template>
+                    </div>
+                @endif
+
                 @if($converted || $proposal->status === \App\Enums\ProposalStatus::Accepted)
                     <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 text-xs font-semibold rounded-full border border-emerald-200">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -368,6 +481,118 @@
             </div>
         </div>
     </section>
+
+    {{-- ========== OVERVIEW SECTION ========== --}}
+    @if($proposal->introduction || $isAdmin)
+    @php $hasOverviewImage = (bool) $proposal->overview_image; @endphp
+    <section id="overview" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
+        <div class="{{ $hasOverviewImage ? 'max-w-6xl' : 'max-w-4xl' }} mx-auto">
+            <div class="flex items-center gap-3 mb-4">
+                <h2 class="text-3xl font-bold text-gray-900">Overview</h2>
+                @if($isAdmin)
+                    <div class="ml-auto flex items-center gap-2 pdf-hide"
+                         x-data="{ showUpload: false }"
+                         @overview-image-uploaded.window="showUpload = false">
+                        <button @click="showUpload = !showUpload"
+                                class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm transition cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            {{ $hasOverviewImage ? 'Change Image' : 'Add Image' }}
+                        </button>
+                        <div x-show="showUpload" x-cloak @click.outside="showUpload = false"
+                             x-transition
+                             class="absolute right-4 mt-14 bg-white rounded-xl shadow-lg border border-gray-200 p-4 w-72 z-20">
+                            <p class="text-xs text-gray-500 mb-2">Optional exhibit image. Shown beside overview text; clickable for full view.</p>
+                            <input type="file" wire:model="overviewImage" accept="image/*"
+                                   class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 file:cursor-pointer">
+                            <div wire:loading wire:target="overviewImage" class="mt-2 text-xs text-gray-400">Uploading...</div>
+                            @if($hasOverviewImage)
+                                <button wire:click="removeOverviewImage"
+                                        class="mt-3 text-xs text-red-500 hover:text-red-700 transition cursor-pointer">
+                                    Remove current image
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+            </div>
+            <div class="{{ $hasOverviewImage ? 'grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 items-center' : 'sm:pl-8' }}">
+                <div>
+                @if($isAdmin)
+                    <div x-data="{
+                            editing: false,
+                            save() {
+                                this.editing = false;
+                                $wire.set('editingIntroduction', $refs.introEditor.innerHTML);
+                                $wire.saveIntroduction();
+                            }
+                         }"
+                         class="relative group">
+                        {{-- Read mode --}}
+                        <div x-show="!editing"
+                             @click="editing = true; $nextTick(() => { $refs.introEditor.focus(); })"
+                             class="prose-light max-w-none text-lg leading-relaxed cursor-pointer rounded-lg p-4 -m-4 border-2 border-dashed border-transparent hover:border-gray-300 transition-colors min-h-[60px]">
+                            @if($proposal->introduction)
+                                {!! $proposal->introduction !!}
+                            @else
+                                <p class="text-gray-400 italic">Click to add introduction text...</p>
+                            @endif
+                        </div>
+                        {{-- Edit mode --}}
+                        <div x-show="editing" x-cloak
+                             @click.outside="save()"
+                             @keydown.escape.window="save()">
+                            <div x-ref="introEditor"
+                                 contenteditable="true"
+                                 class="prose-light max-w-none text-lg leading-relaxed bg-white border-2 border-brand/30 focus:border-brand rounded-lg p-4 -m-4 focus:outline-none min-h-[120px] transition-colors"
+                            >{!! $proposal->introduction !!}</div>
+                            <p class="text-xs text-gray-400 mt-3">Click outside or press Escape to save.</p>
+                        </div>
+                    </div>
+                @else
+                    <div class="prose-light max-w-none text-lg leading-relaxed">
+                        {!! $proposal->introduction !!}
+                    </div>
+                @endif
+                </div>
+                @if($hasOverviewImage)
+                    <div x-data="{ showLightbox: false }">
+                        <a href="{{ Storage::url($proposal->overview_image) }}"
+                           target="_blank" rel="noopener"
+                           @click.prevent="showLightbox = true"
+                           class="block group relative rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow bg-white">
+                            <img src="{{ Storage::url($proposal->overview_image) }}"
+                                 alt="Overview exhibit"
+                                 class="w-full h-auto object-contain">
+                            <div class="pdf-hide absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white/95 text-gray-700 rounded-full shadow">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m-3-3h6"/></svg>
+                                    Click to enlarge
+                                </span>
+                            </div>
+                        </a>
+                        {{-- Lightbox --}}
+                        <div x-show="showLightbox" x-cloak
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             class="pdf-hide fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+                             @click.self="showLightbox = false"
+                             @keydown.escape.window="showLightbox = false">
+                            <button @click="showLightbox = false"
+                                    class="absolute top-4 right-4 p-2 text-white/80 hover:text-white transition cursor-pointer"
+                                    aria-label="Close">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                            <img src="{{ Storage::url($proposal->overview_image) }}"
+                                 alt="Overview exhibit"
+                                 class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl">
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </section>
+    @endif
 
     {{-- ========== ROADMAP SECTION ========== --}}
     @if($proposal->roadmap_enabled || $isAdmin)
@@ -800,287 +1025,95 @@
     </section>
     @endif
 
-    {{-- ========== OVERVIEW SECTION ========== --}}
-    @if($proposal->introduction || $isAdmin)
-    @php $hasOverviewImage = (bool) $proposal->overview_image; @endphp
-    <section id="overview" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
-        <div class="{{ $hasOverviewImage ? 'max-w-6xl' : 'max-w-4xl' }} mx-auto">
-            <div class="flex items-center gap-3 mb-4">
-                <h2 class="text-3xl font-bold text-gray-900">Overview</h2>
-                @if($isAdmin)
-                    <div class="ml-auto flex items-center gap-2 pdf-hide"
-                         x-data="{ showUpload: false }"
-                         @overview-image-uploaded.window="showUpload = false">
-                        <button @click="showUpload = !showUpload"
-                                class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm transition cursor-pointer">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            {{ $hasOverviewImage ? 'Change Image' : 'Add Image' }}
-                        </button>
-                        <div x-show="showUpload" x-cloak @click.outside="showUpload = false"
-                             x-transition
-                             class="absolute right-4 mt-14 bg-white rounded-xl shadow-lg border border-gray-200 p-4 w-72 z-20">
-                            <p class="text-xs text-gray-500 mb-2">Optional exhibit image. Shown beside overview text; clickable for full view.</p>
-                            <input type="file" wire:model="overviewImage" accept="image/*"
-                                   class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 file:cursor-pointer">
-                            <div wire:loading wire:target="overviewImage" class="mt-2 text-xs text-gray-400">Uploading...</div>
-                            @if($hasOverviewImage)
-                                <button wire:click="removeOverviewImage"
-                                        class="mt-3 text-xs text-red-500 hover:text-red-700 transition cursor-pointer">
-                                    Remove current image
-                                </button>
-                            @endif
-                        </div>
-                    </div>
-                @endif
-            </div>
-            <div class="{{ $hasOverviewImage ? 'grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 items-center' : 'sm:pl-8' }}">
-                <div>
-                @if($isAdmin)
-                    <div x-data="{
-                            editing: false,
-                            save() {
-                                this.editing = false;
-                                $wire.set('editingIntroduction', $refs.introEditor.innerHTML);
-                                $wire.saveIntroduction();
-                            }
-                         }"
-                         class="relative group">
-                        {{-- Read mode --}}
-                        <div x-show="!editing"
-                             @click="editing = true; $nextTick(() => { $refs.introEditor.focus(); })"
-                             class="prose-light max-w-none text-lg leading-relaxed cursor-pointer rounded-lg p-4 -m-4 border-2 border-dashed border-transparent hover:border-gray-300 transition-colors min-h-[60px]">
-                            @if($proposal->introduction)
-                                {!! $proposal->introduction !!}
-                            @else
-                                <p class="text-gray-400 italic">Click to add introduction text...</p>
-                            @endif
-                        </div>
-                        {{-- Edit mode --}}
-                        <div x-show="editing" x-cloak
-                             @click.outside="save()"
-                             @keydown.escape.window="save()">
-                            <div x-ref="introEditor"
-                                 contenteditable="true"
-                                 class="prose-light max-w-none text-lg leading-relaxed bg-white border-2 border-brand/30 focus:border-brand rounded-lg p-4 -m-4 focus:outline-none min-h-[120px] transition-colors"
-                            >{!! $proposal->introduction !!}</div>
-                            <p class="text-xs text-gray-400 mt-3">Click outside or press Escape to save.</p>
-                        </div>
-                    </div>
-                @else
-                    <div class="prose-light max-w-none text-lg leading-relaxed">
-                        {!! $proposal->introduction !!}
-                    </div>
-                @endif
-                </div>
-                @if($hasOverviewImage)
-                    <div x-data="{ showLightbox: false }">
-                        <a href="{{ Storage::url($proposal->overview_image) }}"
-                           target="_blank" rel="noopener"
-                           @click.prevent="showLightbox = true"
-                           class="block group relative rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow bg-white">
-                            <img src="{{ Storage::url($proposal->overview_image) }}"
-                                 alt="Overview exhibit"
-                                 class="w-full h-auto object-contain">
-                            <div class="pdf-hide absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white/95 text-gray-700 rounded-full shadow">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m-3-3h6"/></svg>
-                                    Click to enlarge
-                                </span>
-                            </div>
-                        </a>
-                        {{-- Lightbox --}}
-                        <div x-show="showLightbox" x-cloak
-                             x-transition:enter="transition ease-out duration-200"
-                             x-transition:enter-start="opacity-0"
-                             x-transition:enter-end="opacity-100"
-                             class="pdf-hide fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-                             @click.self="showLightbox = false"
-                             @keydown.escape.window="showLightbox = false">
-                            <button @click="showLightbox = false"
-                                    class="absolute top-4 right-4 p-2 text-white/80 hover:text-white transition cursor-pointer"
-                                    aria-label="Close">
-                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                            <img src="{{ Storage::url($proposal->overview_image) }}"
-                                 alt="Overview exhibit"
-                                 class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl">
-                        </div>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </section>
-    @endif
-
-    {{-- ========== DIFFERENTIATOR SECTION ========== --}}
-    @if($proposal->differentiator_enabled || $isAdmin)
-    @php
-        $diffBg = $proposal->differentiator_background
-            ? (str_starts_with($proposal->differentiator_background, 'images/') ? asset($proposal->differentiator_background) : Storage::url($proposal->differentiator_background))
-            : asset('images/rva-street.png');
-    @endphp
-    <style>
-        @keyframes differentiator-pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.82; }
-        }
-        .differentiator-pulse { animation: differentiator-pulse 3.5s ease-in-out infinite; }
-    </style>
-    <section id="why-custom" class="relative py-32 sm:py-44 px-4 sm:px-6 scroll-mt-16 overflow-hidden" style="background-color: #111;">
-        {{-- Background image at 40% opacity for contrast --}}
-        <div class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
-             style="background-image: url('{{ $diffBg }}?v={{ $proposal->updated_at?->timestamp }}');"></div>
-
-        <div class="relative max-w-5xl mx-auto">
-
-            {{-- Admin: Toggle + Settings --}}
-            @if($isAdmin)
-            <div class="pdf-hide mb-8 p-4 bg-white/95 backdrop-blur rounded-xl border border-white/30 shadow-lg"
-                 x-data="{
-                    showSettings: false,
-                    showUpload: false,
-                    uploading: false,
-                    progress: 0,
-                    success: false,
-                    error: '',
-                    resetStatus() { this.progress = 0; this.success = false; this.error = ''; },
-                 }"
-                 x-on:livewire-upload-start="uploading = true; resetStatus();"
-                 x-on:livewire-upload-progress="progress = $event.detail.progress"
-                 x-on:livewire-upload-finish="uploading = false; progress = 100; success = true; setTimeout(() => success = false, 4000);"
-                 x-on:livewire-upload-cancel="uploading = false; progress = 0;"
-                 x-on:livewire-upload-error="uploading = false; error = 'Upload failed. Please try a different image (JPG/PNG, under 10MB).';">
-                <div class="flex items-center justify-between gap-3 flex-wrap">
+    {{-- ========== ABOUT US SECTION ========== --}}
+    @if($proposal->about_enabled || $isAdmin)
+    <section id="about" class="relative scroll-mt-16 @if($proposal->about_enabled) bg-neutral-900 @endif">
+        {{-- Admin toggle bar (shown above section, outside dark bg for legibility) --}}
+        @if($isAdmin)
+            <div class="pdf-hide px-4 sm:px-6 pt-8 bg-white">
+                <div class="max-w-6xl mx-auto p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
                     <label class="flex items-center gap-3 cursor-pointer">
                         <div class="relative">
-                            <input type="checkbox" wire:model.live="editingDifferentiatorEnabled" class="sr-only peer">
+                            <input type="checkbox" wire:model.live="editingAboutEnabled" class="sr-only peer">
                             <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
                             <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
                         </div>
-                        <span class="text-sm font-medium text-gray-700">Include "Why Custom" in Proposal</span>
+                        <span class="text-sm font-medium text-gray-700">Include "About Us" in Proposal</span>
+                        <span class="text-xs text-gray-400 ml-auto">Mirrors the divStrong homepage banner</span>
                     </label>
-                    <div class="flex items-center gap-2" x-show="$wire.editingDifferentiatorEnabled">
-                        <button @click="showUpload = !showUpload; showSettings = false"
-                                type="button"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm transition cursor-pointer">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            Background
-                        </button>
-                        <button @click="showSettings = !showSettings; showUpload = false"
-                                type="button"
-                                class="text-xs text-brand hover:text-gray-900 font-medium transition-colors cursor-pointer">
-                            <span x-text="showSettings ? 'Hide Settings' : 'Edit Settings'"></span>
-                        </button>
-                    </div>
                 </div>
+            </div>
+        @endif
 
-                {{-- Background uploader --}}
-                <div x-show="showUpload && $wire.editingDifferentiatorEnabled" x-cloak x-collapse class="mt-4 pt-4 border-t border-gray-200">
-                    <div class="flex items-start gap-4">
-                        {{-- Current preview thumbnail --}}
-                        <div class="shrink-0">
-                            <div class="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
-                                <img src="{{ $diffBg }}?v={{ $proposal->updated_at?->timestamp }}"
-                                     alt="Current background"
-                                     class="absolute inset-0 w-full h-full object-cover">
-                            </div>
-                            <p class="mt-1 text-[10px] text-center uppercase tracking-wide text-gray-400">
-                                {{ $proposal->differentiator_background ? 'Custom' : 'Default' }}
+        @if($proposal->about_enabled)
+            <div class="relative overflow-hidden py-20 sm:py-28 px-4 sm:px-6">
+                {{-- Subtle background image --}}
+                <div class="absolute inset-0 bg-cover bg-center opacity-10"
+                     style="background-image: url('{{ asset('images/rva-street.png') }}');"></div>
+
+                <div class="relative max-w-6xl mx-auto">
+                    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                        <div>
+                            <p class="text-brand font-semibold text-sm tracking-widest uppercase mb-3">About Us</p>
+                            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+                                Building Apps, APIs &amp; MVPs Since 2009
+                            </h2>
+                            <p class="text-base sm:text-lg text-gray-400 leading-relaxed mb-8">
+                                Our AI-enabled team of strategists, designers, and developers create full-stack solutions for organizations seeking to innovate, automate and invest in creating their own digital products.
                             </p>
-                        </div>
 
-                        <div class="flex-1 min-w-0">
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Upload Background Image</label>
-                            <p class="text-xs text-gray-500 mb-2">JPG/PNG, under 10MB. Will be darkened with a red overlay.</p>
-                            <input type="file" wire:model="differentiatorBackground" accept="image/*"
-                                   x-bind:disabled="uploading"
-                                   class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 file:cursor-pointer disabled:opacity-50">
-
-                            {{-- Progress bar --}}
-                            <div x-show="uploading" x-cloak class="mt-3">
-                                <div class="flex items-center justify-between text-xs mb-1.5">
-                                    <span class="text-gray-600 font-medium flex items-center gap-2">
-                                        <svg class="w-3.5 h-3.5 animate-spin text-brand" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                                        </svg>
-                                        Uploading…
-                                    </span>
-                                    <span class="text-gray-500 tabular-nums" x-text="progress + '%'"></span>
+                            <div
+                                class="grid grid-cols-3 gap-6 sm:gap-8"
+                                x-data="{ started: false, years: 0, clients: 0, projects: 0 }"
+                                x-init="
+                                    $nextTick(() => {
+                                        const observer = new IntersectionObserver((entries) => {
+                                            if (entries[0].isIntersecting && !started) {
+                                                started = true;
+                                                observer.disconnect();
+                                                const ease = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                                                const animate = (target, setter, duration) => {
+                                                    const start = performance.now();
+                                                    const step = (now) => {
+                                                        const progress = Math.min((now - start) / duration, 1);
+                                                        setter(Math.round(ease(progress) * target));
+                                                        if (progress < 1) requestAnimationFrame(step);
+                                                    };
+                                                    requestAnimationFrame(step);
+                                                };
+                                                animate(17, (v) => years = v, 1800);
+                                                setTimeout(() => animate(500, (v) => clients = v, 2000), 200);
+                                                setTimeout(() => animate(1000, (v) => projects = v, 2200), 400);
+                                            }
+                                        }, { threshold: 0.3, rootMargin: '0px 0px -100px 0px' });
+                                        observer.observe($el);
+                                    });
+                                "
+                            >
+                                <div>
+                                    <p class="text-2xl sm:text-3xl font-extrabold text-brand"><span x-text="years">17</span>+</p>
+                                    <p class="text-xs sm:text-sm text-gray-500 mt-1">Years in Business</p>
                                 </div>
-                                <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                                    <div class="h-full bg-brand transition-all duration-150"
-                                         x-bind:style="`width: ${progress}%`"></div>
+                                <div>
+                                    <p class="text-2xl sm:text-3xl font-extrabold text-brand"><span x-text="clients">500</span>+</p>
+                                    <p class="text-xs sm:text-sm text-gray-500 mt-1">Clients</p>
+                                </div>
+                                <div>
+                                    <p class="text-2xl sm:text-3xl font-extrabold text-brand"><span x-text="projects.toLocaleString()">1,000</span>+</p>
+                                    <p class="text-xs sm:text-sm text-gray-500 mt-1">Projects Delivered</p>
                                 </div>
                             </div>
-
-                            {{-- Success message --}}
-                            <div x-show="success" x-cloak
-                                 x-transition:enter="transition ease-out duration-200"
-                                 x-transition:enter-start="opacity-0 -translate-y-1"
-                                 x-transition:enter-end="opacity-100 translate-y-0"
-                                 class="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                Background updated. Scroll down to see it.
-                            </div>
-
-                            {{-- Error message --}}
-                            <div x-show="error" x-cloak
-                                 class="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
-                                <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"/></svg>
-                                <span x-text="error"></span>
-                            </div>
-
-                            @error('differentiatorBackground')
-                                <div class="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
-                                    <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"/></svg>
-                                    <span>{{ $message }}</span>
-                                </div>
-                            @enderror
-
-                            @if($proposal->differentiator_background)
-                                <button wire:click="removeDifferentiatorBackground"
-                                        x-bind:disabled="uploading"
-                                        class="mt-3 text-xs text-red-500 hover:text-red-700 transition cursor-pointer disabled:opacity-50">
-                                    Reset to default image
-                                </button>
-                            @endif
                         </div>
-                    </div>
-                </div>
 
-                {{-- Settings --}}
-                <div x-show="showSettings && $wire.editingDifferentiatorEnabled" x-cloak x-collapse class="mt-4 pt-4 border-t border-gray-200">
-                    <div class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Headline</label>
-                            <textarea wire:model.blur="editingDifferentiatorHeadline"
-                                      wire:change="saveDifferentiatorSettings"
-                                      rows="2"
-                                      class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none resize-none"></textarea>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Attribution</label>
-                            <input type="text" wire:model.blur="editingDifferentiatorAttribution"
-                                   wire:change="saveDifferentiatorSettings"
-                                   placeholder="— Almost Every Client"
-                                   class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                        <div class="relative">
+                            <div class="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+                                <img src="{{ asset('images/team.gif') }}" alt="divStrong team" class="w-full h-full object-cover">
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            @endif
-
-            @if($proposal->differentiator_enabled)
-            <div class="text-center">
-                <h2 class="differentiator-pulse text-[1.7rem] sm:text-[2.7rem] lg:text-[3.4rem] font-semibold text-white leading-tight max-w-4xl mx-auto whitespace-pre-line [text-shadow:0_2px_12px_rgba(0,0,0,0.9)]">{{ $proposal->differentiator_headline ?? '"We should have gone the custom route sooner!"' }}</h2>
-                @if($proposal->differentiator_attribution)
-                    <p class="mt-6 text-base sm:text-lg text-white/70 tracking-wide [text-shadow:0_1px_6px_rgba(0,0,0,0.9)]">{{ $proposal->differentiator_attribution }}</p>
-                @endif
-            </div>
-            @endif
-
-        </div>
+        @endif
     </section>
     @endif
 
@@ -1142,15 +1175,17 @@
                                  class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
                                 <div class="p-6 border-b border-gray-100">
                                     <h3 class="text-lg font-bold text-gray-900">Import Scope from Another Proposal</h3>
-                                    <p class="text-sm text-gray-500 mt-1">Paste the source proposal's identifier (the hex UUID from its URL). All of its scope items will be appended below the existing ones.</p>
+                                    <p class="text-sm text-gray-500 mt-1">Enter the source proposal's 6-character code (the part after <code class="text-gray-700">/proposal/</code> in its URL). All of its scope items will be appended below the existing ones.</p>
                                 </div>
                                 <div class="p-6 space-y-3">
                                     <label class="block">
-                                        <span class="text-xs font-medium text-gray-700">Proposal identifier</span>
+                                        <span class="text-xs font-medium text-gray-700">Proposal code</span>
                                         <input type="text" x-model="importUuid"
                                                @keydown.enter.prevent="if(!importBusy) runImport()"
-                                               placeholder="e.g. 8f3a7c92-1b4d-4e6f-a0c1-9d2e8b3f5a17"
-                                               class="mt-1 block w-full text-sm font-mono bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none"
+                                               @input="importUuid = importUuid.toUpperCase()"
+                                               maxlength="6"
+                                               placeholder="e.g. IGAK96"
+                                               class="mt-1 block w-full text-sm font-mono tracking-widest bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none uppercase"
                                                x-bind:disabled="importBusy">
                                     </label>
                                     <p x-show="importError" x-text="importError" x-cloak
@@ -1523,9 +1558,274 @@
     </section>
     @endif
 
+    {{-- ========== AGILE PROCESS SECTION ========== --}}
+    @if($proposal->process_enabled || $isAdmin)
+    @php
+        $processBg = $proposal->process_background
+            ? (str_starts_with($proposal->process_background, 'images/') ? asset($proposal->process_background) : Storage::url($proposal->process_background))
+            : asset('images/street.png');
+        $processStages = $proposal->process_stages_resolved;
+        $processEyebrow = $proposal->process_eyebrow ?? 'Our Process';
+        $processHeading = $proposal->process_heading ?? 'Ship early. Ship often. Level up together.';
+        $processSubheading = $proposal->process_subheading ?? "We don't disappear for six months and hand you a finished product. We deliver something usable at every stage — you ride it, learn from it, and we iterate toward the end goal together.";
+    @endphp
+    <section id="process" class="relative py-12 sm:py-20 px-4 sm:px-6 scroll-mt-16 overflow-hidden bg-neutral-900">
+        {{-- Background image --}}
+        <div class="absolute inset-0 bg-cover bg-center opacity-20 grayscale"
+             style="background-image: url('{{ $processBg }}?v={{ $proposal->updated_at?->timestamp }}');"></div>
+        {{-- Contrast overlay --}}
+        <div class="absolute inset-0 bg-gradient-to-b from-neutral-900/60 via-neutral-900/40 to-neutral-900/80"></div>
+
+        <div class="relative max-w-6xl mx-auto">
+            {{-- Admin: Toggle + Settings --}}
+            @if($isAdmin)
+            <div class="pdf-hide mb-8 p-4 bg-white/95 backdrop-blur rounded-xl border border-white/30 shadow-lg"
+                 x-data="{
+                    showSettings: false,
+                    showUpload: false,
+                    uploading: false,
+                    progress: 0,
+                    success: false,
+                    error: '',
+                    resetStatus() { this.progress = 0; this.success = false; this.error = ''; },
+                 }"
+                 x-on:livewire-upload-start="uploading = true; resetStatus();"
+                 x-on:livewire-upload-progress="progress = $event.detail.progress"
+                 x-on:livewire-upload-finish="uploading = false; progress = 100; success = true; setTimeout(() => success = false, 4000);"
+                 x-on:livewire-upload-cancel="uploading = false; progress = 0;"
+                 x-on:livewire-upload-error="uploading = false; error = 'Upload failed. Please try a different image (JPG/PNG, under 10MB).';">
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingProcessEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Include "Our Process" in Proposal</span>
+                    </label>
+                    <div class="flex items-center gap-2" x-show="$wire.editingProcessEnabled">
+                        <button @click="showUpload = !showUpload; showSettings = false"
+                                type="button"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm transition cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Background
+                        </button>
+                        <button @click="showSettings = !showSettings; showUpload = false"
+                                type="button"
+                                class="text-xs text-brand hover:text-gray-900 font-medium transition-colors cursor-pointer">
+                            <span x-text="showSettings ? 'Hide Settings' : 'Edit Settings'"></span>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Background uploader --}}
+                <div x-show="showUpload && $wire.editingProcessEnabled" x-cloak x-collapse class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex items-start gap-4">
+                        <div class="shrink-0">
+                            <div class="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+                                <img src="{{ $processBg }}?v={{ $proposal->updated_at?->timestamp }}"
+                                     alt="Current background"
+                                     class="absolute inset-0 w-full h-full object-cover">
+                            </div>
+                            <p class="mt-1 text-[10px] text-center uppercase tracking-wide text-gray-400">
+                                {{ $proposal->process_background ? 'Custom' : 'Default' }}
+                            </p>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Upload Background Image</label>
+                            <p class="text-xs text-gray-500 mb-2">JPG/PNG, under 10MB. Will be desaturated and dimmed for contrast.</p>
+                            <input type="file" wire:model="processBackground" accept="image/*"
+                                   x-bind:disabled="uploading"
+                                   class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 file:cursor-pointer disabled:opacity-50">
+
+                            <div x-show="uploading" x-cloak class="mt-3">
+                                <div class="flex items-center justify-between text-xs mb-1.5">
+                                    <span class="text-gray-600 font-medium">Uploading…</span>
+                                    <span class="text-gray-500 tabular-nums" x-text="progress + '%'"></span>
+                                </div>
+                                <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full bg-brand transition-all duration-150"
+                                         x-bind:style="`width: ${progress}%`"></div>
+                                </div>
+                            </div>
+
+                            <div x-show="success" x-cloak class="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                Background updated.
+                            </div>
+
+                            <div x-show="error" x-cloak class="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
+                                <span x-text="error"></span>
+                            </div>
+
+                            @error('processBackground')
+                                <div class="mt-3 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">{{ $message }}</div>
+                            @enderror
+
+                            @if($proposal->process_background)
+                                <button wire:click="removeProcessBackground"
+                                        x-bind:disabled="uploading"
+                                        class="mt-3 text-xs text-red-500 hover:text-red-700 transition cursor-pointer disabled:opacity-50">
+                                    Reset to default image
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Settings: header text --}}
+                <div x-show="showSettings && $wire.editingProcessEnabled" x-cloak x-collapse class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Eyebrow</label>
+                            <input type="text" wire:model.blur="editingProcessEyebrow"
+                                   wire:change="saveProcessSettings"
+                                   placeholder="Our Process"
+                                   class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Heading</label>
+                            <textarea wire:model.blur="editingProcessHeading"
+                                      wire:change="saveProcessSettings"
+                                      rows="2"
+                                      class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Subheading</label>
+                            <textarea wire:model.blur="editingProcessSubheading"
+                                      wire:change="saveProcessSettings"
+                                      rows="3"
+                                      class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none resize-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @if($proposal->process_enabled)
+            <div class="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand mb-3">{{ $processEyebrow }}</p>
+                <h2 class="text-3xl sm:text-4xl font-bold text-white leading-tight [text-shadow:0_2px_8px_rgba(0,0,0,0.6)]">{{ $processHeading }}</h2>
+                <p class="mt-5 text-lg text-gray-300 leading-relaxed">
+                    {{ $processSubheading }}
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-5 gap-8 sm:gap-4"
+                 @if($isAdmin) x-data="{ editingStage: null, editLabel: '', editCaption: '' }" @endif>
+                @foreach($processStages as $i => $stage)
+                    @php
+                        $stageImg = str_starts_with($stage['image'], 'images/')
+                            ? asset($stage['image'])
+                            : Storage::url($stage['image']);
+                    @endphp
+                    <div class="relative flex flex-col items-center text-center group">
+                        {{-- Connector arrow (desktop only, between cards) --}}
+                        @if(! $loop->last)
+                            <div class="hidden sm:block absolute top-16 left-[60%] w-[80%] h-0.5 -translate-y-1/2 bg-gradient-to-r from-brand/80 to-brand/50 pointer-events-none" aria-hidden="true">
+                                <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[5px] border-l-[7px] border-y-transparent border-l-brand"></div>
+                            </div>
+                        @endif
+
+                        <div class="relative z-10 w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white shadow-xl ring-1 ring-white/20 flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl">
+                            <img src="{{ $stageImg }}?v={{ $proposal->updated_at?->timestamp }}"
+                                 alt="{{ $stage['label'] }}"
+                                 class="w-20 h-20 sm:w-24 sm:h-24 object-contain">
+
+                            {{-- Admin per-stage controls --}}
+                            @if($isAdmin)
+                            <div class="pdf-hide absolute -top-2 -right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                                 x-data="{
+                                    uploading: false,
+                                    progress: 0,
+                                    error: '',
+                                 }"
+                                 x-on:livewire-upload-start="uploading = true; progress = 0; error = '';"
+                                 x-on:livewire-upload-progress="progress = $event.detail.progress"
+                                 x-on:livewire-upload-finish="uploading = false; progress = 100;"
+                                 x-on:livewire-upload-error="uploading = false; error = 'Upload failed';">
+                                <label title="Upload image"
+                                       class="p-1.5 bg-white rounded-full text-gray-600 hover:text-brand transition-colors cursor-pointer shadow-md">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <input type="file" wire:model="stageImages.{{ $i }}" accept="image/*" class="hidden">
+                                </label>
+                                @if(! str_starts_with($stage['image'], 'images/'))
+                                    <button wire:click="removeStageImage({{ $i }})"
+                                            title="Reset to default"
+                                            class="p-1.5 bg-white rounded-full text-gray-600 hover:text-red-500 transition-colors cursor-pointer shadow-md">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    </button>
+                                @endif
+                                <div x-show="uploading" x-cloak class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-white bg-neutral-800/90 px-2 py-0.5 rounded whitespace-nowrap">
+                                    <span x-text="progress + '%'"></span>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+
+                        @if($isAdmin)
+                            <button @click="editingStage = {{ $i }}; editLabel = @js($stage['label']); editCaption = @js($stage['caption']);"
+                                    type="button"
+                                    class="pdf-hide mt-5 text-base font-semibold text-white hover:text-brand transition-colors cursor-pointer border-b border-dashed border-transparent hover:border-brand">
+                                {{ $stage['label'] }}
+                            </button>
+                            <button @click="editingStage = {{ $i }}; editLabel = @js($stage['label']); editCaption = @js($stage['caption']);"
+                                    type="button"
+                                    class="pdf-hide mt-1 text-sm text-gray-400 leading-snug px-2 hover:text-gray-200 transition-colors cursor-pointer text-center">
+                                {!! $stage['caption'] !!}
+                            </button>
+                        @else
+                            <div class="mt-5 text-base font-semibold text-white">{{ $stage['label'] }}</div>
+                            <div class="mt-1 text-sm text-gray-400 leading-snug px-2">{!! $stage['caption'] !!}</div>
+                        @endif
+                    </div>
+                @endforeach
+
+                @if($isAdmin)
+                {{-- Edit Stage Modal --}}
+                <div x-show="editingStage !== null" x-cloak
+                     x-transition.opacity
+                     @keydown.escape.window="editingStage = null"
+                     class="pdf-hide fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                    <div @click.outside="editingStage = null"
+                         class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+                        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                            <h3 class="text-lg font-bold text-gray-900">Edit Stage <span x-text="editingStage !== null ? editingStage + 1 : ''"></span></h3>
+                            <button @click="editingStage = null" class="p-1 text-gray-400 hover:text-gray-600 transition cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Label</label>
+                                <input type="text" x-model="editLabel"
+                                       class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Caption</label>
+                                <textarea x-model="editCaption" rows="2"
+                                          class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none resize-none"></textarea>
+                                <p class="mt-1 text-[11px] text-gray-400">HTML allowed (e.g. <code class="text-gray-500">&amp;mdash;</code> for em-dash).</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                            <button @click="editingStage = null"
+                                    class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">Cancel</button>
+                            <button @click="$wire.updateProcessStage(editingStage, editLabel, editCaption); editingStage = null;"
+                                    class="px-5 py-2.5 text-sm font-medium text-white bg-brand rounded-lg hover:bg-gray-900 transition-colors cursor-pointer shadow-sm">Save</button>
+                        </div>
+                    </div>
+                </div>
+                @endif
+            </div>
+            @endif
+        </div>
+    </section>
+    @endif
+
     {{-- ========== COST / INVESTMENT SECTION ========== --}}
     @if(($proposal->investment_enabled && $proposal->costItems->count()) || $isAdmin)
-    <section id="investment" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
+    <section id="investment" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="max-w-4xl mx-auto">
             @if($isAdmin)
                 <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
@@ -1906,237 +2206,27 @@
     </section>
     @endif
 
-    {{-- ========== ABOUT US SECTION ========== --}}
-    @if($proposal->about_enabled || $isAdmin)
-    <section id="about" class="relative scroll-mt-16 @if($proposal->about_enabled) bg-neutral-900 @endif">
-        {{-- Admin toggle bar (shown above section, outside dark bg for legibility) --}}
-        @if($isAdmin)
-            <div class="pdf-hide px-4 sm:px-6 pt-8 bg-white">
-                <div class="max-w-6xl mx-auto p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <div class="relative">
-                            <input type="checkbox" wire:model.live="editingAboutEnabled" class="sr-only peer">
-                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
-                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
-                        </div>
-                        <span class="text-sm font-medium text-gray-700">Include "About Us" in Proposal</span>
-                        <span class="text-xs text-gray-400 ml-auto">Mirrors the divStrong homepage banner</span>
-                    </label>
-                </div>
-            </div>
-        @endif
-
-        @if($proposal->about_enabled)
-            <div class="relative overflow-hidden py-20 sm:py-28 px-4 sm:px-6">
-                {{-- Subtle background image --}}
-                <div class="absolute inset-0 bg-cover bg-center opacity-10"
-                     style="background-image: url('{{ asset('images/rva-street.png') }}');"></div>
-
-                <div class="relative max-w-6xl mx-auto">
-                    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-                        <div>
-                            <p class="text-brand font-semibold text-sm tracking-widest uppercase mb-3">About Us</p>
-                            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-6 leading-tight">
-                                Building Apps, APIs &amp; MVPs Since 2009
-                            </h2>
-                            <p class="text-base sm:text-lg text-gray-400 leading-relaxed mb-8">
-                                Our AI-enabled team of strategists, designers, and developers create full-stack solutions for organizations seeking to innovate, automate and invest in creating their own digital products.
-                            </p>
-
-                            <div
-                                class="grid grid-cols-3 gap-6 sm:gap-8"
-                                x-data="{ started: false, years: 0, clients: 0, projects: 0 }"
-                                x-init="
-                                    $nextTick(() => {
-                                        const observer = new IntersectionObserver((entries) => {
-                                            if (entries[0].isIntersecting && !started) {
-                                                started = true;
-                                                observer.disconnect();
-                                                const ease = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-                                                const animate = (target, setter, duration) => {
-                                                    const start = performance.now();
-                                                    const step = (now) => {
-                                                        const progress = Math.min((now - start) / duration, 1);
-                                                        setter(Math.round(ease(progress) * target));
-                                                        if (progress < 1) requestAnimationFrame(step);
-                                                    };
-                                                    requestAnimationFrame(step);
-                                                };
-                                                animate(17, (v) => years = v, 1800);
-                                                setTimeout(() => animate(500, (v) => clients = v, 2000), 200);
-                                                setTimeout(() => animate(1000, (v) => projects = v, 2200), 400);
-                                            }
-                                        }, { threshold: 0.3, rootMargin: '0px 0px -100px 0px' });
-                                        observer.observe($el);
-                                    });
-                                "
-                            >
-                                <div>
-                                    <p class="text-2xl sm:text-3xl font-extrabold text-brand"><span x-text="years">17</span>+</p>
-                                    <p class="text-xs sm:text-sm text-gray-500 mt-1">Years in Business</p>
-                                </div>
-                                <div>
-                                    <p class="text-2xl sm:text-3xl font-extrabold text-brand"><span x-text="clients">500</span>+</p>
-                                    <p class="text-xs sm:text-sm text-gray-500 mt-1">Clients</p>
-                                </div>
-                                <div>
-                                    <p class="text-2xl sm:text-3xl font-extrabold text-brand"><span x-text="projects.toLocaleString()">1,000</span>+</p>
-                                    <p class="text-xs sm:text-sm text-gray-500 mt-1">Projects Delivered</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="relative">
-                            <div class="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
-                                <img src="{{ asset('images/team.gif') }}" alt="divStrong team" class="w-full h-full object-cover">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-    </section>
-    @endif
-
-    {{-- ========== PROJECT TEAM SECTION ========== --}}
-    @if($proposal->team_enabled || $isAdmin)
-    <section id="team" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
-        <div class="max-w-6xl mx-auto">
-            @if($isAdmin)
-                <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <div class="relative">
-                            <input type="checkbox" wire:model.live="editingTeamEnabled" class="sr-only peer">
-                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
-                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
-                        </div>
-                        <span class="text-sm font-medium text-gray-700">Include "Project Team" in client proposal</span>
-                    </label>
-                    <span class="text-xs text-gray-400">
-                        Manage the team library in
-                        <a href="/admin/team-members" class="text-brand hover:text-brand-dark font-medium">admin &rsaquo; Teams</a>
-                    </span>
-                </div>
-            @endif
-
-            @if($proposal->team_enabled || $isAdmin)
-                <div class="text-center max-w-2xl mx-auto mb-12">
-                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand mb-3">The People</p>
-                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">Project Team</h2>
-                    <p class="mt-4 text-base text-gray-500 leading-relaxed">
-                        The folks who'll actually be bringing this project to friuition &mdash; not a sales handoff.
-                    </p>
-                </div>
-
-                @php $attachedTeam = $proposal->teamMembers; @endphp
-
-                @if($attachedTeam->count())
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        @foreach($attachedTeam as $member)
-                            <div class="relative group">
-                                @if($isAdmin)
-                                    <button wire:click="detachTeamMember({{ $member->id }})"
-                                            wire:confirm="Remove this team member from the proposal?"
-                                            class="pdf-hide absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-white/95 border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-300 inline-flex items-center justify-center transition-colors cursor-pointer shadow"
-                                            title="Remove from this proposal">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </button>
-                                @endif
-                                <div class="h-full flex flex-col items-center text-center bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-8">
-                                    <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-gray-100 ring-4 ring-white shadow-md mb-5">
-                                        @if($member->avatar_url)
-                                            <img src="{{ $member->avatar_url }}"
-                                                 alt="{{ $member->name }}"
-                                                 class="w-full h-full object-cover">
-                                        @else
-                                            <div class="w-full h-full flex items-center justify-center text-gray-300">
-                                                <svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                            </div>
-                                        @endif
-                                    </div>
-                                    <h3 class="text-lg font-bold text-gray-900 leading-tight">{{ $member->name }}</h3>
-                                    @if($member->title)
-                                        <p class="mt-1 text-sm font-medium text-brand uppercase tracking-wide">{{ $member->title }}</p>
-                                    @endif
-                                    @if($member->description)
-                                        <p class="mt-4 text-sm text-gray-500 leading-relaxed">{{ $member->description }}</p>
-                                    @endif
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    @if($isAdmin)
-                        <div class="rounded-2xl border-2 border-dashed border-gray-300 bg-white p-10 text-center">
-                            <svg class="w-10 h-10 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5.13a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                            <p class="text-gray-500 text-sm">No team members attached yet. Pick from the library below &mdash; or <a href="/admin/team-members/create" class="text-brand hover:text-brand-dark font-medium">add a new team member</a>.</p>
-                        </div>
-                    @else
-                        <p class="text-center text-gray-400 italic">Team details available on request.</p>
-                    @endif
-                @endif
-
-                {{-- Admin team picker --}}
-                @if($isAdmin)
-                    @php $availableTeam = $this->teamLibrary->whereNotIn('id', $attachedTeam->pluck('id')); @endphp
-                    @if($availableTeam->count())
-                        <div class="pdf-hide mt-8 p-5 rounded-xl border border-gray-200 bg-white shadow-sm"
-                             x-data="{ open: {{ $attachedTeam->count() === 0 ? 'true' : 'false' }} }">
-                            <button type="button" @click="open = !open"
-                                    class="flex items-center justify-between w-full text-left cursor-pointer">
-                                <span class="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                                    Attach a Team Member
-                                    <span class="text-xs text-gray-400 font-normal">({{ $availableTeam->count() }} available)</span>
-                                </span>
-                                <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            <div x-show="open" x-collapse x-cloak class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                @foreach($availableTeam as $member)
-                                    <button type="button"
-                                            wire:click="attachTeamMember({{ $member->id }})"
-                                            class="text-left p-3 rounded-lg bg-gray-50 hover:bg-white hover:ring-2 hover:ring-brand transition cursor-pointer flex gap-3 items-center">
-                                        @if($member->avatar_url)
-                                            <img src="{{ $member->avatar_url }}" alt="" class="w-12 h-12 object-cover rounded-full shrink-0">
-                                        @else
-                                            <div class="w-12 h-12 rounded-full bg-gray-200 shrink-0 flex items-center justify-center text-gray-400">
-                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                            </div>
-                                        @endif
-                                        <div class="min-w-0">
-                                            <p class="text-sm font-semibold text-gray-900 truncate">{{ $member->name }}</p>
-                                            <p class="text-xs text-gray-500 truncate">{{ $member->title ?: '—' }}</p>
-                                        </div>
-                                    </button>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-                @endif
-            @endif
-        </div>
-    </section>
-    @endif
-
-    {{-- ========== AGILE PROCESS SECTION ========== --}}
-    @if($proposal->process_enabled || $isAdmin)
+    {{-- ========== DIFFERENTIATOR SECTION ========== --}}
+    @if($proposal->differentiator_enabled || $isAdmin)
     @php
-        $processBg = $proposal->process_background
-            ? (str_starts_with($proposal->process_background, 'images/') ? asset($proposal->process_background) : Storage::url($proposal->process_background))
-            : asset('images/street.png');
-        $processStages = $proposal->process_stages_resolved;
-        $processEyebrow = $proposal->process_eyebrow ?? 'Our Process';
-        $processHeading = $proposal->process_heading ?? 'Ship early. Ship often. Level up together.';
-        $processSubheading = $proposal->process_subheading ?? "We don't disappear for six months and hand you a finished product. We deliver something usable at every stage — you ride it, learn from it, and we iterate toward the end goal together.";
+        $diffBg = $proposal->differentiator_background
+            ? (str_starts_with($proposal->differentiator_background, 'images/') ? asset($proposal->differentiator_background) : Storage::url($proposal->differentiator_background))
+            : asset('images/rva-street.png');
     @endphp
-    <section id="process" class="relative py-12 sm:py-20 px-4 sm:px-6 scroll-mt-16 overflow-hidden bg-neutral-900">
-        {{-- Background image --}}
-        <div class="absolute inset-0 bg-cover bg-center opacity-20 grayscale"
-             style="background-image: url('{{ $processBg }}?v={{ $proposal->updated_at?->timestamp }}');"></div>
-        {{-- Contrast overlay --}}
-        <div class="absolute inset-0 bg-gradient-to-b from-neutral-900/60 via-neutral-900/40 to-neutral-900/80"></div>
+    <style>
+        @keyframes differentiator-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.82; }
+        }
+        .differentiator-pulse { animation: differentiator-pulse 3.5s ease-in-out infinite; }
+    </style>
+    <section id="why-custom" class="relative py-32 sm:py-44 px-4 sm:px-6 scroll-mt-16 overflow-hidden" style="background-color: #111;">
+        {{-- Background image at 40% opacity for contrast --}}
+        <div class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+             style="background-image: url('{{ $diffBg }}?v={{ $proposal->updated_at?->timestamp }}');"></div>
 
-        <div class="relative max-w-6xl mx-auto">
+        <div class="relative max-w-5xl mx-auto">
+
             {{-- Admin: Toggle + Settings --}}
             @if($isAdmin)
             <div class="pdf-hide mb-8 p-4 bg-white/95 backdrop-blur rounded-xl border border-white/30 shadow-lg"
@@ -2157,13 +2247,13 @@
                 <div class="flex items-center justify-between gap-3 flex-wrap">
                     <label class="flex items-center gap-3 cursor-pointer">
                         <div class="relative">
-                            <input type="checkbox" wire:model.live="editingProcessEnabled" class="sr-only peer">
+                            <input type="checkbox" wire:model.live="editingDifferentiatorEnabled" class="sr-only peer">
                             <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
                             <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
                         </div>
-                        <span class="text-sm font-medium text-gray-700">Include "Our Process" in Proposal</span>
+                        <span class="text-sm font-medium text-gray-700">Include "Why Custom" in Proposal</span>
                     </label>
-                    <div class="flex items-center gap-2" x-show="$wire.editingProcessEnabled">
+                    <div class="flex items-center gap-2" x-show="$wire.editingDifferentiatorEnabled">
                         <button @click="showUpload = !showUpload; showSettings = false"
                                 type="button"
                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm transition cursor-pointer">
@@ -2179,28 +2269,37 @@
                 </div>
 
                 {{-- Background uploader --}}
-                <div x-show="showUpload && $wire.editingProcessEnabled" x-cloak x-collapse class="mt-4 pt-4 border-t border-gray-200">
+                <div x-show="showUpload && $wire.editingDifferentiatorEnabled" x-cloak x-collapse class="mt-4 pt-4 border-t border-gray-200">
                     <div class="flex items-start gap-4">
+                        {{-- Current preview thumbnail --}}
                         <div class="shrink-0">
                             <div class="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
-                                <img src="{{ $processBg }}?v={{ $proposal->updated_at?->timestamp }}"
+                                <img src="{{ $diffBg }}?v={{ $proposal->updated_at?->timestamp }}"
                                      alt="Current background"
                                      class="absolute inset-0 w-full h-full object-cover">
                             </div>
                             <p class="mt-1 text-[10px] text-center uppercase tracking-wide text-gray-400">
-                                {{ $proposal->process_background ? 'Custom' : 'Default' }}
+                                {{ $proposal->differentiator_background ? 'Custom' : 'Default' }}
                             </p>
                         </div>
+
                         <div class="flex-1 min-w-0">
                             <label class="block text-xs font-medium text-gray-700 mb-1">Upload Background Image</label>
-                            <p class="text-xs text-gray-500 mb-2">JPG/PNG, under 10MB. Will be desaturated and dimmed for contrast.</p>
-                            <input type="file" wire:model="processBackground" accept="image/*"
+                            <p class="text-xs text-gray-500 mb-2">JPG/PNG, under 10MB. Will be darkened with a red overlay.</p>
+                            <input type="file" wire:model="differentiatorBackground" accept="image/*"
                                    x-bind:disabled="uploading"
                                    class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 file:cursor-pointer disabled:opacity-50">
 
+                            {{-- Progress bar --}}
                             <div x-show="uploading" x-cloak class="mt-3">
                                 <div class="flex items-center justify-between text-xs mb-1.5">
-                                    <span class="text-gray-600 font-medium">Uploading…</span>
+                                    <span class="text-gray-600 font-medium flex items-center gap-2">
+                                        <svg class="w-3.5 h-3.5 animate-spin text-brand" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                        </svg>
+                                        Uploading…
+                                    </span>
                                     <span class="text-gray-500 tabular-nums" x-text="progress + '%'"></span>
                                 </div>
                                 <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
@@ -2209,21 +2308,32 @@
                                 </div>
                             </div>
 
-                            <div x-show="success" x-cloak class="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
+                            {{-- Success message --}}
+                            <div x-show="success" x-cloak
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 class="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                Background updated.
+                                Background updated. Scroll down to see it.
                             </div>
 
-                            <div x-show="error" x-cloak class="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
+                            {{-- Error message --}}
+                            <div x-show="error" x-cloak
+                                 class="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
+                                <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"/></svg>
                                 <span x-text="error"></span>
                             </div>
 
-                            @error('processBackground')
-                                <div class="mt-3 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">{{ $message }}</div>
+                            @error('differentiatorBackground')
+                                <div class="mt-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
+                                    <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"/></svg>
+                                    <span>{{ $message }}</span>
+                                </div>
                             @enderror
 
-                            @if($proposal->process_background)
-                                <button wire:click="removeProcessBackground"
+                            @if($proposal->differentiator_background)
+                                <button wire:click="removeDifferentiatorBackground"
                                         x-bind:disabled="uploading"
                                         class="mt-3 text-xs text-red-500 hover:text-red-700 transition cursor-pointer disabled:opacity-50">
                                     Reset to default image
@@ -2233,152 +2343,37 @@
                     </div>
                 </div>
 
-                {{-- Settings: header text --}}
-                <div x-show="showSettings && $wire.editingProcessEnabled" x-cloak x-collapse class="mt-4 pt-4 border-t border-gray-200">
+                {{-- Settings --}}
+                <div x-show="showSettings && $wire.editingDifferentiatorEnabled" x-cloak x-collapse class="mt-4 pt-4 border-t border-gray-200">
                     <div class="space-y-3">
                         <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Eyebrow</label>
-                            <input type="text" wire:model.blur="editingProcessEyebrow"
-                                   wire:change="saveProcessSettings"
-                                   placeholder="Our Process"
-                                   class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Heading</label>
-                            <textarea wire:model.blur="editingProcessHeading"
-                                      wire:change="saveProcessSettings"
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Headline</label>
+                            <textarea wire:model.blur="editingDifferentiatorHeadline"
+                                      wire:change="saveDifferentiatorSettings"
                                       rows="2"
                                       class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none resize-none"></textarea>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-1">Subheading</label>
-                            <textarea wire:model.blur="editingProcessSubheading"
-                                      wire:change="saveProcessSettings"
-                                      rows="3"
-                                      class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none resize-none"></textarea>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Attribution</label>
+                            <input type="text" wire:model.blur="editingDifferentiatorAttribution"
+                                   wire:change="saveDifferentiatorSettings"
+                                   placeholder="— Almost Every Client"
+                                   class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
                         </div>
                     </div>
                 </div>
             </div>
             @endif
 
-            @if($proposal->process_enabled)
-            <div class="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand mb-3">{{ $processEyebrow }}</p>
-                <h2 class="text-3xl sm:text-4xl font-bold text-white leading-tight [text-shadow:0_2px_8px_rgba(0,0,0,0.6)]">{{ $processHeading }}</h2>
-                <p class="mt-5 text-lg text-gray-300 leading-relaxed">
-                    {{ $processSubheading }}
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-5 gap-8 sm:gap-4"
-                 @if($isAdmin) x-data="{ editingStage: null, editLabel: '', editCaption: '' }" @endif>
-                @foreach($processStages as $i => $stage)
-                    @php
-                        $stageImg = str_starts_with($stage['image'], 'images/')
-                            ? asset($stage['image'])
-                            : Storage::url($stage['image']);
-                    @endphp
-                    <div class="relative flex flex-col items-center text-center group">
-                        {{-- Connector arrow (desktop only, between cards) --}}
-                        @if(! $loop->last)
-                            <div class="hidden sm:block absolute top-16 left-[60%] w-[80%] h-0.5 -translate-y-1/2 bg-gradient-to-r from-brand/80 to-brand/50 pointer-events-none" aria-hidden="true">
-                                <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[5px] border-l-[7px] border-y-transparent border-l-brand"></div>
-                            </div>
-                        @endif
-
-                        <div class="relative z-10 w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white shadow-xl ring-1 ring-white/20 flex items-center justify-center transition-transform duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl">
-                            <img src="{{ $stageImg }}?v={{ $proposal->updated_at?->timestamp }}"
-                                 alt="{{ $stage['label'] }}"
-                                 class="w-20 h-20 sm:w-24 sm:h-24 object-contain">
-
-                            {{-- Admin per-stage controls --}}
-                            @if($isAdmin)
-                            <div class="pdf-hide absolute -top-2 -right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                                 x-data="{
-                                    uploading: false,
-                                    progress: 0,
-                                    error: '',
-                                 }"
-                                 x-on:livewire-upload-start="uploading = true; progress = 0; error = '';"
-                                 x-on:livewire-upload-progress="progress = $event.detail.progress"
-                                 x-on:livewire-upload-finish="uploading = false; progress = 100;"
-                                 x-on:livewire-upload-error="uploading = false; error = 'Upload failed';">
-                                <label title="Upload image"
-                                       class="p-1.5 bg-white rounded-full text-gray-600 hover:text-brand transition-colors cursor-pointer shadow-md">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                    <input type="file" wire:model="stageImages.{{ $i }}" accept="image/*" class="hidden">
-                                </label>
-                                @if(! str_starts_with($stage['image'], 'images/'))
-                                    <button wire:click="removeStageImage({{ $i }})"
-                                            title="Reset to default"
-                                            class="p-1.5 bg-white rounded-full text-gray-600 hover:text-red-500 transition-colors cursor-pointer shadow-md">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                    </button>
-                                @endif
-                                <div x-show="uploading" x-cloak class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-white bg-neutral-800/90 px-2 py-0.5 rounded whitespace-nowrap">
-                                    <span x-text="progress + '%'"></span>
-                                </div>
-                            </div>
-                            @endif
-                        </div>
-
-                        @if($isAdmin)
-                            <button @click="editingStage = {{ $i }}; editLabel = @js($stage['label']); editCaption = @js($stage['caption']);"
-                                    type="button"
-                                    class="pdf-hide mt-5 text-base font-semibold text-white hover:text-brand transition-colors cursor-pointer border-b border-dashed border-transparent hover:border-brand">
-                                {{ $stage['label'] }}
-                            </button>
-                            <button @click="editingStage = {{ $i }}; editLabel = @js($stage['label']); editCaption = @js($stage['caption']);"
-                                    type="button"
-                                    class="pdf-hide mt-1 text-sm text-gray-400 leading-snug px-2 hover:text-gray-200 transition-colors cursor-pointer text-center">
-                                {!! $stage['caption'] !!}
-                            </button>
-                        @else
-                            <div class="mt-5 text-base font-semibold text-white">{{ $stage['label'] }}</div>
-                            <div class="mt-1 text-sm text-gray-400 leading-snug px-2">{!! $stage['caption'] !!}</div>
-                        @endif
-                    </div>
-                @endforeach
-
-                @if($isAdmin)
-                {{-- Edit Stage Modal --}}
-                <div x-show="editingStage !== null" x-cloak
-                     x-transition.opacity
-                     @keydown.escape.window="editingStage = null"
-                     class="pdf-hide fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-                    <div @click.outside="editingStage = null"
-                         class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
-                        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                            <h3 class="text-lg font-bold text-gray-900">Edit Stage <span x-text="editingStage !== null ? editingStage + 1 : ''"></span></h3>
-                            <button @click="editingStage = null" class="p-1 text-gray-400 hover:text-gray-600 transition cursor-pointer">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                        </div>
-                        <div class="p-6 space-y-4">
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 mb-1">Label</label>
-                                <input type="text" x-model="editLabel"
-                                       class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 mb-1">Caption</label>
-                                <textarea x-model="editCaption" rows="2"
-                                          class="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none resize-none"></textarea>
-                                <p class="mt-1 text-[11px] text-gray-400">HTML allowed (e.g. <code class="text-gray-500">&amp;mdash;</code> for em-dash).</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
-                            <button @click="editingStage = null"
-                                    class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">Cancel</button>
-                            <button @click="$wire.updateProcessStage(editingStage, editLabel, editCaption); editingStage = null;"
-                                    class="px-5 py-2.5 text-sm font-medium text-white bg-brand rounded-lg hover:bg-gray-900 transition-colors cursor-pointer shadow-sm">Save</button>
-                        </div>
-                    </div>
-                </div>
+            @if($proposal->differentiator_enabled)
+            <div class="text-center">
+                <h2 class="differentiator-pulse text-[1.7rem] sm:text-[2.7rem] lg:text-[3.4rem] font-semibold text-white leading-tight max-w-4xl mx-auto whitespace-pre-line [text-shadow:0_2px_12px_rgba(0,0,0,0.9)]">{{ $proposal->differentiator_headline ?? '"We should have gone the custom route sooner!"' }}</h2>
+                @if($proposal->differentiator_attribution)
+                    <p class="mt-6 text-base sm:text-lg text-white/70 tracking-wide [text-shadow:0_1px_6px_rgba(0,0,0,0.9)]">{{ $proposal->differentiator_attribution }}</p>
                 @endif
             </div>
             @endif
+
         </div>
     </section>
     @endif
@@ -2571,150 +2566,121 @@
     </section>
     @endif
 
-    {{-- ========== CHANGE REQUESTS SECTION ========== --}}
-    @if($proposal->changes_enabled || $isAdmin)
-    <section id="changes" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
-        <div class="max-w-4xl mx-auto">
+    {{-- ========== PROJECT TEAM SECTION ========== --}}
+    @if($proposal->team_enabled || $isAdmin)
+    <section id="team" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
+        <div class="max-w-6xl mx-auto">
             @if($isAdmin)
                 <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
                     <label class="flex items-center gap-3 cursor-pointer">
                         <div class="relative">
-                            <input type="checkbox" wire:model.live="editingChangesEnabled" class="sr-only peer">
+                            <input type="checkbox" wire:model.live="editingTeamEnabled" class="sr-only peer">
                             <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
                             <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
                         </div>
-                        <span class="text-sm font-medium text-gray-700">Show "Change Requests" in client proposal</span>
+                        <span class="text-sm font-medium text-gray-700">Include "Project Team" in client proposal</span>
                     </label>
-                    @if(!$proposal->changes_enabled)
-                        <span class="text-xs text-amber-600 font-medium inline-flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
-                            Hidden from client view
-                        </span>
-                    @endif
-                </div>
-            @endif
-            <div class="flex items-center gap-3 mb-10">
-                <h2 class="text-3xl font-bold text-gray-900">Change Requests</h2>
-            </div>
-
-            <div class="sm:pl-8">
-            {{-- Admin: Editable content --}}
-            @if($isAdmin)
-                <div class="mb-8" wire:ignore>
-                    <div contenteditable="true"
-                         class="prose prose-gray max-w-none text-gray-600 leading-relaxed focus:outline-none border-b-2 border-dashed border-transparent hover:border-gray-200 focus:border-brand transition-colors px-1 py-2 min-h-[80px]"
-                         x-data
-                         x-on:blur="$wire.set('editingChangeRequestContent', $el.innerText); $wire.saveChangeRequestContent()"
-                         x-init="$el.innerText = @js($editingChangeRequestContent ?: 'Any changes to the scope of work outlined in this proposal will be documented as a Change Request. Change requests may affect the project timeline and budget. All change requests must be approved in writing before work begins.')"
-                    ></div>
-                    <p class="text-xs text-gray-300 mt-2">Click to edit change request content</p>
-                </div>
-            @else
-                <div class="prose prose-gray max-w-none text-gray-600 leading-relaxed mb-10 whitespace-pre-line">{{ $proposal->change_request_content ?: 'Any changes to the scope of work outlined in this proposal will be documented as a Change Request. Change requests may affect the project timeline and budget. All change requests must be approved in writing before work begins.' }}</div>
-            @endif
-            </div>
-
-        </div>
-    </section>
-    @endif
-
-    {{-- ========== VPAT / ACCESSIBILITY SECTION ========== --}}
-    @if($proposal->vpat_enabled || $isAdmin)
-    <section id="vpat" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
-        <div class="max-w-4xl mx-auto">
-            @if($isAdmin)
-                <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <div class="relative">
-                            <input type="checkbox" wire:model.live="editingVpatEnabled" class="sr-only peer">
-                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
-                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
-                        </div>
-                        <span class="text-sm font-medium text-gray-700">Include "Accessibility / VPAT" in client proposal</span>
-                    </label>
-                    <span class="text-xs text-gray-400">Include when responding to government / accessibility-mandated RFPs</span>
-                </div>
-            @endif
-
-            @if($proposal->vpat_enabled)
-                <div class="flex items-center gap-3 mb-3">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand/10 text-brand text-xs font-semibold uppercase tracking-wider">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                        Compliance Statement
+                    <span class="text-xs text-gray-400">
+                        Manage the team library in
+                        <a href="/admin/team-members" class="text-brand hover:text-brand-dark font-medium">admin &rsaquo; Teams</a>
                     </span>
                 </div>
-                <h2 class="text-3xl font-bold text-gray-900 mb-3">Accessibility &amp; VPAT</h2>
-                <p class="text-gray-500 mb-10 leading-relaxed">
-                    Voluntary Product Accessibility Template statement describing how our products and services conform to recognized accessibility standards.
-                </p>
+            @endif
 
-                <div class="prose-light max-w-none text-base leading-relaxed space-y-5">
-                    <p>
-                        divStrong is committed to designing and delivering digital products that are usable by people of all abilities. Our engineering practice aligns with the internationally recognized <strong>Web Content Accessibility Guidelines (WCAG) 2.1 Level AA</strong>, <strong>Section 508 of the Rehabilitation Act</strong>, and the accessibility standards set forth in the State of Colorado Office of Information Technology Rules <strong>8 CCR 1501-11</strong>.
-                    </p>
-                    <p>
-                        Because each of our engagements results in a custom software build rather than a shrink-wrapped product, a final, engagement-specific VPAT (ITI / Revised Section 508 format) is produced at project completion and updated as features evolve. This proposal captures the standards, practices, and controls we build into every project from day one.
+            @if($proposal->team_enabled || $isAdmin)
+                <div class="text-center max-w-2xl mx-auto mb-12">
+                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand mb-3">The People</p>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">Project Team</h2>
+                    <p class="mt-4 text-base text-gray-500 leading-relaxed">
+                        The folks who'll actually be bringing this project to friuition &mdash; not a sales handoff.
                     </p>
                 </div>
 
-                {{-- Standards we align to --}}
-                <div class="mt-10">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Standards We Align To</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
-                            <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-brand/10 text-brand mb-3">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/></svg>
-                            </div>
-                            <p class="text-sm font-semibold text-gray-900">WCAG 2.1 Level AA</p>
-                            <p class="mt-1 text-xs text-gray-500 leading-relaxed">W3C Web Content Accessibility Guidelines &mdash; the baseline we design and test against.</p>
-                        </div>
-                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
-                            <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-brand/10 text-brand mb-3">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z"/></svg>
-                            </div>
-                            <p class="text-sm font-semibold text-gray-900">Section 508</p>
-                            <p class="mt-1 text-xs text-gray-500 leading-relaxed">Revised Section 508 (36 CFR 1194) of the U.S. Rehabilitation Act, aligned with WCAG 2.0 AA.</p>
-                        </div>
-                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
-                            <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-brand/10 text-brand mb-3">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1118 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 13a3 3 0 100-6 3 3 0 000 6z"/></svg>
-                            </div>
-                            <p class="text-sm font-semibold text-gray-900">Colorado 8 CCR 1501-11</p>
-                            <p class="mt-1 text-xs text-gray-500 leading-relaxed">Colorado OIT accessibility rules for technology provided to, or on behalf of, state entities.</p>
-                        </div>
-                    </div>
-                </div>
+                @php $attachedTeam = $proposal->teamMembers; @endphp
 
-                {{-- Our practices --}}
-                <div class="mt-10">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Practices Built Into Every Engagement</h3>
-                    <ul class="space-y-3">
-                        @foreach([
-                            ['Semantic HTML &amp; ARIA', 'Proper landmark regions, heading structure, form labels, and ARIA attributes so assistive technology can interpret every interface.'],
-                            ['Keyboard &amp; Screen-Reader Support', 'All interactive elements are reachable and operable via keyboard, and tested against NVDA, JAWS, and VoiceOver.'],
-                            ['Color &amp; Contrast', 'Minimum 4.5:1 contrast for body text, 3:1 for large text and UI components, with non-color status indicators.'],
-                            ['Responsive &amp; Zoomable', 'Layouts reflow at 200% zoom, support text resizing, and adapt to desktop, tablet, and mobile viewports.'],
-                            ['Media &amp; Imagery', 'Alt text for meaningful images, captions and transcripts for video, no auto-playing audio.'],
-                            ['Automated &amp; Manual Testing', 'axe-core, Lighthouse, and Pa11y run in CI, complemented by manual screen-reader and keyboard walkthroughs before release.'],
-                        ] as [$title, $body])
-                            <li class="flex gap-3">
-                                <svg class="shrink-0 w-5 h-5 text-brand mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                <div>
-                                    <p class="font-semibold text-gray-900">{!! $title !!}</p>
-                                    <p class="text-sm text-gray-600 leading-relaxed">{!! $body !!}</p>
+                @if($attachedTeam->count())
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @foreach($attachedTeam as $member)
+                            <div class="relative group">
+                                @if($isAdmin)
+                                    <button wire:click="detachTeamMember({{ $member->id }})"
+                                            wire:confirm="Remove this team member from the proposal?"
+                                            class="pdf-hide absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-white/95 border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-300 inline-flex items-center justify-center transition-colors cursor-pointer shadow"
+                                            title="Remove from this proposal">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                @endif
+                                <div class="h-full flex flex-col items-center text-center bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-8">
+                                    <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-gray-100 ring-4 ring-white shadow-md mb-5">
+                                        @if($member->avatar_url)
+                                            <img src="{{ $member->avatar_url }}"
+                                                 alt="{{ $member->name }}"
+                                                 class="w-full h-full object-cover">
+                                        @else
+                                            <div class="w-full h-full flex items-center justify-center text-gray-300">
+                                                <svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <h3 class="text-lg font-bold text-gray-900 leading-tight">{{ $member->name }}</h3>
+                                    @if($member->title)
+                                        <p class="mt-1 text-sm font-medium text-brand uppercase tracking-wide">{{ $member->title }}</p>
+                                    @endif
+                                    @if($member->description)
+                                        <p class="mt-4 text-sm text-gray-500 leading-relaxed">{{ $member->description }}</p>
+                                    @endif
                                 </div>
-                            </li>
+                            </div>
                         @endforeach
-                    </ul>
-                </div>
+                    </div>
+                @else
+                    @if($isAdmin)
+                        <div class="rounded-2xl border-2 border-dashed border-gray-300 bg-white p-10 text-center">
+                            <svg class="w-10 h-10 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5.13a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                            <p class="text-gray-500 text-sm">No team members attached yet. Pick from the library below &mdash; or <a href="/admin/team-members/create" class="text-brand hover:text-brand-dark font-medium">add a new team member</a>.</p>
+                        </div>
+                    @else
+                        <p class="text-center text-gray-400 italic">Team details available on request.</p>
+                    @endif
+                @endif
 
-                {{-- Delivery commitment --}}
-                <div class="mt-10 rounded-xl border-l-4 border-brand bg-brand/5 p-5 sm:p-6">
-                    <h3 class="text-base font-semibold text-gray-900 mb-2">Project-Specific VPAT on Delivery</h3>
-                    <p class="text-sm text-gray-700 leading-relaxed">
-                        At the conclusion of development divStrong will produce a completed <strong>VPAT 2.5 (Revised Section 508 edition)</strong> documenting conformance by success criterion (Supports / Partially Supports / Does Not Support / Not Applicable), along with any remediation commitments. We will work collaboratively with your team to resolve any standards gaps identified during the engagement.
-                    </p>
-                </div>
+                {{-- Admin team picker --}}
+                @if($isAdmin)
+                    @php $availableTeam = $this->teamLibrary->whereNotIn('id', $attachedTeam->pluck('id')); @endphp
+                    @if($availableTeam->count())
+                        <div class="pdf-hide mt-8 p-5 rounded-xl border border-gray-200 bg-white shadow-sm"
+                             x-data="{ open: {{ $attachedTeam->count() === 0 ? 'true' : 'false' }} }">
+                            <button type="button" @click="open = !open"
+                                    class="flex items-center justify-between w-full text-left cursor-pointer">
+                                <span class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    Attach a Team Member
+                                    <span class="text-xs text-gray-400 font-normal">({{ $availableTeam->count() }} available)</span>
+                                </span>
+                                <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="open" x-collapse x-cloak class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                @foreach($availableTeam as $member)
+                                    <button type="button"
+                                            wire:click="attachTeamMember({{ $member->id }})"
+                                            class="text-left p-3 rounded-lg bg-gray-50 hover:bg-white hover:ring-2 hover:ring-brand transition cursor-pointer flex gap-3 items-center">
+                                        @if($member->avatar_url)
+                                            <img src="{{ $member->avatar_url }}" alt="" class="w-12 h-12 object-cover rounded-full shrink-0">
+                                        @else
+                                            <div class="w-12 h-12 rounded-full bg-gray-200 shrink-0 flex items-center justify-center text-gray-400">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                            </div>
+                                        @endif
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-semibold text-gray-900 truncate">{{ $member->name }}</p>
+                                            <p class="text-xs text-gray-500 truncate">{{ $member->title ?: '—' }}</p>
+                                        </div>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                @endif
             @endif
         </div>
     </section>
@@ -2982,6 +2948,155 @@
                         </div>
                     @endif
                 @endif
+            @endif
+        </div>
+    </section>
+    @endif
+
+    {{-- ========== CHANGE REQUESTS SECTION ========== --}}
+    @if($proposal->changes_enabled || $isAdmin)
+    <section id="changes" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
+        <div class="max-w-4xl mx-auto">
+            @if($isAdmin)
+                <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingChangesEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Show "Change Requests" in client proposal</span>
+                    </label>
+                    @if(!$proposal->changes_enabled)
+                        <span class="text-xs text-amber-600 font-medium inline-flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                            Hidden from client view
+                        </span>
+                    @endif
+                </div>
+            @endif
+            <div class="flex items-center gap-3 mb-10">
+                <h2 class="text-3xl font-bold text-gray-900">Change Requests</h2>
+            </div>
+
+            <div class="sm:pl-8">
+            {{-- Admin: Editable content --}}
+            @if($isAdmin)
+                <div class="mb-8" wire:ignore>
+                    <div contenteditable="true"
+                         class="prose prose-gray max-w-none text-gray-600 leading-relaxed focus:outline-none border-b-2 border-dashed border-transparent hover:border-gray-200 focus:border-brand transition-colors px-1 py-2 min-h-[80px]"
+                         x-data
+                         x-on:blur="$wire.set('editingChangeRequestContent', $el.innerText); $wire.saveChangeRequestContent()"
+                         x-init="$el.innerText = @js($editingChangeRequestContent ?: 'Any changes to the scope of work outlined in this proposal will be documented as a Change Request. Change requests may affect the project timeline and budget. All change requests must be approved in writing before work begins.')"
+                    ></div>
+                    <p class="text-xs text-gray-300 mt-2">Click to edit change request content</p>
+                </div>
+            @else
+                <div class="prose prose-gray max-w-none text-gray-600 leading-relaxed mb-10 whitespace-pre-line">{{ $proposal->change_request_content ?: 'Any changes to the scope of work outlined in this proposal will be documented as a Change Request. Change requests may affect the project timeline and budget. All change requests must be approved in writing before work begins.' }}</div>
+            @endif
+            </div>
+
+        </div>
+    </section>
+    @endif
+
+    {{-- ========== VPAT / ACCESSIBILITY SECTION ========== --}}
+    @if($proposal->vpat_enabled || $isAdmin)
+    <section id="vpat" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
+        <div class="max-w-4xl mx-auto">
+            @if($isAdmin)
+                <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingVpatEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Include "Accessibility / VPAT" in client proposal</span>
+                    </label>
+                    <span class="text-xs text-gray-400">Include when responding to government / accessibility-mandated RFPs</span>
+                </div>
+            @endif
+
+            @if($proposal->vpat_enabled)
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand/10 text-brand text-xs font-semibold uppercase tracking-wider">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        Compliance Statement
+                    </span>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-900 mb-3">Accessibility &amp; VPAT</h2>
+                <p class="text-gray-500 mb-10 leading-relaxed">
+                    Voluntary Product Accessibility Template statement describing how our products and services conform to recognized accessibility standards.
+                </p>
+
+                <div class="prose-light max-w-none text-base leading-relaxed space-y-5">
+                    <p>
+                        divStrong is committed to designing and delivering digital products that are usable by people of all abilities. Our engineering practice aligns with the internationally recognized <strong>Web Content Accessibility Guidelines (WCAG) 2.1 Level AA</strong>, <strong>Section 508 of the Rehabilitation Act</strong>, and the accessibility standards set forth in the State of Colorado Office of Information Technology Rules <strong>8 CCR 1501-11</strong>.
+                    </p>
+                    <p>
+                        Because each of our engagements results in a custom software build rather than a shrink-wrapped product, a final, engagement-specific VPAT (ITI / Revised Section 508 format) is produced at project completion and updated as features evolve. This proposal captures the standards, practices, and controls we build into every project from day one.
+                    </p>
+                </div>
+
+                {{-- Standards we align to --}}
+                <div class="mt-10">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Standards We Align To</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                            <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-brand/10 text-brand mb-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/></svg>
+                            </div>
+                            <p class="text-sm font-semibold text-gray-900">WCAG 2.1 Level AA</p>
+                            <p class="mt-1 text-xs text-gray-500 leading-relaxed">W3C Web Content Accessibility Guidelines &mdash; the baseline we design and test against.</p>
+                        </div>
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                            <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-brand/10 text-brand mb-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z"/></svg>
+                            </div>
+                            <p class="text-sm font-semibold text-gray-900">Section 508</p>
+                            <p class="mt-1 text-xs text-gray-500 leading-relaxed">Revised Section 508 (36 CFR 1194) of the U.S. Rehabilitation Act, aligned with WCAG 2.0 AA.</p>
+                        </div>
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                            <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-brand/10 text-brand mb-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1118 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 13a3 3 0 100-6 3 3 0 000 6z"/></svg>
+                            </div>
+                            <p class="text-sm font-semibold text-gray-900">Colorado 8 CCR 1501-11</p>
+                            <p class="mt-1 text-xs text-gray-500 leading-relaxed">Colorado OIT accessibility rules for technology provided to, or on behalf of, state entities.</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Our practices --}}
+                <div class="mt-10">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Practices Built Into Every Engagement</h3>
+                    <ul class="space-y-3">
+                        @foreach([
+                            ['Semantic HTML &amp; ARIA', 'Proper landmark regions, heading structure, form labels, and ARIA attributes so assistive technology can interpret every interface.'],
+                            ['Keyboard &amp; Screen-Reader Support', 'All interactive elements are reachable and operable via keyboard, and tested against NVDA, JAWS, and VoiceOver.'],
+                            ['Color &amp; Contrast', 'Minimum 4.5:1 contrast for body text, 3:1 for large text and UI components, with non-color status indicators.'],
+                            ['Responsive &amp; Zoomable', 'Layouts reflow at 200% zoom, support text resizing, and adapt to desktop, tablet, and mobile viewports.'],
+                            ['Media &amp; Imagery', 'Alt text for meaningful images, captions and transcripts for video, no auto-playing audio.'],
+                            ['Automated &amp; Manual Testing', 'axe-core, Lighthouse, and Pa11y run in CI, complemented by manual screen-reader and keyboard walkthroughs before release.'],
+                        ] as [$title, $body])
+                            <li class="flex gap-3">
+                                <svg class="shrink-0 w-5 h-5 text-brand mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                <div>
+                                    <p class="font-semibold text-gray-900">{!! $title !!}</p>
+                                    <p class="text-sm text-gray-600 leading-relaxed">{!! $body !!}</p>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+
+                {{-- Delivery commitment --}}
+                <div class="mt-10 rounded-xl border-l-4 border-brand bg-brand/5 p-5 sm:p-6">
+                    <h3 class="text-base font-semibold text-gray-900 mb-2">Project-Specific VPAT on Delivery</h3>
+                    <p class="text-sm text-gray-700 leading-relaxed">
+                        At the conclusion of development divStrong will produce a completed <strong>VPAT 2.5 (Revised Section 508 edition)</strong> documenting conformance by success criterion (Supports / Partially Supports / Does Not Support / Not Applicable), along with any remediation commitments. We will work collaboratively with your team to resolve any standards gaps identified during the engagement.
+                    </p>
+                </div>
             @endif
         </div>
     </section>

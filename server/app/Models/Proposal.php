@@ -25,6 +25,7 @@ class Proposal extends Model
         'vpat_enabled', 'performance_enabled', 'references_enabled', 'team_enabled',
         'process_enabled', 'process_eyebrow', 'process_heading', 'process_subheading',
         'process_background', 'process_stages',
+        'nav_hidden_sections',
         'status',
         'change_request_content', 'cr_signature_name', 'cr_signature_data', 'cr_signed_at',
         'tc_signature_name', 'tc_signature_data', 'tc_signed_at',
@@ -62,7 +63,44 @@ class Proposal extends Model
             'team_enabled' => 'boolean',
             'process_enabled' => 'boolean',
             'process_stages' => 'array',
+            'nav_hidden_sections' => 'array',
         ];
+    }
+
+    /**
+     * Every section that can appear in the sticky nav, with its label and whether it
+     * is currently enabled on this proposal. Used by the customize-nav modal so the
+     * admin can pick which enabled sections appear in the nav.
+     */
+    public function getNavCandidatesAttribute(): array
+    {
+        return collect([
+            ['id' => 'overview',    'label' => 'Overview',      'enabled' => true],
+            ['id' => 'roadmap',     'label' => 'Roadmap',       'enabled' => (bool) $this->roadmap_enabled],
+            ['id' => 'about',       'label' => 'About',         'enabled' => (bool) $this->about_enabled],
+            ['id' => 'scope',       'label' => 'Scope',         'enabled' => true],
+            ['id' => 'process',     'label' => 'Process',       'enabled' => (bool) $this->process_enabled],
+            ['id' => 'investment',  'label' => 'Investment',    'enabled' => (bool) $this->investment_enabled],
+            ['id' => 'why-custom',  'label' => 'Why Custom',    'enabled' => (bool) $this->differentiator_enabled],
+            ['id' => 'milestones',  'label' => 'Milestones',    'enabled' => (bool) $this->milestones_enabled],
+            ['id' => 'team',        'label' => 'Team',          'enabled' => (bool) $this->team_enabled],
+            ['id' => 'performance', 'label' => 'Past Work',     'enabled' => (bool) $this->performance_enabled],
+            ['id' => 'references',  'label' => 'References',    'enabled' => (bool) $this->references_enabled],
+            ['id' => 'changes',     'label' => 'Changes',       'enabled' => (bool) $this->changes_enabled],
+            ['id' => 'vpat',        'label' => 'Accessibility', 'enabled' => (bool) $this->vpat_enabled],
+            ['id' => 'terms',       'label' => 'Terms',         'enabled' => (bool) $this->terms_enabled],
+        ])->filter(fn ($s) => $s['enabled'])->values()->all();
+    }
+
+    /** Sections actually rendered in the nav: enabled AND not hidden. */
+    public function getNavSectionsAttribute(): array
+    {
+        $hidden = $this->nav_hidden_sections ?? [];
+
+        return collect($this->nav_candidates)
+            ->reject(fn ($s) => in_array($s['id'], $hidden, true))
+            ->values()
+            ->all();
     }
 
     protected static function booted(): void

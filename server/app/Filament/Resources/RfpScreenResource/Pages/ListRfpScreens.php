@@ -71,7 +71,6 @@ class ListRfpScreens extends ListRecords
     public function content(Schema $schema): Schema
     {
         return $schema->components([
-            \Filament\Schemas\Components\EmbeddedSchema::make('filtersForm'),
             \Filament\Schemas\Components\Livewire::make(RfpScreenStatsWidget::class, fn () => ['pageFilters' => $this->filters]),
             $this->getTabsContentComponent(),
             \Filament\Schemas\Components\RenderHook::make(\Filament\View\PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_BEFORE),
@@ -98,7 +97,7 @@ class ListRfpScreens extends ListRecords
     {
         return [
             Actions\Action::make('screenNewRfp')
-                ->label('Screen New RFP')
+                ->label('Screen RFP')
                 ->icon('heroicon-o-plus')
                 ->modalHeading('Screen RFP')
                 ->modalContent(fn () => view('filament.rfp-screen-create-modal-host'))
