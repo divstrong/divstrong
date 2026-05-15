@@ -47,6 +47,18 @@ Route::get('/proposal/{uuid}', ProposalView::class)
 Route::get('/proposal/{uuid}/pdf', [\App\Http\Controllers\ProposalPdfController::class, 'download'])
     ->name('proposal.pdf');
 
+Route::get('/proposal/{uuid}/cover', function (string $uuid) {
+    $proposal = \App\Models\Proposal::where('uuid', $uuid)->firstOrFail();
+    $qr = (new \chillerlan\QRCode\QRCode(new \chillerlan\QRCode\QROptions([
+        'outputType'     => \chillerlan\QRCode\QRCode::OUTPUT_MARKUP_SVG,
+        'eccLevel'       => \chillerlan\QRCode\QRCode::ECC_M,
+        'svgViewBoxSize' => 200,
+        'addQuietzone'   => true,
+        'imageBase64'    => false,
+    ])))->render($proposal->public_url);
+    return view('proposal-cover', ['proposal' => $proposal, 'qr' => $qr]);
+})->name('proposal.cover');
+
 // PayPal payment endpoints
 Route::prefix('proposal/{uuid}/payment')->group(function () {
     Route::post('/create-order', [\App\Http\Controllers\PayPalController::class, 'createOrder'])

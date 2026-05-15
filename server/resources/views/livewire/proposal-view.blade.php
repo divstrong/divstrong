@@ -305,6 +305,11 @@
             </div>
 
         @if($isAdmin)
+            <a href="{{ route('proposal.cover', $proposal->uuid) }}" target="_blank" rel="noopener"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/90 border border-gray-200 text-gray-600 hover:bg-white hover:text-gray-900 shadow-sm transition cursor-pointer backdrop-blur-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h6m0 0l-3-3m3 3l-3 3M4 7h6a2 2 0 012 2v0M4 7l3-3m-3 3l3 3"/></svg>
+                Proposal PDF
+            </a>
             <div x-data="{ showShare: false, shareSent: false }"
                  @proposal-shared.window="shareSent = true">
                 <button @click="showShare = true; shareSent = false"
@@ -553,6 +558,20 @@
                         {!! $proposal->introduction !!}
                     </div>
                 @endif
+
+                {{-- Signature block --}}
+                <div style="margin-top: 2rem; display: flex; align-items: center; gap: 1.25rem;">
+                    <img src="{{ asset('images/jim.png') }}"
+                         alt="James Doyle"
+                         style="width: 56px; height: 56px; border-radius: 9999px; object-fit: cover; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; flex-shrink: 0;">
+                    <div style="line-height: 1.25;">
+                        <div style="font-weight: 700; color: #111827;">James Doyle</div>
+                        <div style="font-size: 0.875rem; color: #4b5563;">Founder &amp; CEO</div>
+                    </div>
+                    <img src="{{ asset('images/signature.png') }}"
+                         alt="Signature"
+                         style="height: 96px; width: auto; object-fit: contain; margin-left: 0.5rem;">
+                </div>
                 </div>
                 @if($hasOverviewImage)
                     <div x-data="{ showLightbox: false }">
@@ -3642,6 +3661,27 @@
         </div>
     </section>
     @endif
+
+    {{-- ========== QR CODE ========== --}}
+    @php
+        $proposalQrUrl = $proposal->public_url;
+        $proposalQrDataUri = (new \chillerlan\QRCode\QRCode(new \chillerlan\QRCode\QROptions([
+            'outputType' => \chillerlan\QRCode\QRCode::OUTPUT_MARKUP_SVG,
+            'eccLevel'   => \chillerlan\QRCode\QRCode::ECC_M,
+            'svgViewBoxSize' => 200,
+            'addQuietzone'   => true,
+            'cssClass'       => 'w-full h-full',
+            'imageBase64'    => false,
+        ])))->render($proposalQrUrl);
+    @endphp
+    <section class="py-12 px-4 sm:px-6 bg-white">
+        <div class="max-w-4xl mx-auto flex flex-col items-center text-center">
+            <div class="w-40 h-40 p-3 bg-white rounded-xl border border-gray-200 shadow-sm">
+                {!! $proposalQrDataUri !!}
+            </div>
+            <p class="mt-4 text-sm text-gray-500">Scan to view this proposal online</p>
+        </div>
+    </section>
 
     {{-- ========== FOOTER ========== --}}
     <footer class="py-8 px-6 bg-white border-t border-gray-200">

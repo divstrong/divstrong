@@ -199,19 +199,6 @@ class ViewRfpScreen extends ViewRecord
                     ])
                     ->collapsible(),
 
-                Section::make('Budget')
-                    ->description(fn ($record) => $record->budget_intel_at
-                        ? 'Snapshot from public budget data, run ' . $record->budget_intel_at->diffForHumans()
-                        : null)
-                    ->schema([
-                        ViewEntry::make('budget_intel')
-                            ->hiddenLabel()
-                            ->view('filament.rfp-budget-summary'),
-                    ])
-                    ->collapsible()
-                    ->collapsed()
-                    ->visible(fn ($record) => ! empty($record->budget_intel)),
-
                 Section::make('Red Flags')
                     ->schema([
                         TextEntry::make('red_flags')
@@ -246,6 +233,37 @@ class ViewRfpScreen extends ViewRecord
                     ])
                     ->collapsible()
                     ->visible(fn ($record) => !empty($record->submission_requirements)),
+
+                Section::make('Budget')
+                    ->description(function ($record) {
+                        if (! $record->budget_intel_at) return null;
+                        $intel = $record->budget_intel ?? [];
+                        $when = $record->budget_intel_at->diffForHumans();
+
+                        if (($intel['source_method'] ?? null) === 'document' && ! empty($intel['source_file_path'])) {
+                            $url = \Illuminate\Support\Facades\Storage::disk('public')->url($intel['source_file_path']);
+                            $name = $intel['source_filename'] ?? 'Source budget document';
+                            return new \Illuminate\Support\HtmlString(
+                                'Source: <a href="' . e($url) . '" target="_blank" rel="noopener" style="color: #ef4444; text-decoration: underline; font-weight: 500;">' . e($name) . '</a> &middot; run ' . e($when)
+                            );
+                        }
+
+                        if (! empty($intel['source_url'])) {
+                            return new \Illuminate\Support\HtmlString(
+                                'Source: <a href="' . e($intel['source_url']) . '" target="_blank" rel="noopener" style="color: #ef4444; text-decoration: underline; font-weight: 500;">public budget document &rarr;</a> &middot; run ' . e($when)
+                            );
+                        }
+
+                        return 'Snapshot from public budget data, run ' . $when;
+                    })
+                    ->schema([
+                        ViewEntry::make('budget_intel')
+                            ->hiddenLabel()
+                            ->view('filament.rfp-budget-summary'),
+                    ])
+                    ->collapsible()
+                    ->collapsed()
+                    ->visible(fn ($record) => ! empty($record->budget_intel)),
 
                 Section::make('Notes')
                     ->icon('heroicon-o-chat-bubble-left-right')
