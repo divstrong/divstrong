@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BugReportController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ProposalController;
 use App\Http\Controllers\Api\RfpScreenController;
@@ -9,6 +10,11 @@ use Illuminate\Support\Facades\Route;
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+
+Route::middleware('throttle:60,1')->group(function () {
+    Route::options('/bug-reports', [BugReportController::class, 'preflight']);
+    Route::post('/bug-reports', [BugReportController::class, 'store']);
+});
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);

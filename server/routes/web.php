@@ -40,6 +40,13 @@ Route::post('/appointment', function (Request $request) {
 
 Route::get('/invite/{token}', AcceptInvite::class)->name('invite.accept');
 
+Route::get('/admin/bug-screenshots/{report}', function (\App\Models\BugReport $report) {
+    abort_unless(auth()->check() && auth()->user()->hasPermission('bug_reports'), 403);
+    abort_unless($report->screenshot_path, 404);
+
+    return \Illuminate\Support\Facades\Storage::disk('local')->response($report->screenshot_path);
+})->middleware('auth')->name('bug-screenshot.show');
+
 Route::get('/proposal/{uuid}', ProposalView::class)
     ->name('proposal.view')
     ->middleware('track.proposal.view');

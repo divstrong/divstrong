@@ -4,7 +4,9 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "deploy": "powershell -ExecutionPolicy Bypass -File ../deploy/deploy.ps1",
+        "deploy:dry": "powershell -ExecutionPolicy Bypass -File ../deploy/deploy.ps1 -DryRun"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

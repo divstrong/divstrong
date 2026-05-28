@@ -22,6 +22,7 @@ class Role extends Model
             'services' => 'Services',
             'scope_items' => 'Scope Items',
             'screenah' => 'Screenah',
+            'bug_reports' => 'Bug Reports',
             'users' => 'Users',
             'settings' => 'Settings',
         ];
