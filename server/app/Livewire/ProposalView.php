@@ -71,6 +71,9 @@ class ProposalView extends Component
     // About Us toggle
     public bool $editingAboutEnabled = false;
 
+    // Overview toggle (default true preserves prior behavior)
+    public bool $editingOverviewEnabled = true;
+
     // Section visibility toggles (default true preserves prior behavior)
     public bool $editingInvestmentEnabled = true;
     public bool $editingMilestonesEnabled = true;
@@ -144,6 +147,7 @@ class ProposalView extends Component
             $this->editingDifferentiatorHeadline = $this->proposal->differentiator_headline ?? '"We should have gone the custom route sooner!"';
             $this->editingDifferentiatorAttribution = $this->proposal->differentiator_attribution ?? '— Almost Every Client';
             $this->editingAboutEnabled = (bool) $this->proposal->about_enabled;
+            $this->editingOverviewEnabled = (bool) $this->proposal->overview_enabled;
             $this->editingInvestmentEnabled = (bool) $this->proposal->investment_enabled;
             $this->editingMilestonesEnabled = (bool) $this->proposal->milestones_enabled;
             $this->editingChangesEnabled = (bool) $this->proposal->changes_enabled;
@@ -745,6 +749,14 @@ class ProposalView extends Component
         $this->proposal->refresh();
     }
 
+    public function updatedEditingOverviewEnabled($value): void
+    {
+        if (! $this->isAdmin) return;
+
+        $this->proposal->update(['overview_enabled' => $value]);
+        $this->proposal->refresh();
+    }
+
     public function updatedEditingInvestmentEnabled($value): void
     {
         if (! $this->isAdmin) return;
@@ -1202,6 +1214,54 @@ class ProposalView extends Component
         ]);
 
         $this->proposal->load('terms');
+    }
+
+    public function importTermsFromProposal(string $uuid): array
+    {
+        if (! $this->isAdmin) {
+            return ['ok' => false, 'message' => 'Not authorized.'];
+        }
+
+        $uuid = strtoupper(trim($uuid));
+
+        // Proposal codes are 6-char uppercase alphanumeric (see Proposal::booted())
+        if (! preg_match('/^[A-Z0-9]{6}$/', $uuid)) {
+            return ['ok' => false, 'message' => 'Proposal codes are 6 letters/numbers (e.g. IGAK96).'];
+        }
+
+        if ($uuid === strtoupper((string) $this->proposal->uuid)) {
+            return ['ok' => false, 'message' => 'You can\'t import terms from the same proposal.'];
+        }
+
+        $source = Proposal::where('uuid', $uuid)->first();
+        if (! $source) {
+            return ['ok' => false, 'message' => 'No proposal found with that identifier.'];
+        }
+
+        $items = $source->terms()->orderBy('sort_order')->get();
+        if ($items->isEmpty()) {
+            return ['ok' => false, 'message' => 'That proposal has no terms to import.'];
+        }
+
+        $maxSort = $this->proposal->terms()->max('sort_order') ?? 0;
+
+        foreach ($items as $item) {
+            $maxSort++;
+            $this->proposal->terms()->create([
+                'content' => $item->content,
+                'sort_order' => $maxSort,
+            ]);
+        }
+
+        $this->proposal->load('terms');
+
+        $count = $items->count();
+        $sourceLabel = $source->project_title ?: ($source->client_company ?: 'proposal');
+
+        return [
+            'ok' => true,
+            'message' => "Imported {$count} term" . ($count === 1 ? '' : 's') . " from {$sourceLabel}.",
+        ];
     }
 
     public function updateTerm(int $id, string $content): void

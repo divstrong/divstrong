@@ -488,10 +488,28 @@
     </section>
 
     {{-- ========== OVERVIEW SECTION ========== --}}
-    @if($proposal->introduction || $isAdmin)
+    @if(($proposal->overview_enabled && $proposal->introduction) || $isAdmin)
     @php $hasOverviewImage = (bool) $proposal->overview_image; @endphp
     <section id="overview" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="{{ $hasOverviewImage ? 'max-w-6xl' : 'max-w-4xl' }} mx-auto">
+            @if($isAdmin)
+                <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" wire:model.live="editingOverviewEnabled" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-brand transition-colors"></div>
+                            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Show "Overview" in client proposal</span>
+                    </label>
+                    @if(!$proposal->overview_enabled)
+                        <span class="text-xs text-amber-600 font-medium inline-flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                            Hidden from client view
+                        </span>
+                    @endif
+                </div>
+            @endif
             <div class="flex items-center gap-3 mb-4">
                 <h2 class="text-3xl font-bold text-gray-900">Overview</h2>
                 @if($isAdmin)
@@ -3147,11 +3165,96 @@
                 <h2 class="text-3xl font-bold text-gray-900">Terms & Conditions</h2>
 
                 @if($isAdmin)
+                <div class="ml-auto flex items-center gap-4">
+                    {{-- Import terms from another proposal --}}
+                    <div x-data="{
+                             importOpen: false,
+                             importUuid: '',
+                             importBusy: false,
+                             importError: '',
+                             importSuccess: '',
+                             async runImport() {
+                                 this.importError = '';
+                                 this.importSuccess = '';
+                                 if (! this.importUuid.trim()) { this.importError = 'Enter a proposal identifier.'; return; }
+                                 this.importBusy = true;
+                                 try {
+                                     const result = await $wire.importTermsFromProposal(this.importUuid.trim());
+                                     if (result?.ok) {
+                                         this.importSuccess = result.message;
+                                         this.importUuid = '';
+                                         setTimeout(() => { this.importOpen = false; this.importSuccess = ''; }, 1400);
+                                     } else {
+                                         this.importError = result?.message || 'Import failed.';
+                                     }
+                                 } catch (e) {
+                                     this.importError = 'Something went wrong. Please try again.';
+                                 } finally {
+                                     this.importBusy = false;
+                                 }
+                             }
+                         }">
+                        {{-- Import link --}}
+                        <button @click="importOpen = true"
+                                class="text-sm font-medium text-brand hover:text-gray-900 transition-colors cursor-pointer">
+                            Import
+                        </button>
+
+                        {{-- Import modal --}}
+                        <div x-show="importOpen" x-cloak
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100"
+                             x-transition:leave-end="opacity-0"
+                             class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                             @keydown.escape.window="importOpen = false; importError = ''; importSuccess = '';">
+                            <div @click.outside="importOpen = false; importError = ''; importSuccess = '';"
+                                 class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+                                <div class="p-6 border-b border-gray-100">
+                                    <h3 class="text-lg font-bold text-gray-900">Import Terms from Another Proposal</h3>
+                                    <p class="text-sm text-gray-500 mt-1">Enter the source proposal's 6-character code (the part after <code class="text-gray-700">/proposal/</code> in its URL). All of its terms will be appended below the existing ones.</p>
+                                </div>
+                                <div class="p-6 space-y-3">
+                                    <label class="block">
+                                        <span class="text-xs font-medium text-gray-700">Proposal code</span>
+                                        <input type="text" x-model="importUuid"
+                                               @keydown.enter.prevent="if(!importBusy) runImport()"
+                                               @input="importUuid = importUuid.toUpperCase()"
+                                               maxlength="6"
+                                               placeholder="e.g. IGAK96"
+                                               class="mt-1 block w-full text-sm font-mono tracking-widest bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none uppercase"
+                                               x-bind:disabled="importBusy">
+                                    </label>
+                                    <p x-show="importError" x-text="importError" x-cloak
+                                       class="text-sm text-red-600"></p>
+                                    <p x-show="importSuccess" x-text="importSuccess" x-cloak
+                                       class="text-sm text-emerald-600"></p>
+                                </div>
+                                <div class="p-6 border-t border-gray-100 flex items-center justify-end gap-3">
+                                    <button @click="importOpen = false; importError = ''; importSuccess = '';"
+                                            x-bind:disabled="importBusy"
+                                            class="text-sm text-gray-500 hover:text-gray-700 cursor-pointer disabled:opacity-50">Cancel</button>
+                                    <button @click="runImport()"
+                                            x-bind:disabled="importBusy"
+                                            class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-60 disabled:cursor-wait cursor-pointer">
+                                        <svg x-show="importBusy" x-cloak class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
+                                            <path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                        </svg>
+                                        <span x-text="importBusy ? 'Importing…' : 'Import Terms'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <button wire:click="addTerm"
-                            class="ml-auto inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand border border-brand/30 rounded-lg hover:bg-brand hover:text-white transition-colors cursor-pointer">
+                            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand border border-brand/30 rounded-lg hover:bg-brand hover:text-white transition-colors cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                         Add Term
                     </button>
+                </div>
                 @endif
             </div>
 

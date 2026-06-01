@@ -20,7 +20,7 @@ class Proposal extends Model
         'discount_enabled', 'discount_type', 'discount_value',
         'roadmap_enabled', 'roadmap_title', 'roadmap_subtitle', 'roadmap_hours_per_sprint', 'roadmap_months',
         'differentiator_enabled', 'differentiator_headline', 'differentiator_attribution', 'differentiator_background',
-        'about_enabled',
+        'about_enabled', 'overview_enabled',
         'investment_enabled', 'milestones_enabled', 'changes_enabled', 'terms_enabled',
         'vpat_enabled', 'performance_enabled', 'references_enabled', 'team_enabled',
         'process_enabled', 'process_eyebrow', 'process_heading', 'process_subheading',
@@ -53,6 +53,7 @@ class Proposal extends Model
             'roadmap_months' => 'integer',
             'differentiator_enabled' => 'boolean',
             'about_enabled' => 'boolean',
+            'overview_enabled' => 'boolean',
             'investment_enabled' => 'boolean',
             'milestones_enabled' => 'boolean',
             'changes_enabled' => 'boolean',
@@ -75,7 +76,7 @@ class Proposal extends Model
     public function getNavCandidatesAttribute(): array
     {
         return collect([
-            ['id' => 'overview',    'label' => 'Overview',      'enabled' => true],
+            ['id' => 'overview',    'label' => 'Overview',      'enabled' => (bool) $this->overview_enabled],
             ['id' => 'roadmap',     'label' => 'Roadmap',       'enabled' => (bool) $this->roadmap_enabled],
             ['id' => 'about',       'label' => 'About',         'enabled' => (bool) $this->about_enabled],
             ['id' => 'scope',       'label' => 'Scope',         'enabled' => true],
