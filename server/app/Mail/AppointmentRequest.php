@@ -16,6 +16,7 @@ class AppointmentRequest extends Mailable
     public function __construct(
         public string $name,
         public string $email,
+        public string $projectType,
         public string $date,
         public string $time,
         public ?string $description = null,

@@ -21,6 +21,7 @@ Route::post('/appointment', function (Request $request) {
     $validated = $request->validate([
         'name' => 'required|string|max:255',
         'email' => 'required|email|max:255',
+        'project_type' => 'required|string|max:50',
         'date' => 'required|date|after:today',
         'time' => 'required|string',
         'description' => 'nullable|string|max:2000',
@@ -30,6 +31,7 @@ Route::post('/appointment', function (Request $request) {
         ->send(new AppointmentRequest(
             name: $validated['name'],
             email: $validated['email'],
+            projectType: $validated['project_type'],
             date: $validated['date'],
             time: $validated['time'],
             description: $validated['description'] ?? null,

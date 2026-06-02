@@ -20,5 +20,6 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     @stack('scripts')
     @livewireScripts
+    <script src="https://www.divstrong.com/bug-reporter.js" data-site-key="bk_mXPKI0XMTPeSgOSWHqfhcwUrNwwpcgwSYnDayfsy" defer></script>
 </body>
 </html>

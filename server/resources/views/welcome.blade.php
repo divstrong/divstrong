@@ -56,6 +56,7 @@
                         </div>
                     </div>
                     <a href="#work" class="text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900 transition-colors">Portfolio</a>
+                    <a href="#pricing" class="text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
                     <a href="#contact" class="text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900 transition-colors">Contact</a>
                 </div>
 
@@ -120,6 +121,7 @@
                 <a @click="$store.nav.mobileOpen = false" href="#about" class="block px-3 py-3 text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-brand hover:bg-gray-50 rounded-lg transition-colors">About</a>
                 <a @click="$store.nav.mobileOpen = false" href="#services" class="block px-3 py-3 text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-brand hover:bg-gray-50 rounded-lg transition-colors">Services</a>
                 <a @click="$store.nav.mobileOpen = false" href="#work" class="block px-3 py-3 text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-brand hover:bg-gray-50 rounded-lg transition-colors">Portfolio</a>
+                <a @click="$store.nav.mobileOpen = false" href="#pricing" class="block px-3 py-3 text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-brand hover:bg-gray-50 rounded-lg transition-colors">Pricing</a>
                 <a @click="$store.nav.mobileOpen = false" href="#contact" class="block px-3 py-3 text-sm font-bold uppercase tracking-wide text-gray-600 hover:text-brand hover:bg-gray-50 rounded-lg transition-colors">Contact</a>
 
                 <div class="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-1">
@@ -568,6 +570,68 @@
         </div>
     </section>
 
+    {{-- ==================== PRICING ==================== --}}
+    <section id="pricing" class="py-24 lg:py-32 bg-white">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <p class="text-brand font-semibold text-sm tracking-wide uppercase mb-3">Pricing</p>
+                <h2 class="text-4xl lg:text-5xl font-extrabold tracking-tight mb-4">Simple, Transparent Rates</h2>
+                <p class="text-lg text-gray-500">Engage us the way that fits your project. AI-enabled effort to match your needs &amp; maximize value. No hidden fees, no surprises.</p>
+            </div>
+
+            {{-- Pricing Cards Grid --}}
+            <div class="grid md:grid-cols-3 gap-8 items-stretch">
+                {{-- Hourly --}}
+                <div class="group relative flex flex-col p-8 rounded-2xl bg-white border border-gray-100 hover:border-brand/20 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300">
+                    <div class="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand/20 transition-colors">
+                        <svg class="w-6 h-6 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Hourly</h3>
+                    <div class="flex items-baseline gap-1 mb-4">
+                        <span class="text-4xl font-extrabold tracking-tight">$175</span>
+                        <span class="text-gray-500 font-medium">/hr</span>
+                    </div>
+                    <p class="text-gray-500 leading-relaxed mb-8 flex-1">Best for small changes and improvements &mdash; quick fixes, tweaks, and ongoing refinements to an existing product.</p>
+                    <a href="#contact" class="btn-request inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-200 text-gray-900 font-semibold rounded-lg">
+                        Request Hourly
+                    </a>
+                </div>
+
+                {{-- Daily --}}
+                <div class="group relative flex flex-col p-8 rounded-2xl bg-white border border-gray-100 hover:border-brand/20 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300">
+                    <div class="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand/20 transition-colors">
+                        <svg class="w-6 h-6 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Daily</h3>
+                    <div class="flex items-baseline gap-1 mb-4">
+                        <span class="text-4xl font-extrabold tracking-tight">$1,250</span>
+                        <span class="text-gray-500 font-medium">/day</span>
+                    </div>
+                    <p class="text-gray-500 leading-relaxed mb-8 flex-1">Best for new features and small projects &mdash; dedicated focus to design, build, and ship a meaningful piece of functionality.</p>
+                    <a href="#contact" class="btn-request inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-200 text-gray-900 font-semibold rounded-lg">
+                        Request Daily
+                    </a>
+                </div>
+
+                {{-- Sprint --}}
+                <div class="group relative flex flex-col p-8 rounded-2xl bg-white border border-gray-100 hover:border-brand/20 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300">
+                    <div class="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-brand/20 transition-colors">
+                        <svg class="w-6 h-6 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Sprint</h3>
+                    <div class="flex items-baseline gap-1 mb-4">
+                        <span class="text-4xl font-extrabold tracking-tight">$3,000</span>
+                        <span class="text-gray-500 font-medium">/ea</span>
+                    </div>
+                    <p class="text-gray-500 leading-relaxed mb-8 flex-1">Best for custom full stack builds and native apps that may require multiple sprints depending on complexity.</p>
+                    <a href="#contact" class="btn-request inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-200 text-gray-900 font-semibold rounded-lg">
+                        Request Sprint
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
     {{-- ==================== VALUE PROPOSITION / CTA ==================== --}}
     <section class="relative py-24 lg:py-32 bg-neutral-900 overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">
@@ -704,7 +768,7 @@ Midlothian, VA 23113</p>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                        <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Preferred Date</label>
                                         <input type="date" id="date" name="date" required
                                                x-model="selectedDate"
                                                :min="minDate"
@@ -712,7 +776,7 @@ Midlothian, VA 23113</p>
                                                class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all">
                                     </div>
                                     <div>
-                                        <label for="time" class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                                        <label for="time" class="block text-sm font-medium text-gray-700 mb-1">Preferred Time</label>
                                         <select id="time" name="time" required x-model="selectedTime"
                                                 class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all bg-white">
                                             <option value="">Select a time</option>
@@ -731,6 +795,16 @@ Midlothian, VA 23113</p>
                                             <option value="4:00 PM">4:00 PM EST</option>
                                         </select>
                                     </div>
+                                </div>
+                                <div>
+                                    <label for="project_type" class="block text-sm font-medium text-gray-700 mb-1">Project Type?</label>
+                                    <select id="project_type" name="project_type" required
+                                            class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all bg-white">
+                                        <option value="">Select a project type</option>
+                                        <option value="Hourly">Hourly &mdash; minor enhancements</option>
+                                        <option value="Daily">Daily &mdash; new features &amp; small projects</option>
+                                        <option value="Sprint(s)">Sprint(s) &mdash; custom full stack builds &amp; native apps</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Describe Your Project</label>
@@ -863,6 +937,16 @@ Midlothian, VA 23113</p>
         .btn-brand:hover {
             transform: scale(1.06);
             color: #FFD700 !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 6px 20px rgba(237,37,55,0.4);
+        }
+        .btn-request {
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+        .btn-request:hover {
+            background: linear-gradient(to bottom, #f43f4f 0%, #ed2537 40%, #c91e2e 100%);
+            border-color: #b91a27;
+            color: #FFD700;
+            transform: scale(1.04);
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 6px 20px rgba(237,37,55,0.4);
         }
         .service-card {

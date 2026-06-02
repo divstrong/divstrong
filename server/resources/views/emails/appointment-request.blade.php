@@ -40,6 +40,12 @@
                                 </tr>
                                 <tr>
                                     <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+                                        <span style="color: #9ca3af; font-size: 14px;">Project Type</span><br>
+                                        <span style="color: #111827; font-size: 16px; font-weight: 600;">{{ $projectType }}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
                                         <span style="color: #9ca3af; font-size: 14px;">Preferred Date</span><br>
                                         <span style="color: #111827; font-size: 16px; font-weight: 600;">{{ \Carbon\Carbon::parse($date)->format('l, F j, Y') }}</span>
                                     </td>
