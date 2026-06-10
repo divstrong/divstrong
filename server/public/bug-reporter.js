@@ -35,7 +35,10 @@
   }
   var apiOrigin = srcUrl.origin;
   var apiUrl = apiOrigin + '/api/bug-reports';
-  var html2canvasUrl = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+  // html2canvas-pro supports modern CSS color functions (oklch, etc.) used by
+  // Tailwind v4 / Filament v4; the original html2canvas 1.4.1 throws on them.
+  // It registers the same window.html2canvas global, so it's a drop-in.
+  var html2canvasUrl = 'https://cdn.jsdelivr.net/npm/html2canvas-pro@1.5.8/dist/html2canvas-pro.min.js';
 
   // --- capture last N console errors before user reports ---
   var errorBuffer = [];
@@ -230,7 +233,16 @@
             out.toBlob(function (blob) { resolve(blob); }, 'image/jpeg', 0.82);
           });
         })
+        .catch(function (e) {
+          // Screenshot capture is best-effort: if html2canvas fails (e.g. an
+          // unsupported CSS color, tainted image), still send the report
+          // without a screenshot rather than losing it entirely.
+          host.style.display = '';
+          try { console.warn('[bug-reporter] screenshot capture failed, sending without it:', e && e.message); } catch (_) {}
+          return null;
+        })
         .then(function (blob) {
+          host.style.display = '';
           statusEl.textContent = 'Sending report...';
           var fd = new FormData();
           fd.append('what_happened', what);
