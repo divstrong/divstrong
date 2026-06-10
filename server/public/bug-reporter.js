@@ -203,14 +203,31 @@
             useCORS: true,
             allowTaint: false,
             logging: false,
-            backgroundColor: null,
-            scale: Math.min(window.devicePixelRatio || 1, 2),
+            backgroundColor: '#ffffff',
+            // scale 1 (not devicePixelRatio): retina pages would otherwise
+            // produce a screenshot several times larger than needed.
+            scale: 1,
           });
         })
         .then(function (canvas) {
           host.style.display = '';
+          // Downscale very large captures so the upload stays well under the
+          // server's size limit (tall / high-DPI pages can otherwise exceed it).
+          var MAX_W = 1600, MAX_H = 4000;
+          var ratio = Math.min(1, MAX_W / canvas.width, MAX_H / canvas.height);
+          var out = canvas;
+          if (ratio < 1) {
+            out = document.createElement('canvas');
+            out.width = Math.max(1, Math.round(canvas.width * ratio));
+            out.height = Math.max(1, Math.round(canvas.height * ratio));
+            var ctx = out.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, out.width, out.height);
+            ctx.drawImage(canvas, 0, 0, out.width, out.height);
+          }
           return new Promise(function (resolve) {
-            canvas.toBlob(function (blob) { resolve(blob); }, 'image/png', 0.92);
+            // JPEG keeps the payload small and reliable vs lossless PNG.
+            out.toBlob(function (blob) { resolve(blob); }, 'image/jpeg', 0.82);
           });
         })
         .then(function (blob) {
@@ -224,7 +241,7 @@
           fd.append('viewport_height', String(window.innerHeight || 0));
           if (document.referrer) fd.append('referrer', document.referrer);
           errorBuffer.forEach(function (e) { fd.append('console_errors[]', e); });
-          if (blob) fd.append('screenshot', blob, 'screenshot.png');
+          if (blob) fd.append('screenshot', blob, 'screenshot.jpg');
 
           return fetch(apiUrl, {
             method: 'POST',
