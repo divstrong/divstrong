@@ -57,10 +57,15 @@ class BugReportController extends Controller
         $screenshotPath = null;
 
         if ($request->hasFile('screenshot')) {
-            $screenshotPath = $request->file('screenshot')->store(
+            // The 'local' disk is configured with throw => false, so a write
+            // failure (e.g. storage/ not writable on the server) returns false
+            // rather than throwing. Normalise that to null so the report still
+            // saves cleanly without a screenshot instead of losing the report.
+            $stored = $request->file('screenshot')->store(
                 'bug-screenshots/'.$site->id,
                 'local'
             );
+            $screenshotPath = is_string($stored) && $stored !== '' ? $stored : null;
         }
 
         $report = BugReport::create([

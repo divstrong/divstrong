@@ -42,6 +42,13 @@ Route::post('/appointment', function (Request $request) {
 
 Route::get('/invite/{token}', AcceptInvite::class)->name('invite.accept');
 
+// Private, token-gated client view of their own bug reports. The token is a
+// per-site secret (NOT the public embed key) emailed to the client.
+Route::get('/reports/{token}', [\App\Http\Controllers\ClientBugReportController::class, 'index'])
+    ->name('client.bug-reports');
+Route::get('/reports/{token}/screenshot/{report}', [\App\Http\Controllers\ClientBugReportController::class, 'screenshot'])
+    ->name('client.bug-reports.screenshot');
+
 Route::get('/admin/bug-screenshots/{report}', function (\App\Models\BugReport $report) {
     abort_unless(auth()->check() && auth()->user()->hasPermission('bug_reports'), 403);
     abort_unless($report->screenshot_path, 404);

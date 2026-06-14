@@ -29,7 +29,9 @@ class BugReporterSiteResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-bug-ant';
 
-    protected static ?string $navigationLabel = 'Bug Trackers';
+    protected static ?string $navigationLabel = 'Trackers';
+
+    protected static ?string $navigationParentItem = 'Bugs';
 
     protected static ?string $modelLabel = 'Bug Tracker';
 
@@ -86,11 +88,44 @@ class BugReporterSiteResource extends Resource
                                 $snippet = '<script src="'.$src.'" data-site-key="'.$record->public_key.'" defer></script>';
                                 $jsString = json_encode($snippet, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP);
                                 $htmlEscaped = e($snippet);
+                                $clickAttr = e('navigator.clipboard.writeText('.$jsString.').then(()=>{copied=true;setTimeout(()=>copied=false,1500)})');
 
                                 return new \Illuminate\Support\HtmlString(
                                     '<div x-data="{copied:false}" style="position:relative;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 14px 14px 16px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:1.5">'
                                     .'<button type="button" '
-                                        .'x-on:click="navigator.clipboard.writeText('.$jsString.').then(()=>{copied=true;setTimeout(()=>copied=false,1500)})" '
+                                        .'x-on:click="'.$clickAttr.'" '
+                                        .'style="position:absolute;top:8px;right:8px;display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;font-size:12px;font-weight:500;background:#fff;color:#374151;border:1px solid #d1d5db;border-radius:6px;cursor:pointer" '
+                                        .'x-on:mouseover="$el.style.background=\'#f3f4f6\'" x-on:mouseout="$el.style.background=\'#fff\'">'
+                                        .'<svg x-show="!copied" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'
+                                        .'<svg x-show="copied" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+                                        .'<span x-text="copied ? \'Copied\' : \'Copy\'"></span>'
+                                    .'</button>'
+                                    .'<div style="padding-right:90px;white-space:pre-wrap;word-break:break-all;color:#111827">'.$htmlEscaped.'</div>'
+                                    .'</div>'
+                                );
+                            }),
+                    ])
+                    ->visible(fn ($record) => $record !== null),
+
+                Section::make('Client Report Link')
+                    ->columnSpanFull()
+                    ->description('Private link the client uses to view their own reports. This is NOT the embed key — it is never exposed in page source. Email it to the client.')
+                    ->schema([
+                        Forms\Components\Placeholder::make('reports_link')
+                            ->hiddenLabel()
+                            ->content(function (?BugReporterSite $record) {
+                                if (! $record?->read_token) {
+                                    return 'Save the site to generate the link.';
+                                }
+                                $url = $record->reportsUrl();
+                                $jsString = json_encode($url, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP);
+                                $htmlEscaped = e($url);
+                                $clickAttr = e('navigator.clipboard.writeText('.$jsString.').then(()=>{copied=true;setTimeout(()=>copied=false,1500)})');
+
+                                return new \Illuminate\Support\HtmlString(
+                                    '<div x-data="{copied:false}" style="position:relative;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 14px 14px 16px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:1.5">'
+                                    .'<button type="button" '
+                                        .'x-on:click="'.$clickAttr.'" '
                                         .'style="position:absolute;top:8px;right:8px;display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;font-size:12px;font-weight:500;background:#fff;color:#374151;border:1px solid #d1d5db;border-radius:6px;cursor:pointer" '
                                         .'x-on:mouseover="$el.style.background=\'#f3f4f6\'" x-on:mouseout="$el.style.background=\'#fff\'">'
                                         .'<svg x-show="!copied" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'

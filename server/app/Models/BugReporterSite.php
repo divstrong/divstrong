@@ -14,6 +14,7 @@ class BugReporterSite extends Model
         'name',
         'domain',
         'public_key',
+        'read_token',
         'notify_email',
         'is_active',
     ];
@@ -28,12 +29,25 @@ class BugReporterSite extends Model
             if (empty($site->public_key)) {
                 $site->public_key = self::generateKey();
             }
+            if (empty($site->read_token)) {
+                $site->read_token = self::generateReadToken();
+            }
         });
     }
 
     public static function generateKey(): string
     {
         return 'bk_'.Str::random(40);
+    }
+
+    public static function generateReadToken(): string
+    {
+        return 'rk_'.Str::random(48);
+    }
+
+    public function reportsUrl(): string
+    {
+        return route('client.bug-reports', ['token' => $this->read_token]);
     }
 
     public function normalizedDomain(): string
