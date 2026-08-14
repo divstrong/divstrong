@@ -11,12 +11,14 @@ class ClaudeService
     private string $apiKey;
     private string $model;
     private int $maxTokens;
+    private string $effort;
 
     public function __construct()
     {
         $this->apiKey = config('claude.api_key');
         $this->model = config('claude.model');
         $this->maxTokens = config('claude.max_tokens');
+        $this->effort = config('claude.effort', 'high');
     }
 
     public function getModel(): string
@@ -33,9 +35,7 @@ class ClaudeService
 
         $response = $this->sendWithRetry($content);
 
-        $rawText = $response->json('content.0.text', '');
-
-        return $this->parseResponse($rawText);
+        return $this->parseResponse($this->firstTextBlock($response));
     }
 
     private function buildMultiDocContent(string $primaryPath, string $prompt, array $attachmentPaths): array
@@ -101,6 +101,7 @@ class ClaudeService
                 ->post('https://api.anthropic.com/v1/messages', [
                     'model' => $this->model,
                     'max_tokens' => $this->maxTokens,
+                    'output_config' => ['effort' => $this->effort],
                     'messages' => [
                         [
                             'role' => 'user',
@@ -110,6 +111,8 @@ class ClaudeService
                 ]);
 
             if ($response->successful()) {
+                $this->assertNotRefused($response);
+
                 return $response;
             }
 
@@ -144,6 +147,43 @@ class ClaudeService
 
             throw new \RuntimeException($message);
         }
+    }
+
+    /**
+     * Return the first text block in the response.
+     *
+     * Opus 5 thinks by default, so content[0] is a thinking block — reading
+     * content.0.text would silently yield an empty string.
+     */
+    private function firstTextBlock(\Illuminate\Http\Client\Response $response): string
+    {
+        foreach ($response->json('content', []) as $block) {
+            if (($block['type'] ?? null) === 'text') {
+                return (string) ($block['text'] ?? '');
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * A safety refusal comes back as HTTP 200 with stop_reason "refusal" and
+     * no usable content. Fail loudly rather than storing an empty analysis.
+     */
+    private function assertNotRefused(\Illuminate\Http\Client\Response $response): void
+    {
+        if ($response->json('stop_reason') !== 'refusal') {
+            return;
+        }
+
+        Log::warning('Claude declined the request', [
+            'category' => $response->json('stop_details.category'),
+        ]);
+
+        throw new \RuntimeException(
+            'Claude declined to analyze this document. If the content is legitimate, '
+            . 'try removing any unrelated attachments and rescanning.'
+        );
     }
 
     private function extractText(string $fullPath, string $extension): string
@@ -243,7 +283,7 @@ PROMPT;
         ];
 
         $response = $this->sendWithRetry($content);
-        $rawText = $response->json('content.0.text', '');
+        $rawText = $this->firstTextBlock($response);
 
         $jsonMatch = [];
         if (preg_match('/```json\s*(.*?)\s*```/s', $rawText, $jsonMatch)) {
