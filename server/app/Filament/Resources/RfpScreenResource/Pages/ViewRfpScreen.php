@@ -2,12 +2,13 @@
 
 namespace App\Filament\Resources\RfpScreenResource\Pages;
 
-use App\Enums\ProposalStatus;
 use App\Filament\Resources\ProposalResource;
 use App\Filament\Resources\RfpScreenResource;
-use App\Models\Proposal;
-use App\Models\TermsLibrary;
+use App\Models\Setting;
 use App\Services\ClaudeService;
+use App\Services\RfpProposalBuilder;
+use App\Support\EngagementPlan;
+use Illuminate\Support\HtmlString;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -358,11 +359,44 @@ class ViewRfpScreen extends ViewRecord
                 ->icon('heroicon-o-document-plus')
                 ->color('gray')
                 ->visible(fn ($record) => $record->status === 'completed' && $record->proposal_id === null)
-                ->requiresConfirmation()
-                ->modalHeading('Create Proposal from RFP')
-                ->modalDescription(fn ($record) => "Generate a draft proposal from \"{$record->rfp_name}\"? Claude will write an overview and scope items based on the RFP analysis.")
+                ->modalHeading('Generate Proposal from RFP')
+                ->modalDescription(fn ($record) => "Claude reads \"{$record->rfp_name}\", drafts an overview, and divides the scope into delivery phases — one Scope of Work group and one Investment row each.")
+                ->modalWidth(\Filament\Support\Enums\Width::TwoExtraLarge)
                 ->modalSubmitActionLabel('Generate Proposal')
-                ->action(function () {
+                ->form([
+                    Forms\Components\Select::make('unit')
+                        ->label('Bill this engagement in')
+                        ->options($this->unitOptions())
+                        ->default(EngagementPlan::normaliseUnit(null))
+                        ->native(false)
+                        ->required()
+                        ->live()
+                        ->afterStateUpdated(fn (callable $set, $state) => $set(
+                            'quantity',
+                            EngagementPlan::defaultQuantity(EngagementPlan::normaliseUnit($state)),
+                        ))
+                        ->helperText('Rates come from Settings → Rates.'),
+                    Forms\Components\TextInput::make('quantity')
+                        ->label(fn (callable $get) => 'How many ' . EngagementPlan::make($get('unit'), 2)->unitLabel(2) . '?')
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(fn (callable $get) => EngagementPlan::configFor(EngagementPlan::normaliseUnit($get('unit')))['max_quantity'])
+                        ->default(EngagementPlan::defaultQuantity(EngagementPlan::normaliseUnit(null)))
+                        ->required()
+                        ->live(onBlur: true),
+                    Forms\Components\Placeholder::make('engagement_total')
+                        ->label('Investment')
+                        ->content(fn (callable $get) => $this->engagementSummary($get('unit'), $get('quantity'))),
+                    Forms\Components\Textarea::make('scope_prompt')
+                        ->label('Scope Prompt (optional)')
+                        ->rows(4)
+                        ->maxLength(4000)
+                        ->placeholder("e.g. Lead with the accessibility remediation — that's what they actually care about. Assume they keep their existing CMS. Don't propose native mobile apps; we're pitching a responsive web build.")
+                        ->helperText('Extra context the RFP document does not contain. The drafter treats this as authoritative and shapes the phase themes and scope items around it.')
+                        ->columnSpanFull(),
+                ])
+                ->action(function (array $data) {
                     $record = $this->record;
 
                     if ($record->proposal_id !== null) {
@@ -374,57 +408,29 @@ class ViewRfpScreen extends ViewRecord
                         return;
                     }
 
+                    $plan = EngagementPlan::make(
+                        $data['unit'] ?? null,
+                        (int) ($data['quantity'] ?? 0),
+                        $data['scope_prompt'] ?? null,
+                    );
+
                     try {
-                        $service = new ClaudeService();
-                        $content = $service->generateProposalContent(
-                            $record->rfp_name ?? 'Untitled RFP',
-                            $record->summary ?? '',
-                            $record->requirements ?? [],
-                            $record->red_flags ?? [],
-                        );
-
-                        $proposal = Proposal::create([
-                            'user_id' => Auth::id(),
-                            'project_title' => $record->rfp_name ?? 'Untitled Project',
-                            'proposal_date' => now(),
-                            'valid_until' => now()->addDays(60),
-                            'client_name' => $content['contact_name'] ?? '',
-                            'client_email' => $content['contact_email'] ?? '',
-                            'client_company' => $content['contact_company'] ?? '',
-                            'introduction' => $content['introduction'] ?? '',
-                            'status' => ProposalStatus::Draft,
-                            'view_count' => 0,
-                        ]);
-
-                        foreach ($content['scope_items'] ?? [] as $i => $item) {
-                            $proposal->scopeItems()->create([
-                                'category' => $item['category'] ?? 'Development',
-                                'title' => $item['title'] ?? '',
-                                'description' => $item['description'] ?? '',
-                                'bullets' => $item['bullets'] ?? [],
-                                'sort_order' => $i,
-                            ]);
-                        }
-
-                        foreach (TermsLibrary::where('is_active', true)->orderBy('sort_order')->get() as $i => $term) {
-                            $proposal->terms()->create([
-                                'content' => $term->content,
-                                'sort_order' => $i,
-                            ]);
-                        }
-
-                        $record->update(['proposal_id' => $proposal->id]);
+                        $proposal = (new RfpProposalBuilder())->build($record, $plan, Auth::id());
 
                         Notification::make()
                             ->success()
                             ->title('Draft proposal created')
-                            ->body('Review and refine the generated content.')
+                            ->body(ucfirst($plan->quantityLabel()) . ' across ' . $plan->phaseCount
+                                . ' ' . str('phase')->plural($plan->phaseCount)
+                                . '. Review and refine the generated content.')
                             ->send();
 
                         return redirect(ProposalResource::getUrl('edit', ['record' => $proposal]));
                     } catch (\Throwable $e) {
                         Log::error('Proposal generation from RFP failed', [
                             'rfp_screen_id' => $record->id,
+                            'unit' => $plan->unit,
+                            'quantity' => $plan->quantity,
                             'error' => $e->getMessage(),
                         ]);
 
@@ -525,6 +531,35 @@ class ViewRfpScreen extends ViewRecord
                 }),
             Actions\DeleteAction::make(),
         ];
+    }
+
+    /** "Sprints — $3,000 each", priced from Settings → Rates. */
+    protected function unitOptions(): array
+    {
+        $options = [];
+
+        foreach (EngagementPlan::units() as $unit => $config) {
+            $options[$unit] = str($config['label'])->plural()
+                . ' — $' . number_format(Setting::rateFor($unit), 0) . ' each';
+        }
+
+        return $options;
+    }
+
+    /** Live running total under the quantity field, plus the phase split. */
+    protected function engagementSummary(?string $unit, mixed $quantity): HtmlString
+    {
+        $plan = EngagementPlan::make($unit, (int) $quantity);
+        $phaseLabel = str($plan->config()['phase_label'])->lower()->plural($plan->phaseCount);
+
+        return new HtmlString(
+            '<span style="font-size: 1.25rem; font-weight: 700;">$'
+            . number_format($plan->total(), 0)
+            . '</span> <span style="color: #6b7280;">= ' . $plan->quantity . ' '
+            . e($plan->unitLabel()) . ' × $' . number_format($plan->rate, 0) . '</span>'
+            . '<br><span style="color: #6b7280; font-size: 0.875rem;">Scope divided into '
+            . $plan->phaseCount . ' ' . e($phaseLabel) . ' — one investment row each.</span>'
+        );
     }
 
     protected function runReanalysis(): void

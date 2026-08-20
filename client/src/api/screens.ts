@@ -77,8 +77,34 @@ export async function rescanScreen(id: number, file?: FilePick): Promise<RfpScre
   return res.data;
 }
 
-export async function createProposalFromScreen(id: number): Promise<{ proposal_id: number; message: string }> {
-  return apiRequest(`/rfp-screens/${id}/create-proposal`, { method: 'POST', timeoutMs: 120000 });
+export type EngagementUnit = 'sprint' | 'day' | 'hour';
+
+export type ProposalEngagement = {
+  /** Billing unit. Defaults server-side to 'sprint'. */
+  unit?: EngagementUnit;
+  /** How many of that unit. Defaults server-side per unit. */
+  quantity?: number;
+  /** Optional extra guidance for how the scope should be drafted. */
+  scope_prompt?: string;
+};
+
+export async function createProposalFromScreen(
+  id: number,
+  engagement?: ProposalEngagement,
+): Promise<{
+  proposal_id: number;
+  unit?: EngagementUnit;
+  quantity?: number;
+  total?: number;
+  message: string;
+}> {
+  // Drafting reads the source RFP document and writes the full delivery plan,
+  // so this runs longer than the old summary-only generation.
+  return apiRequest(`/rfp-screens/${id}/create-proposal`, {
+    method: 'POST',
+    body: engagement,
+    timeoutMs: 300000,
+  });
 }
 
 export async function deleteScreen(id: number): Promise<void> {

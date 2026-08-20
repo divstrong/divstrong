@@ -3,17 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\ScreenRfp;
-use App\Enums\ProposalStatus;
 use App\Http\Controllers\Controller;
-use App\Models\Proposal;
 use App\Models\RfpScreen;
-use App\Models\TermsLibrary;
-use App\Services\ClaudeService;
+use App\Services\RfpProposalBuilder;
+use App\Support\EngagementPlan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class RfpScreenController extends Controller
 {
@@ -88,52 +87,42 @@ class RfpScreenController extends Controller
         $this->authorizeOwnership($request, $rfpScreen);
         abort_unless($rfpScreen->status === 'completed', 422, 'RFP must be fully analyzed first.');
 
+        $validated = $request->validate([
+            'unit' => ['sometimes', Rule::in(array_keys(EngagementPlan::units()))],
+            'quantity' => 'sometimes|integer|min:1',
+            'scope_prompt' => 'sometimes|nullable|string|max:4000',
+            // Legacy: earlier clients posted a raw sprint count.
+            'sprints' => 'sometimes|integer|min:1',
+        ]);
+
+        $plan = EngagementPlan::make(
+            $validated['unit'] ?? (isset($validated['sprints']) ? 'sprint' : null),
+            $validated['quantity'] ?? $validated['sprints'] ?? null,
+            $validated['scope_prompt'] ?? null,
+        );
+
+        if ($rfpScreen->proposal_id !== null) {
+            return response()->json([
+                'proposal_id' => $rfpScreen->proposal_id,
+                'message' => 'A proposal has already been generated from this RFP.',
+            ], 200);
+        }
+
         try {
-            $service = new ClaudeService();
-            $content = $service->generateProposalContent(
-                $rfpScreen->rfp_name ?? 'Untitled RFP',
-                $rfpScreen->summary ?? '',
-                $rfpScreen->requirements ?? [],
-                $rfpScreen->red_flags ?? [],
-            );
-
-            $proposal = Proposal::create([
-                'user_id' => Auth::id(),
-                'project_title' => $rfpScreen->rfp_name ?? 'Untitled Project',
-                'proposal_date' => now(),
-                'valid_until' => now()->addDays(60),
-                'client_name' => $content['contact_name'] ?? $rfpScreen->contact_name ?? '',
-                'client_email' => $content['contact_email'] ?? $rfpScreen->contact_email ?? '',
-                'client_company' => $content['contact_company'] ?? '',
-                'introduction' => $content['introduction'] ?? '',
-                'status' => ProposalStatus::Draft,
-                'view_count' => 0,
-            ]);
-
-            foreach ($content['scope_items'] ?? [] as $i => $item) {
-                $proposal->scopeItems()->create([
-                    'category' => $item['category'] ?? 'Development',
-                    'title' => $item['title'] ?? '',
-                    'description' => $item['description'] ?? '',
-                    'bullets' => $item['bullets'] ?? [],
-                    'sort_order' => $i,
-                ]);
-            }
-
-            foreach (TermsLibrary::where('is_active', true)->orderBy('sort_order')->get() as $i => $term) {
-                $proposal->terms()->create([
-                    'content' => $term->content,
-                    'sort_order' => $i,
-                ]);
-            }
+            $proposal = (new RfpProposalBuilder())->build($rfpScreen, $plan, Auth::id());
 
             return response()->json([
                 'proposal_id' => $proposal->id,
+                'unit' => $plan->unit,
+                'quantity' => $plan->quantity,
+                'total' => $plan->total(),
                 'message' => 'Draft proposal created from RFP.',
             ], 201);
         } catch (\Throwable $e) {
             Log::error('Proposal generation from RFP failed', [
                 'rfp_screen_id' => $rfpScreen->id,
+                'unit' => $plan->unit,
+                'quantity' => $plan->quantity,
                 'error' => $e->getMessage(),
             ]);
 

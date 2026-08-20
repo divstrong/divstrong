@@ -233,14 +233,20 @@ class ProposalResource extends Resource
                                                 ($state['category'] ?? '') . ': ' . ($state['title'] ?? 'New Item')
                                             )
                                             ->schema([
-                                                Forms\Components\Select::make('category')
-                                                    ->options([
-                                                        'Design' => 'Design',
-                                                        'Development' => 'Development',
-                                                        'SEO' => 'SEO',
-                                                        'Hosting' => 'Hosting',
-                                                        'Content' => 'Content',
-                                                        'Maintenance' => 'Maintenance',
+                                                // Free text, not a select: proposals drafted from an
+                                                // RFP group their scope by sprint ("Sprint 2 — Core
+                                                // Build"), and a fixed option list would blank those
+                                                // out on save.
+                                                Forms\Components\TextInput::make('category')
+                                                    ->label('Category / Sprint')
+                                                    ->maxLength(255)
+                                                    ->datalist([
+                                                        'Design',
+                                                        'Development',
+                                                        'SEO',
+                                                        'Hosting',
+                                                        'Content',
+                                                        'Maintenance',
                                                     ]),
                                                 Forms\Components\TextInput::make('title')
                                                     ->maxLength(255),

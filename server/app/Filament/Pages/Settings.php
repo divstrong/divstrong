@@ -47,6 +47,10 @@ class Settings extends Page
             'city' => $settings->city ?? '',
             'state' => $settings->state ?? '',
             'zip' => $settings->zip ?? '',
+            'hourly_rate' => $settings->hourly_rate,
+            'daily_rate' => $settings->daily_rate,
+            'sprint_rate' => $settings->sprint_rate,
+            'hours_per_day' => $settings->hours_per_day,
         ]);
     }
 
@@ -98,6 +102,56 @@ class Settings extends Page
                                 ])->alignment(Alignment::End),
                             ]),
 
+                        Tab::make('Rates')
+                            ->icon('heroicon-o-currency-dollar')
+                            ->schema([
+                                Section::make('Billing Rates')
+                                    ->description('The single source of truth for what we charge. These drive the public pricing section on the landing page and the Investment totals when a proposal is generated from an RFP.')
+                                    ->columns(3)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('hourly_rate')
+                                            ->label('Hourly')
+                                            ->numeric()
+                                            ->minValue(0)
+                                            ->step(1)
+                                            ->prefix('$')
+                                            ->suffix('/hr')
+                                            ->required()
+                                            ->helperText('Small changes and improvements.'),
+                                        Forms\Components\TextInput::make('daily_rate')
+                                            ->label('Daily')
+                                            ->numeric()
+                                            ->minValue(0)
+                                            ->step(1)
+                                            ->prefix('$')
+                                            ->suffix('/day')
+                                            ->required()
+                                            ->helperText('New features and small projects.'),
+                                        Forms\Components\TextInput::make('sprint_rate')
+                                            ->label('Sprint')
+                                            ->numeric()
+                                            ->minValue(0)
+                                            ->step(1)
+                                            ->prefix('$')
+                                            ->suffix('/ea')
+                                            ->required()
+                                            ->helperText('Custom full stack builds and native apps.'),
+                                        Forms\Components\TextInput::make('hours_per_day')
+                                            ->label('Hours in a Billed Day')
+                                            ->numeric()
+                                            ->integer()
+                                            ->minValue(1)
+                                            ->maxValue(24)
+                                            ->required()
+                                            ->helperText('Shown on the Daily pricing card.'),
+                                    ]),
+                                Actions::make([
+                                    Action::make('saveRates')
+                                        ->label('Save Rates')
+                                        ->action(fn () => $this->saveRates()),
+                                ])->alignment(Alignment::End),
+                            ]),
+
                         Tab::make('Roles')
                             ->icon('heroicon-o-shield-check')
                             ->schema([
@@ -127,9 +181,31 @@ class Settings extends Page
             'zip' => $data['zip'] ?? '',
         ]);
 
+        Setting::forgetInstance();
+
         Notification::make()
             ->success()
             ->title('Settings saved')
+            ->send();
+    }
+
+    public function saveRates(): void
+    {
+        $data = $this->form->getState();
+
+        Setting::instance()->update([
+            'hourly_rate' => max(0, (float) ($data['hourly_rate'] ?? 0)),
+            'daily_rate' => max(0, (float) ($data['daily_rate'] ?? 0)),
+            'sprint_rate' => max(0, (float) ($data['sprint_rate'] ?? 0)),
+            'hours_per_day' => max(1, (int) ($data['hours_per_day'] ?? 10)),
+        ]);
+
+        Setting::forgetInstance();
+
+        Notification::make()
+            ->success()
+            ->title('Rates saved')
+            ->body('The public pricing section and new proposal drafts now use these rates.')
             ->send();
     }
 }

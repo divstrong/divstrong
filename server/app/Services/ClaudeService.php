@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\EngagementPlan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -237,72 +238,321 @@ class ClaudeService
         return preg_replace('/\s+/', ' ', trim($text));
     }
 
-    public function generateProposalContent(string $rfpName, string $summary, array $requirements, array $redFlags): array
+    /**
+     * Draft proposal content from a screened RFP, shaped to the engagement the
+     * user picked: one billing unit, a quantity of it, and the phases it is
+     * split across.
+     *
+     * $rfp accepts: rfp_name, summary, requirements, red_flags,
+     * submission_requirements, contact_name, contact_email, contact_company,
+     * locality, file_path, attachment_paths.
+     *
+     * The returned `phases` array always holds exactly $plan->phaseCount
+     * entries whose quantities sum to exactly $plan->quantity — the Investment
+     * total has to be exact even when the model drifts.
+     */
+    public function generateProposalContent(array $rfp, EngagementPlan $plan): array
     {
+        // Drafting a full proposal from the source documents takes 60-180s.
         @set_time_limit(0);
 
-        $requirementsList = collect($requirements)->map(fn ($r, $i) => ($i + 1) . ". {$r}")->implode("\n");
-        $redFlagsList = collect($redFlags)->map(fn ($r) => "- {$r}")->implode("\n");
-
-        $prompt = <<<PROMPT
-You are a proposal writer for a boutique web development and SaaS company called divStrong. Based on the following RFP analysis, generate proposal content.
-
-RFP NAME: {$rfpName}
-
-SUMMARY: {$summary}
-
-KEY REQUIREMENTS:
-{$requirementsList}
-
-RED FLAGS (be aware of these but don't mention them in the proposal):
-{$redFlagsList}
-
-RESPOND IN THIS EXACT JSON FORMAT:
-```json
-{
-    "introduction": "<A professional 2-4 paragraph HTML introduction/overview for the proposal. Use <p> tags for paragraphs. Address the client's needs, briefly describe our approach, and express enthusiasm for the project. Do NOT use placeholder names — write generically about 'your organization' or 'your team'. Keep it concise and professional.>",
-    "scope_items": [
-        {
-            "category": "<one of: Design, Development, SEO, Hosting, Content, Maintenance>",
-            "title": "<short scope item title>",
-            "description": "<brief description of this scope item>",
-            "bullets": ["<specific deliverable or task>", "<another deliverable>"]
-        }
-    ],
-    "contact_name": "<extracted contact person name from the RFP if available, or null>",
-    "contact_email": "<extracted contact email from the RFP if available, or null>",
-    "contact_company": "<extracted organization/company name from the RFP if available, or null>"
-}
-```
-
-Generate 3-6 scope items that logically cover the RFP requirements. Each scope item should have 2-4 bullets.
-PROMPT;
-
-        $content = [
-            ['type' => 'text', 'text' => $prompt],
-        ];
+        $summary = $rfp['summary'] ?? '';
+        $prompt = $this->buildProposalPrompt($rfp, $plan);
+        $content = $this->buildProposalContent($prompt, $rfp);
 
         $response = $this->sendWithRetry($content);
-        $rawText = $this->firstTextBlock($response);
+        $parsed = $this->decodeJsonBlock($this->firstTextBlock($response));
 
-        $jsonMatch = [];
-        if (preg_match('/```json\s*(.*?)\s*```/s', $rawText, $jsonMatch)) {
-            $parsed = json_decode($jsonMatch[1], true);
-        } else {
-            $parsed = json_decode($rawText, true);
-        }
+        if (! is_array($parsed) || ! isset($parsed['introduction'])) {
+            Log::warning('Proposal draft response could not be parsed as JSON', [
+                'rfp_name' => $rfp['rfp_name'] ?? null,
+            ]);
 
-        if (is_array($parsed) && isset($parsed['introduction'])) {
-            return $parsed;
+            return [
+                'introduction' => '<p>' . e($summary) . '</p>',
+                'cost_notes' => null,
+                'phases' => $this->normalisePhases([], $plan),
+                'contact_name' => $rfp['contact_name'] ?? null,
+                'contact_email' => $rfp['contact_email'] ?? null,
+                'contact_company' => $rfp['contact_company'] ?? null,
+            ];
         }
 
         return [
-            'introduction' => '<p>' . e($summary) . '</p>',
-            'scope_items' => [],
-            'contact_name' => null,
-            'contact_email' => null,
-            'contact_company' => null,
+            'introduction' => $this->cleanContactField($parsed['introduction'] ?? null) ?? '<p>' . e($summary) . '</p>',
+            'cost_notes' => $this->cleanContactField($parsed['cost_notes'] ?? null),
+            'phases' => $this->normalisePhases($parsed['phases'] ?? [], $plan),
+            'contact_name' => $this->cleanContactField($parsed['contact_name'] ?? null) ?? ($rfp['contact_name'] ?? null),
+            'contact_email' => $this->cleanContactField($parsed['contact_email'] ?? null) ?? ($rfp['contact_email'] ?? null),
+            'contact_company' => $this->cleanContactField($parsed['contact_company'] ?? null) ?? ($rfp['contact_company'] ?? null),
         ];
+    }
+
+    private function buildProposalPrompt(array $rfp, EngagementPlan $plan): string
+    {
+        $rfpName = $rfp['rfp_name'] ?? 'Untitled RFP';
+        $summary = $rfp['summary'] ?? '';
+
+        $requirementsList = collect($rfp['requirements'] ?? [])
+            ->map(fn ($r, $i) => ($i + 1) . ". {$r}")
+            ->implode("\n") ?: 'None extracted.';
+
+        $redFlagsList = collect($rfp['red_flags'] ?? [])
+            ->map(fn ($r) => "- {$r}")
+            ->implode("\n") ?: 'None.';
+
+        $submissionList = collect($rfp['submission_requirements'] ?? [])
+            ->map(fn ($r) => "- {$r}")
+            ->implode("\n") ?: 'None extracted.';
+
+        $localityLine = filled($rfp['locality'] ?? null) ? "CLIENT LOCALITY: {$rfp['locality']}\n\n" : '';
+
+        return implode("\n\n", array_filter([
+            <<<INTRO
+            You are the lead proposal writer at divStrong, a boutique web development and custom software studio staffed by veteran technologists. You are drafting the first internal draft of a proposal responding to the RFP below. A human reviews and refines it afterwards, so be specific and substantive rather than hedging.
+
+            RFP NAME: {$rfpName}
+
+            {$localityLine}SUMMARY OF THE RFP:
+            {$summary}
+
+            KEY REQUIREMENTS EXTRACTED FROM THE RFP:
+            {$requirementsList}
+
+            SUBMISSION REQUIREMENTS (context only — never write about these in the proposal copy):
+            {$submissionList}
+
+            RISKS / RED FLAGS (design the delivery plan around these, but never mention them in the proposal copy):
+            {$redFlagsList}
+            INTRO,
+            $this->scopeGuidanceBlock($plan),
+            $this->engagementBlock($plan),
+            $this->proposalJsonSpec($plan),
+        ]));
+    }
+
+    /**
+     * The optional scope prompt from the modal. Placed ahead of the structural
+     * rules and marked as overriding, so the lead's steer wins over the
+     * drafter's own read of the RFP.
+     */
+    private function scopeGuidanceBlock(EngagementPlan $plan): ?string
+    {
+        if (blank($plan->scopePrompt)) {
+            return null;
+        }
+
+        return <<<GUIDANCE
+        ADDITIONAL GUIDANCE FROM THE PROPOSAL LEAD — TREAT THIS AS AUTHORITATIVE:
+        {$plan->scopePrompt}
+
+        This guidance reflects context the RFP document does not contain. Where it conflicts with your own reading of the RFP, follow the guidance. Shape the phase themes, the scope items, and their emphasis around it.
+        GUIDANCE;
+    }
+
+    private function engagementBlock(EngagementPlan $plan): string
+    {
+        $phases = $plan->phaseCount;
+        $phaseLabel = strtolower($plan->config()['phase_label']);
+        $quantityLabel = $plan->quantityLabel();
+        $total = number_format($plan->total(), 0);
+        $blurb = $plan->blurb();
+
+        $sizing = $plan->unit === 'sprint'
+            ? "Each {$phaseLabel} is exactly one sprint, so there are {$phases} of them. Set \"quantity\" to 1 on every {$phaseLabel}."
+            : "Divide the {$plan->quantity} {$plan->unitLabel()} across the {$phases} {$phaseLabel}s by setting each one's \"quantity\". They MUST add up to exactly {$plan->quantity}. Weight them by real effort — a heavier {$phaseLabel} gets more {$plan->unitLabel()}.";
+
+        return <<<PLAN_BLOCK
+        ENGAGEMENT STRUCTURE — THIS IS THE MOST IMPORTANT PART:
+        This engagement is sold as {$quantityLabel} — \${$total} total. One {$plan->unitLabel(1)} is {$blurb}.
+
+        Delivery is organised into exactly {$phases} {$phaseLabel}s. {$sizing}
+
+        Divide the ENTIRE scope of the RFP across those {$phases} {$phaseLabel}s. Rules:
+        - The plan must fit inside {$quantityLabel}. Do not propose more work than that buys — if the RFP is larger than the budget, scope the {$phaseLabel}s to the highest-value subset and keep them honest about what is included.
+        - Sequence them so each {$phaseLabel} depends only on what came before: discovery and foundations first, core functionality next, integrations and content migration after that, then accessibility and performance hardening, launch, and post-launch support.
+        - Assign every requirement you commit to a {$phaseLabel}. Do not silently drop work you claim to cover.
+        - Give each {$phaseLabel} a short client-facing theme title of 2-4 words. Do not prefix it with a number — the numbering is added separately.
+        - Each {$phaseLabel} holds 2-5 scope items. Each scope item has a title, a one-or-two sentence description, and 2-4 concrete deliverable bullets. Bullets are things that get handed over, not activities.
+        - Scope item titles must be specific to THIS RFP, not generic web-project boilerplate.
+        PLAN_BLOCK;
+    }
+
+    private function proposalJsonSpec(EngagementPlan $plan): string
+    {
+        $phases = $plan->phaseCount;
+        $phaseLabel = strtolower($plan->config()['phase_label']);
+        $unitLabel = $plan->unitLabel();
+        $quantityNote = $plan->unit === 'sprint'
+            ? 'always 1'
+            : "how many {$unitLabel} this {$phaseLabel} consumes; all {$phases} must sum to exactly {$plan->quantity}";
+
+        return <<<SPEC
+        RESPOND WITH JSON ONLY, IN THIS EXACT SHAPE:
+        ```json
+        {
+            "introduction": "<2-3 paragraph HTML overview wrapped in <p> tags. Paragraph 1: mirror back what this organization is asking for, in their own terms, showing you read and understood the RFP. Paragraph 2: how divStrong's team of veteran technologists will deliver it — reference the {$phases}-{$phaseLabel} structure and the discipline and predictability it brings. Paragraph 3: why this team is the right fit, plus genuine enthusiasm for the work. Address the reader as 'your organization' or 'your team' — never invent a client name. No headings, no lists, no markdown — <p> tags only.>",
+            "cost_notes": "<one or two sentences shown under the Investment table explaining the pricing model and the overall timeline. Plain text, no HTML.>",
+            "phases": [
+                {
+                    "number": 1,
+                    "title": "<2-4 word theme for this {$phaseLabel}>",
+                    "summary": "<one sentence on what this {$phaseLabel} delivers — used as the Investment line item detail>",
+                    "quantity": <{$quantityNote}>,
+                    "scope_items": [
+                        {
+                            "title": "<specific scope item title>",
+                            "description": "<one or two sentences>",
+                            "bullets": ["<concrete deliverable>", "<concrete deliverable>"]
+                        }
+                    ]
+                }
+            ],
+            "contact_name": "<contact person named in the RFP, or null>",
+            "contact_email": "<contact email from the RFP, or null>",
+            "contact_company": "<issuing organization or agency name, or null>"
+        }
+        ```
+
+        The "phases" array MUST contain exactly {$phases} objects, numbered 1 through {$phases}. Output the JSON block and nothing else.
+        SPEC;
+    }
+
+    /**
+     * Attach the source RFP documents when they are still on disk — grounding
+     * the draft in the real document beats working from the summary alone.
+     * Falls back to a prompt-only request if anything is unreadable.
+     */
+    private function buildProposalContent(string $prompt, array $rfp): array
+    {
+        $filePath = $rfp['file_path'] ?? null;
+
+        if (blank($filePath)) {
+            return [['type' => 'text', 'text' => $prompt]];
+        }
+
+        try {
+            return $this->buildMultiDocContent(
+                $filePath,
+                $prompt,
+                array_values(array_filter((array) ($rfp['attachment_paths'] ?? []))),
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Proposal draft falling back to summary-only context', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return [['type' => 'text', 'text' => $prompt]];
+        }
+    }
+
+    /**
+     * Force the model's phase list to exactly the planned count — extra phases
+     * fold their scope into the last one kept, missing ones get a neutral
+     * placeholder — then re-allocate the billing units so they sum exactly.
+     */
+    private function normalisePhases(mixed $phases, EngagementPlan $plan): array
+    {
+        $clean = [];
+
+        foreach (is_array($phases) ? $phases : [] as $phase) {
+            if (! is_array($phase)) {
+                continue;
+            }
+
+            $clean[] = [
+                'title' => $this->cleanContactField($phase['title'] ?? null) ?? 'Delivery',
+                'summary' => $this->cleanContactField($phase['summary'] ?? null) ?? '',
+                'weight' => is_numeric($phase['quantity'] ?? null) ? (float) $phase['quantity'] : 0.0,
+                'scope_items' => $this->normaliseScopeItems($phase['scope_items'] ?? []),
+            ];
+        }
+
+        if (count($clean) > $plan->phaseCount) {
+            $overflow = array_splice($clean, $plan->phaseCount);
+            $last = count($clean) - 1;
+
+            foreach ($overflow as $extra) {
+                $clean[$last]['scope_items'] = array_merge($clean[$last]['scope_items'], $extra['scope_items']);
+                $clean[$last]['weight'] += $extra['weight'];
+            }
+        }
+
+        while (count($clean) < $plan->phaseCount) {
+            $clean[] = ['title' => 'Delivery', 'summary' => '', 'weight' => 0.0, 'scope_items' => []];
+        }
+
+        $allocation = $plan->allocate(array_column($clean, 'weight'));
+
+        foreach ($clean as $i => $phase) {
+            unset($clean[$i]['weight']);
+            $clean[$i]['number'] = $i + 1;
+            $clean[$i]['quantity'] = $allocation[$i];
+        }
+
+        return array_values($clean);
+    }
+
+    private function normaliseScopeItems(mixed $items): array
+    {
+        $clean = [];
+
+        foreach (is_array($items) ? $items : [] as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $title = $this->cleanContactField($item['title'] ?? null);
+
+            if ($title === null) {
+                continue;
+            }
+
+            $clean[] = [
+                'title' => $title,
+                'description' => $this->cleanContactField($item['description'] ?? null) ?? '',
+                'bullets' => collect((array) ($item['bullets'] ?? []))
+                    ->filter(fn ($b) => is_string($b) && trim($b) !== '')
+                    ->map(fn ($b) => trim($b))
+                    ->values()
+                    ->all(),
+            ];
+        }
+
+        return $clean;
+    }
+
+
+    /**
+     * Pull a JSON object out of a model response, whether it arrived in a
+     * fenced block, bare, or wrapped in prose.
+     */
+    private function decodeJsonBlock(string $rawText): mixed
+    {
+        $match = [];
+
+        if (preg_match('/```(?:json)?\s*(.*?)\s*```/s', $rawText, $match)) {
+            $decoded = json_decode($match[1], true);
+
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        $decoded = json_decode($rawText, true);
+
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        $start = strpos($rawText, '{');
+        $end = strrpos($rawText, '}');
+
+        if ($start !== false && $end !== false && $end > $start) {
+            return json_decode(substr($rawText, $start, $end - $start + 1), true);
+        }
+
+        return null;
     }
 
     private function parseResponse(string $rawText): array

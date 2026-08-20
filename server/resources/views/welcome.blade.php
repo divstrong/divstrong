@@ -588,7 +588,7 @@
                     </div>
                     <h3 class="text-xl font-bold mb-2">Hourly</h3>
                     <div class="flex items-baseline gap-1 mb-4">
-                        <span class="text-4xl font-extrabold tracking-tight">$175</span>
+                        <span class="text-4xl font-extrabold tracking-tight">${{ number_format($rates['hour'], 0) }}</span>
                         <span class="text-gray-500 font-medium">/hr</span>
                     </div>
                     <p class="text-gray-500 leading-relaxed mb-8 flex-1">Best for small changes and improvements &mdash; quick fixes, tweaks, and ongoing refinements to an existing product.</p>
@@ -604,10 +604,10 @@
                     </div>
                     <h3 class="text-xl font-bold mb-2">Daily</h3>
                     <div class="flex items-baseline gap-1 mb-4">
-                        <span class="text-4xl font-extrabold tracking-tight">$1,250</span>
+                        <span class="text-4xl font-extrabold tracking-tight">${{ number_format($rates['day'], 0) }}</span>
                         <span class="text-gray-500 font-medium">/day</span>
                     </div>
-                    <p class="text-gray-500 leading-relaxed mb-8 flex-1">Best for new features and small projects &mdash; dedicated focus to design, build, and ship a meaningful piece of functionality.</p>
+                    <p class="text-gray-500 leading-relaxed mb-8 flex-1">Best for new features and small projects &mdash; a dedicated {{ $rates['hours_per_day'] }}-hour day of focus to design, build, and ship a meaningful piece of functionality.</p>
                     <a href="#contact" class="btn-request inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-200 text-gray-900 font-semibold rounded-lg">
                         Request Daily
                     </a>
@@ -620,7 +620,7 @@
                     </div>
                     <h3 class="text-xl font-bold mb-2">Sprint</h3>
                     <div class="flex items-baseline gap-1 mb-4">
-                        <span class="text-4xl font-extrabold tracking-tight">$3,000</span>
+                        <span class="text-4xl font-extrabold tracking-tight">${{ number_format($rates['sprint'], 0) }}</span>
                         <span class="text-gray-500 font-medium">/ea</span>
                     </div>
                     <p class="text-gray-500 leading-relaxed mb-8 flex-1">Best for custom full stack builds and native apps that may require multiple sprints depending on complexity.</p>

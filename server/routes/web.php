@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    // Pricing cards read live rates from Admin > Settings > Rates.
+    return view('welcome', ['rates' => \App\Models\Setting::rates()]);
 });
 
 Route::get('/accessibility', fn () => view('accessibility'))->name('accessibility');
