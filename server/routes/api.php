@@ -11,6 +11,14 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
+// Hit once per page load by every embed of bug-reporter.js, so it gets a much
+// higher limit than the submit endpoint — an office behind a single NAT would
+// otherwise trip the throttle and lose the widget.
+Route::middleware('throttle:300,1')->group(function () {
+    Route::options('/bug-reports/config', [BugReportController::class, 'preflight']);
+    Route::get('/bug-reports/config', [BugReportController::class, 'config']);
+});
+
 Route::middleware('throttle:60,1')->group(function () {
     Route::options('/bug-reports', [BugReportController::class, 'preflight']);
     Route::post('/bug-reports', [BugReportController::class, 'store']);

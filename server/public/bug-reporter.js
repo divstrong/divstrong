@@ -35,6 +35,7 @@
   }
   var apiOrigin = srcUrl.origin;
   var apiUrl = apiOrigin + '/api/bug-reports';
+  var configUrl = apiOrigin + '/api/bug-reports/config?key=' + encodeURIComponent(siteKey);
   // html2canvas-pro supports modern CSS color functions (oklch, etc.) used by
   // Tailwind v4 / Filament v4; the original html2canvas 1.4.1 throws on them.
   // It registers the same window.html2canvas global, so it's a drop-in.
@@ -43,8 +44,12 @@
   // --- capture last N console errors before user reports ---
   var errorBuffer = [];
   var MAX_ERRORS = 20;
+  // Capture starts immediately -- errors thrown during page load happen long
+  // before the activation check below resolves, and they are the ones worth
+  // attaching to a report. If the site turns out to be inactive we undo all of
+  // it in teardownErrorCapture() so a disabled widget leaves the page untouched.
   var origError = console.error;
-  console.error = function () {
+  var patchedError = function () {
     try {
       var parts = [];
       for (var i = 0; i < arguments.length; i++) {
@@ -56,14 +61,27 @@
     } catch (e) { /* swallow */ }
     return origError.apply(console, arguments);
   };
-  window.addEventListener('error', function (e) {
+  console.error = patchedError;
+
+  function onWindowError(e) {
     errorBuffer.push((e.message || 'error') + ' @ ' + (e.filename || '?') + ':' + (e.lineno || '?'));
     if (errorBuffer.length > MAX_ERRORS) errorBuffer.shift();
-  });
-  window.addEventListener('unhandledrejection', function (e) {
+  }
+  function onRejection(e) {
     errorBuffer.push('unhandledrejection: ' + safeStringify(e.reason));
     if (errorBuffer.length > MAX_ERRORS) errorBuffer.shift();
-  });
+  }
+  window.addEventListener('error', onWindowError);
+  window.addEventListener('unhandledrejection', onRejection);
+
+  function teardownErrorCapture() {
+    // Only restore if nothing else wrapped console.error after us; clobbering
+    // another tool's patch would be worse than leaving ours in place.
+    if (console.error === patchedError) console.error = origError;
+    window.removeEventListener('error', onWindowError);
+    window.removeEventListener('unhandledrejection', onRejection);
+    errorBuffer.length = 0;
+  }
 
   function safeStringify(v) {
     try { return JSON.stringify(v); } catch (e) { return String(v); }
@@ -293,9 +311,26 @@
     });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
+  // The is_active toggle lives in the divStrong admin, but this file is a
+  // static asset -- so ask the API whether the site is switched on before
+  // rendering anything. Fails closed: if we cannot confirm the site is active
+  // we render nothing, since a submission would be rejected anyway.
+  function isSiteActive() {
+    return fetch(configUrl, { method: 'GET', credentials: 'omit', mode: 'cors' })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (body) { return !!(body && body.active); })
+      .catch(function () { return false; });
   }
+
+  isSiteActive().then(function (active) {
+    if (!active) {
+      teardownErrorCapture();
+      return;
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  });
 })();

@@ -20,6 +20,36 @@ class BugReportController extends Controller
         return $this->withCors(response('', 204), $request, null);
     }
 
+    /**
+     * Tells the embed widget whether it should render at all.
+     *
+     * The is_active toggle is stored server-side, but bug-reporter.js is a
+     * static file, so without this the widget draws its icon and form on every
+     * page and only discovers the site is switched off when store() rejects
+     * the submission. The key is passed as a query param rather than the
+     * X-Site-Key header so this stays a CORS "simple request" and skips the
+     * preflight round-trip on every page load.
+     */
+    public function config(Request $request): JsonResponse
+    {
+        $key = $request->query('key') ?? $request->header('X-Site-Key');
+
+        $site = $key
+            ? BugReporterSite::where('public_key', $key)->first()
+            : null;
+
+        $response = response()->json([
+            'active' => (bool) $site?->is_active,
+        ]);
+
+        // Short private cache: keeps repeat page loads off the database while
+        // still letting an admin toggle take effect within a minute. Private
+        // because the CORS headers vary by origin.
+        $response->headers->set('Cache-Control', 'private, max-age=60');
+
+        return $this->withCors($response, $request, $site);
+    }
+
     public function store(Request $request): JsonResponse|Response
     {
         $key = $request->header('X-Site-Key') ?? $request->input('site_key');
@@ -128,7 +158,7 @@ class BugReportController extends Controller
         }
 
         $response->headers->set('Vary', 'Origin');
-        $response->headers->set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
         $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, X-Site-Key, Accept');
         $response->headers->set('Access-Control-Max-Age', '86400');
 
