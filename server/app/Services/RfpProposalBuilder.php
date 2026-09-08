@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Enums\ProposalStatus;
 use App\Models\Proposal;
 use App\Models\RfpScreen;
-use App\Models\TermsLibrary;
+use App\Services\Concerns\AttachesProposalTerms;
 use App\Support\EngagementPlan;
 use Illuminate\Support\Facades\DB;
 
@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\DB;
  */
 class RfpProposalBuilder
 {
+    use AttachesProposalTerms;
+
     public function __construct(private ?ClaudeService $claude = null)
     {
         $this->claude ??= new ClaudeService();
@@ -119,18 +121,6 @@ class RfpProposalBuilder
         }
 
         return "{$category}: {$summary}";
-    }
-
-    private function attachTerms(Proposal $proposal): void
-    {
-        $terms = TermsLibrary::where('is_active', true)->orderBy('sort_order')->get();
-
-        foreach ($terms as $i => $term) {
-            $proposal->terms()->create([
-                'content' => $term->content,
-                'sort_order' => $i,
-            ]);
-        }
     }
 
     private function defaultCostNotes(EngagementPlan $plan): string

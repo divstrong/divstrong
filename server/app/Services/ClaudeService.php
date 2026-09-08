@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\EngagementMix;
 use App\Support\EngagementPlan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -492,6 +493,215 @@ class ClaudeService
 
         return array_values($clean);
     }
+
+    /**
+     * Draft proposal content from a client brief rather than an RFP document:
+     * the only source material is what the proposal lead typed into the modal,
+     * plus who the client is and how the engagement was sized.
+     *
+     * The returned `sprints` array always holds exactly $mix->sprints entries,
+     * numbered 1..n — the Investment rows and the milestones are built from it,
+     * so the count has to be exact even when the model drifts.
+     */
+    public function generateClientProposalContent(array $brief, EngagementMix $mix): array
+    {
+        // Drafting a full proposal takes 60-180s.
+        @set_time_limit(0);
+
+        $prompt = $this->buildClientProposalPrompt($brief, $mix);
+
+        $response = $this->sendWithRetry([['type' => 'text', 'text' => $prompt]]);
+        $parsed = $this->decodeJsonBlock($this->firstTextBlock($response));
+
+        if (! is_array($parsed)) {
+            Log::warning('Client proposal draft response could not be parsed as JSON', [
+                'client' => $brief['client_company'] ?? $brief['client_name'] ?? null,
+            ]);
+
+            $parsed = [];
+        }
+
+        return [
+            'project_title' => $this->cleanContactField($parsed['project_title'] ?? null),
+            'introduction' => $this->cleanContactField($parsed['introduction'] ?? null)
+                ?? '<p>' . e((string) $mix->scopePrompt) . '</p>',
+            'cost_notes' => $this->cleanContactField($parsed['cost_notes'] ?? null),
+            'sprints' => $this->normaliseSprints($parsed['sprints'] ?? [], $mix),
+            'day_work' => $mix->hasDays() ? $this->cleanContactField($parsed['day_work'] ?? null) : null,
+            'hour_work' => $mix->hasHours() ? $this->cleanContactField($parsed['hour_work'] ?? null) : null,
+        ];
+    }
+
+    private function buildClientProposalPrompt(array $brief, EngagementMix $mix): string
+    {
+        $clientName = $this->cleanContactField($brief['client_name'] ?? null);
+        $company = $this->cleanContactField($brief['client_company'] ?? null);
+        $title = $this->cleanContactField($brief['project_title'] ?? null);
+
+        $who = $company
+            ? "CLIENT: {$company}" . ($clientName ? " (primary contact: {$clientName})" : '')
+            : 'CLIENT: ' . ($clientName ?: 'the client');
+
+        $titleLine = $title
+            ? "WORKING PROJECT TITLE: {$title}"
+            : 'WORKING PROJECT TITLE: none given — propose one.';
+
+        $scopePrompt = (string) $mix->scopePrompt;
+
+        return implode("\n\n", array_filter([
+            <<<INTRO
+            You are the lead proposal writer at divStrong, a boutique web development and custom software studio staffed by veteran technologists. You are drafting the first internal draft of a proposal for a client relationship — there is no RFP document, only the brief below from the divStrong lead who spoke with them. A human reviews and refines this draft afterwards, so be specific and substantive rather than hedging.
+
+            {$who}
+
+            {$titleLine}
+
+            THE BRIEF — everything known about the project scope. Treat it as authoritative and build the whole proposal around it:
+            {$scopePrompt}
+            INTRO,
+            $this->clientEngagementBlock($mix),
+            $this->clientVoiceBlock(),
+            $this->clientProposalJsonSpec($mix),
+        ]));
+    }
+
+    private function clientEngagementBlock(EngagementMix $mix): string
+    {
+        $sprints = $mix->sprints;
+        $blurb = $mix->sprintBlurb();
+        $rate = number_format($mix->sprintRate, 0);
+        $total = number_format($mix->total(), 0);
+        $weeks = $sprints * 2;
+
+        $supplemental = [];
+
+        if ($mix->hasDays()) {
+            $supplemental[] = 'ALSO SOLD: ' . $mix->dayLine()
+                . ' of day-rate development time, billed as one extra Investment row. This is flexible time held alongside the sprints — refinement, content work, support, or smaller scope the sprints do not cover.';
+        }
+
+        if ($mix->hasHours()) {
+            $supplemental[] = 'ALSO SOLD: ' . $mix->hourLine()
+                . ' of hour-rate development time, billed as one extra Investment row. This is small-batch time for ad-hoc requests and fixes.';
+        }
+
+        $supplementalBlock = $supplemental ? "\n\n" . implode("\n\n", $supplemental) : '';
+
+        return <<<PLAN_BLOCK
+        ENGAGEMENT STRUCTURE — THIS IS THE MOST IMPORTANT PART:
+        Delivery is organised into exactly {$sprints} sprints. One sprint is {$blurb}, sold at \${$rate} each, so the sprints run about {$weeks} weeks end to end. The whole engagement totals \${$total}.{$supplementalBlock}
+
+        Divide the ENTIRE project across those {$sprints} sprints. Rules:
+        - The plan must fit inside what the client is buying. Do not propose more work than {$sprints} sprints can deliver — if the brief is larger than that, scope the sprints to the highest-value subset and be honest about what is included.
+        - Sequence them so each sprint depends only on what came before: discovery and foundations first, core functionality next, integrations and content after that, then hardening, launch, and handover.
+        - Assign every part of the brief you commit to a sprint. Do not silently drop work you claim to cover.
+        - Give each sprint a short client-facing theme title of 2-4 words. Do not prefix it with a number — the numbering is added separately.
+        - Each sprint holds 2-5 scope items. Each scope item has a title, a one-or-two sentence description, and 2-4 concrete deliverable bullets. Bullets are things that get handed over, not activities.
+        - Scope item titles must be specific to THIS project, not generic web-project boilerplate.
+        PLAN_BLOCK;
+    }
+
+    /**
+     * The client reads this document, not an evaluation committee — so the
+     * sprint goals have to survive a non-technical reader.
+     */
+    private function clientVoiceBlock(): string
+    {
+        return <<<VOICE
+        HOW TO WRITE IT:
+        The reader is a business owner or a marketing lead, not an engineer. Write so that someone with no technical background finishes each sprint's goal knowing exactly what they will be able to see, use, or show their team when it ends.
+        - Say what the client gets, not what we do. "You'll be able to publish a new case study yourself in under five minutes" beats "implement CMS content type with WYSIWYG editing".
+        - No jargon, acronyms, framework names, or infrastructure terms in the sprint goals. Scope item bullets may name a concrete deliverable — a page, a form, a dashboard, a migrated archive — but still avoid implementation detail.
+        - Short sentences. Plain words. Confident and warm, never salesy or padded with adjectives.
+        - Never invent facts about the client's business, their current systems, their traffic, or their team that the brief does not state.
+        VOICE;
+    }
+
+    private function clientProposalJsonSpec(EngagementMix $mix): string
+    {
+        $sprints = $mix->sprints;
+
+        $dayWork = $mix->hasDays()
+            ? '"day_work": "<3-7 word plain-language label for what the ' . $mix->days
+                . ' days of flexible development time cover, e.g. Content migration and design refinements>",'
+            : '';
+
+        $hourWork = $mix->hasHours()
+            ? '"hour_work": "<3-7 word plain-language label for what the ' . $mix->hours
+                . ' hours of development time cover, e.g. Ad-hoc fixes and small enhancements>",'
+            : '';
+
+        return <<<SPEC
+        RESPOND WITH JSON ONLY, IN THIS EXACT SHAPE:
+        ```json
+        {
+            "project_title": "<short project title, 3-7 words, specific to this engagement>",
+            "introduction": "<2-3 paragraph HTML overview wrapped in <p> tags. Paragraph 1: mirror back what this client is trying to achieve, in their own terms, showing you listened. Paragraph 2: how divStrong will deliver it — reference the {$sprints}-sprint structure and the predictability and visible progress it brings. Paragraph 3: why this team is the right fit, plus genuine enthusiasm for the work. Address the reader as 'you' and 'your team'. No headings, no lists, no markdown — <p> tags only.>",
+            "cost_notes": "<one or two sentences shown under the Investment table, giving the overall timeline and when the clock starts. Terse and formal, matching the house style of past proposals: \"Project to be completed within two (2) months of project start date, effective upon receipt of initial deposit.\" Write counts as word-then-digits the same way. Plain text, no HTML.>",
+            {$dayWork}
+            {$hourWork}
+            "sprints": [
+                {
+                    "number": 1,
+                    "title": "<2-4 word theme for this sprint>",
+                    "goal": "<ONE plain-language sentence naming what the client will be able to see or do when this sprint ends. No jargon. This is the sentence the client reads next to their payment milestone.>",
+                    "scope_items": [
+                        {
+                            "title": "<specific scope item title>",
+                            "description": "<one or two sentences in plain language>",
+                            "bullets": ["<concrete deliverable>", "<concrete deliverable>"]
+                        }
+                    ]
+                }
+            ]
+        }
+        ```
+
+        The "sprints" array MUST contain exactly {$sprints} objects, numbered 1 through {$sprints}. Output the JSON block and nothing else.
+        SPEC;
+    }
+
+    /**
+     * Force the model's sprint list to exactly the number sold — extra sprints
+     * fold their scope into the last one kept, missing ones get a neutral
+     * placeholder — so the Investment rows and the milestones always line up.
+     */
+    private function normaliseSprints(mixed $sprints, EngagementMix $mix): array
+    {
+        $clean = [];
+
+        foreach (is_array($sprints) ? $sprints : [] as $sprint) {
+            if (! is_array($sprint)) {
+                continue;
+            }
+
+            $clean[] = [
+                'title' => $this->cleanContactField($sprint['title'] ?? null) ?? 'Delivery',
+                'goal' => $this->cleanContactField($sprint['goal'] ?? null) ?? '',
+                'scope_items' => $this->normaliseScopeItems($sprint['scope_items'] ?? []),
+            ];
+        }
+
+        if (count($clean) > $mix->sprints) {
+            $overflow = array_splice($clean, $mix->sprints);
+            $last = count($clean) - 1;
+
+            foreach ($overflow as $extra) {
+                $clean[$last]['scope_items'] = array_merge($clean[$last]['scope_items'], $extra['scope_items']);
+            }
+        }
+
+        while (count($clean) < $mix->sprints) {
+            $clean[] = ['title' => 'Delivery', 'goal' => '', 'scope_items' => []];
+        }
+
+        foreach ($clean as $i => $sprint) {
+            $clean[$i]['number'] = $i + 1;
+        }
+
+        return array_values($clean);
+    }
+
 
     private function normaliseScopeItems(mixed $items): array
     {
