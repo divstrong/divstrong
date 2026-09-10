@@ -14,6 +14,12 @@ class TrackProposalView
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // The PDF renderer loads this page in headless Chrome; that is us, not the
+        // client, so it must not inflate view_count or fire a "viewed" notification.
+        if ($request->boolean('pdf')) {
+            return $next($request);
+        }
+
         $uuid = $request->route('uuid');
         $proposal = Proposal::where('uuid', $uuid)->first();
 

@@ -99,6 +99,7 @@
 
     root.innerHTML =
       '<style>' +
+        '@media print { :host { display: none !important; } }' +
         ':host, * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }' +
         '.fab { position: fixed; right: 20px; bottom: 20px; width: 52px; height: 52px; border-radius: 999px;' +
               ' background: #1f2937; color: #fff; border: none; cursor: pointer; box-shadow: 0 6px 16px rgba(0,0,0,.25);' +

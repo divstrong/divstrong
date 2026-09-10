@@ -3,15 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Proposal;
+use App\Support\PdfRenderer;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
-use Symfony\Component\Process\Process;
 
 class ProposalPdfController extends Controller
 {
-    public function download(string $uuid): Response
+    public function download(string $uuid, PdfRenderer $renderer): Response
     {
         @set_time_limit(0);
 
@@ -19,31 +19,28 @@ class ProposalPdfController extends Controller
 
         $url = route('proposal.view', ['uuid' => $uuid]) . '?pdf=1';
 
-        $tmpDir = storage_path('app/tmp');
-        if (! is_dir($tmpDir)) {
-            mkdir($tmpDir, 0755, true);
+        // Optional override so a dev server that cannot serve a second concurrent
+        // request (artisan serve on Windows) can render through a sibling instance.
+        if ($base = config('services.pdf.base_url')) {
+            $url = rtrim($base, '/') . '/proposal/' . $uuid . '?pdf=1';
         }
-        $tmpPath = $tmpDir . DIRECTORY_SEPARATOR . 'proposal-' . Str::uuid()->toString() . '.pdf';
 
-        $script = base_path('scripts/render-pdf.mjs');
-        $node = config('services.node.binary', 'node');
+        $tmpPath = $renderer->tmpDir() . DIRECTORY_SEPARATOR . 'proposal-' . Str::uuid()->toString() . '.pdf';
 
-        $process = new Process([$node, $script, $url, $tmpPath], base_path());
-        $process->setTimeout(180);
-        $process->run();
+        $process = $renderer->render($url, $tmpPath);
 
         if (! $process->isSuccessful() || ! is_file($tmpPath)) {
             Log::error('Proposal PDF generation failed', [
                 'uuid' => $uuid,
                 'url' => $url,
-                'node' => $node,
-                'script' => $script,
+                'node' => $renderer->nodeBinary(),
                 'tmp_path' => $tmpPath,
                 'tmp_exists' => is_file($tmpPath),
                 'exit_code' => $process->getExitCode(),
                 'stdout' => $process->getOutput(),
                 'stderr' => $process->getErrorOutput(),
                 'cwd' => base_path(),
+                'hint' => 'Run `php artisan proposal:pdf-doctor` on this host to diagnose.',
             ]);
             @unlink($tmpPath);
             throw new RuntimeException(

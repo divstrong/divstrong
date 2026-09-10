@@ -76,6 +76,19 @@ Route::get('/proposal/{uuid}/cover', function (string $uuid) {
     return view('proposal-cover', ['proposal' => $proposal, 'qr' => $qr]);
 })->name('proposal.cover');
 
+Route::get('/proposal/{uuid}/badge', function (string $uuid) {
+    $proposal = \App\Models\Proposal::where('uuid', $uuid)->firstOrFail();
+    $qr = (new \chillerlan\QRCode\QRCode(new \chillerlan\QRCode\QROptions([
+        'outputType'     => \chillerlan\QRCode\QRCode::OUTPUT_MARKUP_SVG,
+        'eccLevel'       => \chillerlan\QRCode\QRCode::ECC_M,
+        'svgViewBoxSize' => 200,
+        'addQuietzone'   => true,
+        'imageBase64'    => false,
+    ])))->render($proposal->public_url);
+
+    return view('proposal-badge', ['proposal' => $proposal, 'qr' => $qr]);
+})->name('proposal.badge');
+
 // PayPal payment endpoints
 Route::prefix('proposal/{uuid}/payment')->group(function () {
     Route::post('/create-order', [\App\Http\Controllers\PayPalController::class, 'createOrder'])
@@ -83,3 +96,26 @@ Route::prefix('proposal/{uuid}/payment')->group(function () {
     Route::post('/{orderId}/capture', [\App\Http\Controllers\PayPalController::class, 'captureOrder'])
         ->name('proposal.payment.capture');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Cold outreach opt-out
+|--------------------------------------------------------------------------
+|
+| Public and unauthenticated by necessity — CAN-SPAM says the mechanism must not require the
+| recipient to log in, create an account, or supply anything beyond their address. The route
+| is signed, so the prospect id in the URL cannot be edited to opt somebody else out.
+|
+| GET confirms, POST performs. That split matters twice over: a link prefetched by a mail
+| client or scanned by a security appliance must not silently unsubscribe someone, and RFC
+| 8058 one-click unsubscribes arrive as a bare POST from Gmail or Yahoo with no page loaded.
+*/
+Route::get('unsubscribe/{prospect}', [\App\Http\Controllers\UnsubscribeController::class, 'show'])
+    ->name('outreach.unsubscribe')
+    ->middleware('signed');
+
+Route::post('unsubscribe/{prospect}', [\App\Http\Controllers\UnsubscribeController::class, 'store'])
+    ->name('outreach.unsubscribe.confirm')
+    ->middleware('signed')
+    // A one-click POST from Gmail or Yahoo carries no session and therefore no CSRF token.
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);

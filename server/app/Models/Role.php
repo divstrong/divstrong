@@ -22,6 +22,8 @@ class Role extends Model
             'services' => 'Services',
             'scope_items' => 'Scope Items',
             'screenah' => 'Screenah',
+            'prospects' => 'Prospects',
+            'email_templates' => 'Email Templates',
             'bug_reports' => 'Bug Reports',
             'users' => 'Users',
             'settings' => 'Settings',

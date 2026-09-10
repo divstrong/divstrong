@@ -60,3 +60,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/proposals/{proposal}/milestones/{itemId}', [ProposalController::class, 'updateMilestone']);
     Route::delete('/proposals/{proposal}/milestones/{itemId}', [ProposalController::class, 'deleteMilestone']);
 });
+
+/*
+| Postmark email events (opens / clicks / bounces / spam complaints) -> prospect timeline.
+|
+| This is what turns the engagement chips on Prospects from "sent" into something that says
+| whether anyone read it. Authenticated by a shared secret in the URL — see
+| PostmarkWebhookController::authorized() and config('services.postmark.webhook_secret').
+*/
+Route::post('/webhooks/postmark', [\App\Http\Controllers\PostmarkWebhookController::class, 'handle'])
+    ->name('webhooks.postmark');

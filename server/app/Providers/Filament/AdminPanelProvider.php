@@ -42,6 +42,23 @@ class AdminPanelProvider extends PanelProvider
                 fn (): string => view('filament.rfp-screen-progress')->render(),
                 scopes: \App\Filament\Resources\RfpScreenResource\Pages\ListRfpScreens::class,
             )
+            // Styling for the custom views in the Prospects area — engagement chips, activity
+            // timeline, email preview. Scoped to the three pages that use them so the rest of
+            // the panel does not carry CSS it never needs.
+            //
+            // It has to be injected rather than written as utility classes: the panel is
+            // served Filament's own pre-compiled stylesheet, not a bundle built from this
+            // app's Blade files, so a Tailwind class in a panel view compiles to nothing and
+            // renders unstyled. See the partial for the full note.
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => view('filament.prospects.panel-styles')->render(),
+                scopes: [
+                    \App\Filament\Resources\ProspectResource\Pages\ListProspects::class,
+                    \App\Filament\Resources\ProspectResource\Pages\EditProspect::class,
+                    \App\Filament\Resources\EmailTemplateResource\Pages\EditEmailTemplate::class,
+                ],
+            )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn (): string => Blade::render('

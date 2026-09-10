@@ -310,6 +310,11 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h6m0 0l-3-3m3 3l-3 3M4 7h6a2 2 0 012 2v0M4 7l3-3m-3 3l3 3"/></svg>
                 Proposal PDF
             </a>
+            <a href="{{ route('proposal.badge', $proposal->uuid) }}" target="_blank" rel="noopener"
+               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/90 border border-gray-200 text-gray-600 hover:bg-white hover:text-gray-900 shadow-sm transition cursor-pointer backdrop-blur-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                Badge
+            </a>
             <div x-data="{ showShare: false, shareSent: false }"
                  @proposal-shared.window="shareSent = true">
                 <button @click="showShare = true; shareSent = false"
@@ -732,8 +737,8 @@
                 </div>
             </div>
 
-            {{-- Phase Chevrons - Desktop --}}
-            <div class="hidden sm:block" x-data="{
+            {{-- Phase Chevrons - Desktop (screen only; print uses the stacked timeline) --}}
+            <div class="hidden sm:block roadmap-chevrons" x-data="{
                     editingPhaseId: null,
                     editTitle: '', editSubtitle: '', editDescription: '', editColor: '#3B82F6', editIcon: 'clipboard', editWeeks: 4, editHours: 160,
                     deletePhaseId: null, deletePhaseTitle: '',
@@ -993,7 +998,7 @@
 
                 {{-- Add Phase Button --}}
                 @if($isAdmin)
-                <div class="mt-6 text-center">
+                <div class="mt-6 text-center pdf-hide">
                     <button wire:click="addRoadmapPhase"
                             class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand border border-brand/30 rounded-lg hover:bg-brand hover:text-white transition-colors cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -1003,13 +1008,14 @@
                 @endif
             </div>
 
-            {{-- Mobile: Vertical Timeline --}}
-            <div class="sm:hidden space-y-4">
+            {{-- Mobile: Vertical Timeline (also what prints, where chevrons are unreadable) --}}
+            <div class="sm:hidden space-y-4 roadmap-stack">
                 @foreach($phases as $index => $phase)
                 <div class="flex gap-4">
                     {{-- Phase number circle --}}
                     <div class="flex flex-col items-center">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-lg" style="background-color: {{ $phase->color }}">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-lg roadmap-stack-num"
+                             style="background-color: {{ $phase->color }}; border-color: {{ $phase->color }}">
                             {{ $index + 1 }}
                         </div>
                         @if(!$loop->last)
@@ -1040,7 +1046,7 @@
                 @endforeach
 
                 @if($isAdmin)
-                <div class="text-center pt-2">
+                <div class="text-center pt-2 pdf-hide">
                     <button wire:click="addRoadmapPhase"
                             class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand border border-brand/30 rounded-lg hover:bg-brand hover:text-white transition-colors cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -3777,12 +3783,38 @@
             'imageBase64'    => false,
         ])))->render($proposalQrUrl);
     @endphp
-    <section class="py-12 px-4 sm:px-6 bg-white">
-        <div class="max-w-4xl mx-auto flex flex-col items-center text-center">
-            <div class="w-40 h-40 p-3 bg-white rounded-xl border border-gray-200 shadow-sm">
-                {!! $proposalQrDataUri !!}
+    <section class="py-14 px-4 sm:px-6 bg-white">
+        <div class="max-w-xl mx-auto">
+            <div class="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <div class="absolute inset-x-0 top-0 h-1 bg-brand"></div>
+
+                <div class="flex flex-col sm:flex-row items-center gap-7 p-7 sm:p-9 text-center sm:text-left">
+                    <div class="w-36 h-36 shrink-0 p-2.5 bg-white rounded-xl border border-gray-200">
+                        {!! $proposalQrDataUri !!}
+                    </div>
+
+                    <div class="min-w-0">
+                        <div class="text-[10px] font-bold tracking-[0.25em] uppercase text-brand">Proposal</div>
+                        <h3 class="mt-2 text-xl sm:text-2xl font-bold text-gray-900 leading-snug">
+                            {{ $proposal->client_company ?: $proposal->client_name ?: 'Client' }}
+                        </h3>
+                        @if($proposal->project_title)
+                            <p class="mt-1 text-sm text-gray-500">{{ $proposal->project_title }}</p>
+                        @endif
+
+                        <p class="mt-4 text-sm font-medium text-gray-900">Scan to view this proposal online</p>
+                        <p class="mt-1 text-xs text-gray-400 break-all">{{ $proposalQrUrl }}</p>
+
+                        @if($isAdmin)
+                            <a href="{{ route('proposal.badge', $proposal->uuid) }}" target="_blank" rel="noopener"
+                               class="mt-5 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg bg-brand text-white hover:bg-gray-900 shadow-sm transition cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                Print Badge
+                            </a>
+                        @endif
+                    </div>
+                </div>
             </div>
-            <p class="mt-4 text-sm text-gray-500">Scan to view this proposal online</p>
         </div>
     </section>
 
@@ -3796,7 +3828,7 @@
 
     {{-- ========== CHAT SIDEBAR ========== --}}
     @if($isAdmin)
-        <div x-data="{ chatOpen: false }" x-cloak>
+        <div x-data="{ chatOpen: false }" x-cloak class="pdf-hide">
             {{-- Floating Chat Button --}}
             <button @click="chatOpen = !chatOpen"
                     class="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 cursor-pointer"
