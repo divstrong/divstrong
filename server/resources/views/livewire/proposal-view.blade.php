@@ -181,7 +181,7 @@
                     </span>
                 @else
                     <a href="#approval"
-                       @click.prevent="document.getElementById('approval')?.scrollIntoView({ behavior: 'smooth' })"
+                       @click.prevent="(document.getElementById('approval') || document.getElementById('sign-agree'))?.scrollIntoView({ behavior: 'smooth' })"
                        class="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 bg-brand hover:bg-gray-900 text-white text-xs font-semibold rounded-full transition-colors cursor-pointer shadow-sm whitespace-nowrap">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                         <span class="hidden sm:inline">Approve</span>
@@ -3406,7 +3406,7 @@
             </div>
 
             {{-- Sign & Agree --}}
-            <div class="mt-10">
+            <div id="sign-agree" class="mt-10 scroll-mt-16">
                 @if($proposal->tc_signed_at)
                     {{-- Signed state --}}
                     <div class="bg-white border border-emerald-200 rounded-xl p-6 shadow-sm">
@@ -3476,6 +3476,8 @@
     </section>
 
     {{-- ========== APPROVAL SECTION ========== --}}
+    {{-- Only render when one of the states below has content; otherwise it's an empty gray band. --}}
+    @if($converted || $accepted || $declined || $expired || (!$isAdmin && $proposal->tc_signed_at))
     <section id="approval" class="py-12 sm:py-20 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
         <div class="max-w-2xl mx-auto">
             @if($converted)
@@ -3769,6 +3771,7 @@
             @endif
         </div>
     </section>
+    @endif
     @endif
 
     {{-- ========== QR CODE ========== --}}

@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Services\ClaudeService;
 use App\Services\RfpProposalBuilder;
 use App\Support\EngagementPlan;
+use Closure;
 use Illuminate\Support\HtmlString;
 use Filament\Actions;
 use Filament\Actions\Action;
@@ -26,6 +27,8 @@ use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\On;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ViewRfpScreen extends ViewRecord
 {
@@ -452,22 +455,11 @@ class ViewRfpScreen extends ViewRecord
                 ->icon('heroicon-o-paper-clip')
                 ->color('gray')
                 ->form([
-                    Forms\Components\FileUpload::make('files')
+                    static::documentUpload('files', allowSpreadsheets: true)
                         ->label('Supporting Documents')
                         ->multiple()
-                        ->directory('rfp-documents')
-                        ->disk('public')
-                        ->acceptedFileTypes([
-                            'application/pdf',
-                            'application/msword',
-                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                            'text/plain',
-                            'text/csv',
-                            'text/markdown',
-                        ])
-                        ->maxSize(20480)
                         ->required()
-                        ->helperText('PDF, DOC, DOCX, TXT, CSV, MD (max 20MB each). The RFP will be re-analyzed against the full document set.'),
+                        ->helperText('PDF, DOC, DOCX, TXT, CSV, MD, XLS, XLSX (max 20MB each). The RFP will be re-analyzed against the full document set.'),
                 ])
                 ->modalSubmitActionLabel('Upload & Rescan')
                 ->action(function (array $data) {
@@ -483,7 +475,13 @@ class ViewRfpScreen extends ViewRecord
                         ]);
                     }
 
-                    $this->runReanalysis();
+                    Notification::make()
+                        ->title(count($files) . ' document(s) uploaded')
+                        ->body('Rescanning the RFP against the full document set…')
+                        ->success()
+                        ->send();
+
+                    $this->requestRescan();
                 }),
             Actions\Action::make('reanalyze')
                 ->label('Rescan')
@@ -493,19 +491,8 @@ class ViewRfpScreen extends ViewRecord
                 ->modalDescription('Optionally upload a new version of the RFP to replace the existing primary document. Leave blank to re-analyze the existing file. Supporting documents will still be included.')
                 ->modalSubmitActionLabel('Rescan')
                 ->form([
-                    Forms\Components\FileUpload::make('replacement_file')
+                    static::documentUpload('replacement_file')
                         ->label('Replace Primary RFP (optional)')
-                        ->directory('rfp-documents')
-                        ->disk('public')
-                        ->acceptedFileTypes([
-                            'application/pdf',
-                            'application/msword',
-                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                            'text/plain',
-                            'text/csv',
-                            'text/markdown',
-                        ])
-                        ->maxSize(20480)
                         ->helperText('PDF, DOC, DOCX, TXT, CSV, MD (max 20MB). If provided, the existing primary RFP file will be replaced.'),
                 ])
                 ->action(function (array $data) {
@@ -527,7 +514,7 @@ class ViewRfpScreen extends ViewRecord
                         }
                     }
 
-                    $this->runReanalysis();
+                    $this->requestRescan();
                 }),
             Actions\DeleteAction::make(),
         ];
@@ -560,6 +547,70 @@ class ViewRfpScreen extends ViewRecord
             . '<br><span style="color: #6b7280; font-size: 0.875rem;">Scope divided into '
             . $plan->phaseCount . ' ' . e($phaseLabel) . ' — one investment row each.</span>'
         );
+    }
+
+    /**
+     * Shared upload field for RFP documents. Keep ->maxSize() in step with
+     * livewire.temporary_file_upload.rules — Livewire validates the temp
+     * upload first, so a lower limit there rejects the file before Filament
+     * ever sees it.
+     */
+    protected static function documentUpload(string $name, bool $allowSpreadsheets = false): Forms\Components\FileUpload
+    {
+        $types = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'text/plain',
+            'text/csv',
+            'text/markdown',
+        ];
+
+        if ($allowSpreadsheets) {
+            $types[] = 'application/vnd.ms-excel';
+            $types[] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        }
+
+        return Forms\Components\FileUpload::make($name)
+            ->directory('rfp-documents')
+            ->disk('public')
+            ->acceptedFileTypes($types)
+            // 'bail' + the existence check must precede the max: rule that
+            // ->maxSize() appends. Validating size on a temp upload that is no
+            // longer on disk throws UnableToRetrieveMetadata (a 500) instead of
+            // failing validation, which is what a stale browser snapshot hits.
+            ->rules([
+                'bail',
+                static fn (): Closure => static function (string $attribute, mixed $value, Closure $fail): void {
+                    if ($value instanceof TemporaryUploadedFile && ! $value->exists()) {
+                        $fail('This upload is no longer on the server. Reload the page and attach the file again.');
+                    }
+                },
+            ])
+            ->maxSize(20480);
+    }
+
+    /**
+     * Hand the rescan to a follow-up Livewire request.
+     *
+     * The Claude call runs up to 180s plus rate-limit backoff. Running it in
+     * the same request that consumes the temp uploads means a gateway timeout
+     * leaves the browser holding a snapshot that still points at temp files
+     * this request already moved into rfp-documents/ — the next submit then
+     * 500s on the missing file. Returning first keeps the upload durable and
+     * the retry cheap.
+     */
+    protected function requestRescan(): void
+    {
+        $this->record->update(['status' => 'analyzing']);
+        $this->refreshFormData(['status']);
+        $this->dispatch('rfp-rescan-requested')->self();
+    }
+
+    #[On('rfp-rescan-requested')]
+    public function handleRescanRequest(): void
+    {
+        $this->runReanalysis();
     }
 
     protected function runReanalysis(): void

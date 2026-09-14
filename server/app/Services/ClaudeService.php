@@ -7,6 +7,7 @@ use App\Support\EngagementPlan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ClaudeService
 {
@@ -194,6 +195,7 @@ class ClaudeService
             'txt', 'csv', 'md' => file_get_contents($fullPath),
             'docx' => $this->extractDocxText($fullPath),
             'doc' => $this->extractDocText($fullPath),
+            'xls', 'xlsx' => $this->extractSpreadsheetText($fullPath),
             default => throw new \RuntimeException("Unsupported file type: {$extension}"),
         };
 
@@ -218,6 +220,46 @@ class ClaudeService
         throw new \RuntimeException(
             'Could not extract text from .doc file. Install antiword for .doc support, or convert to .docx or PDF first.'
         );
+    }
+
+    /**
+     * Flatten every sheet to CSV-style rows so pricing tables and forms keep
+     * their row/column structure in the prompt.
+     */
+    private function extractSpreadsheetText(string $path): string
+    {
+        try {
+            $spreadsheet = IOFactory::load($path);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Could not open spreadsheet: ' . $e->getMessage());
+        }
+
+        $sections = [];
+
+        foreach ($spreadsheet->getAllSheets() as $sheet) {
+            $lines = [];
+
+            foreach ($sheet->toArray(null, true, true, false) as $row) {
+                $cells = array_map(fn ($cell) => trim((string) $cell), $row);
+
+                if (implode('', $cells) === '') {
+                    continue;
+                }
+
+                $lines[] = implode(',', array_map(
+                    fn (string $cell) => preg_match('/[",\n]/', $cell) ? '"' . str_replace('"', '""', $cell) . '"' : $cell,
+                    $cells,
+                ));
+            }
+
+            if ($lines) {
+                $sections[] = "Sheet: {$sheet->getTitle()}\n" . implode("\n", $lines);
+            }
+        }
+
+        $spreadsheet->disconnectWorksheets();
+
+        return implode("\n\n", $sections);
     }
 
     private function extractDocxText(string $path): string
