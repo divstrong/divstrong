@@ -27,6 +27,7 @@ class Role extends Model
             'bug_reports' => 'Bug Reports',
             'users' => 'Users',
             'settings' => 'Settings',
+            'server_logs' => 'Server Logs',
         ];
     }
 

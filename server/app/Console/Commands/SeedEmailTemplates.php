@@ -50,6 +50,44 @@ class SeedEmailTemplates extends Command
                     .'Placeholders: {{ prospect_name }}, {{ company }}, {{ sender_name }}, '
                     .'{{ schedule_url }}.',
             ],
+            /*
+             * The promotional-products preview campaign. These four are a sequence rather
+             * than three alternatives, so the descriptions say where each one sits — the
+             * copy only makes sense in order.
+             *
+             * The greeting, the sign-off, the preview card and its button are all added by
+             * the shell. Write prose here and nothing else.
+             */
+            'promo_preview_intro' => [
+                'name' => 'Preview · 1. The concept',
+                'subject' => 'A website concept for {{ company }}',
+                'view' => 'emails.campaign.steps.preview-intro',
+                'description' => 'Step 1, sent on enrolment. Deliberately carries no price — '
+                    .'the first cold email asks for curiosity, not a purchase decision. '
+                    .'Placeholders: {{ company }}, {{ first_name }}, {{ preview_url }}, {{ sender_name }}.',
+            ],
+            'promo_preview_nudge' => [
+                'name' => 'Preview · 2. Nudge',
+                'subject' => 'Did the concept for {{ company }} land?',
+                'view' => 'emails.campaign.steps.preview-nudge',
+                'description' => 'Step 2, three days later. Short by design — a reminder, not '
+                    .'a second pitch. Placeholders: {{ company }}, {{ first_name }}.',
+            ],
+            'promo_preview_details' => [
+                'name' => 'Preview · 3. What launching looks like',
+                'subject' => 'What it takes to put {{ company }} live',
+                'view' => 'emails.campaign.steps.preview-details',
+                'description' => 'Step 3, a week in, and the first email that mentions money. '
+                    .'Move or delete that paragraph freely. Placeholders: {{ company }}, {{ first_name }}.',
+            ],
+            'promo_preview_last' => [
+                'name' => 'Preview · 4. Last note',
+                'subject' => 'Last note on the concept for {{ company }}',
+                'view' => 'emails.campaign.steps.preview-last',
+                'description' => 'Step 4, two weeks in. A real close with an easy out — which '
+                    .'is what earns the occasional late reply. Placeholders: {{ company }}.',
+            ],
+
             EmailTemplate::GENERAL_UPDATE => [
                 'name' => 'General Update',
                 'subject' => 'What we have been building at divStrong',

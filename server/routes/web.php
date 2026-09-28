@@ -57,6 +57,22 @@ Route::get('/admin/bug-screenshots/{report}', function (\App\Models\BugReport $r
     return \Illuminate\Support\Facades\Storage::disk('local')->response($report->screenshot_path);
 })->middleware('auth')->name('bug-screenshot.show');
 
+/*
+|--------------------------------------------------------------------------
+| Campaign preview pages and call booking
+|--------------------------------------------------------------------------
+|
+| All public and unauthenticated. The preview page is addressed by a stable
+| per-prospect token rather than a signed URL because it is meant to be forwarded
+| around an office — a signature tied to one request would break on the first
+| forward, which is exactly the moment the pitch is working.
+*/
+Route::get('/p/{token}', \App\Livewire\PreviewLanding::class)->name('preview.show');
+
+Route::get('/book', \App\Livewire\BookCall::class)->name('book');
+
+Route::get('/meet/{token}', \App\Livewire\ManageMeeting::class)->name('meeting.manage');
+
 Route::get('/proposal/{uuid}', ProposalView::class)
     ->name('proposal.view')
     ->middleware('track.proposal.view');

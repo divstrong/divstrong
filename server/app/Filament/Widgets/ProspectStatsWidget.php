@@ -23,15 +23,15 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
  */
 class ProspectStatsWidget extends BaseWidget
 {
-    /** Two of the header row's three columns; the activity chart takes the third. */
-    protected int|string|array $columnSpan = 2;
+    /** Three of the header row's five columns; the activity chart takes the other two. */
+    protected int|string|array $columnSpan = 3;
 
     protected static ?int $sort = 1;
 
-    /** Four across, so eight tiles land as two tidy rows inside that two-thirds. */
+    /** Three across, so six tiles land as two tidy rows in the space left for them. */
     protected function getColumns(): int
     {
-        return 4;
+        return 3;
     }
 
     protected function getStats(): array
@@ -43,8 +43,9 @@ class ProspectStatsWidget extends BaseWidget
 
         $total = $scoped()->count();
 
-        $qualified = $scoped()->where('lead_status', Prospect::LEAD_QUALIFIED)->count();
-        $agencies = $scoped()->where('segment', Prospect::SEGMENT_AGENCY)->count();
+        // Qualified and Agencies used to have tiles here. Both are one click away on the
+        // list's own filters, and neither is a number anyone watches daily — the row is
+        // for the funnel, and six tiles leave the activity chart room to be readable.
         $converted = $scoped()->whereNotNull('client_id')->count();
 
         $emailed = $this->countWithActivity($scoped, ProspectActivity::EMAIL_SENT);
@@ -59,20 +60,6 @@ class ProspectStatsWidget extends BaseWidget
             Stat::make('Total Prospects', number_format($total))
                 ->icon('heroicon-o-users')
                 ->color('primary'),
-
-            Stat::make('Qualified', number_format($qualified))
-                ->description($this->share($qualified, $total).' of all prospects')
-                ->icon('heroicon-o-hand-thumb-up')
-                ->color('success')
-                ->url($this->filterUrl('lead_status', Prospect::LEAD_QUALIFIED))
-                ->extraAttributes(['class' => 'cursor-pointer']),
-
-            Stat::make('Agencies', number_format($agencies))
-                ->description($this->share($agencies, $total).' of the book')
-                ->icon('heroicon-o-building-office-2')
-                ->color('success')
-                ->url($this->filterUrl('segment', Prospect::SEGMENT_AGENCY))
-                ->extraAttributes(['class' => 'cursor-pointer']),
 
             Stat::make('Converted', number_format($converted))
                 ->description($this->share($converted, $total).' became clients')

@@ -135,5 +135,14 @@ return [
 
         // Where the emails send people to book time.
         'schedule_url' => env('OUTREACH_SCHEDULE_URL', 'https://divstrong.com/contact'),
+
+        /*
+        | The window drip campaigns may send in, as hours in the booking timezone,
+        | weekdays only. Cold email landing at 3am local reads as automated before it
+        | is read at all, and a send window is the cheapest deliverability control
+        | there is.
+        */
+        'send_from_hour' => (int) env('OUTREACH_SEND_FROM_HOUR', 8),
+        'send_until_hour' => (int) env('OUTREACH_SEND_UNTIL_HOUR', 17),
     ],
 ];

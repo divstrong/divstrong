@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\PayPalException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -67,8 +68,16 @@ class PayPalService
         }
 
         if ($response->failed()) {
-            Log::error('PayPal create order failed', ['status' => $response->status(), 'body' => $response->body()]);
-            throw new \RuntimeException('Failed to create PayPal order: ' . $response->body());
+            $exception = PayPalException::fromResponse('create order', $response);
+
+            Log::error('PayPal create order failed', [
+                'status' => $response->status(),
+                'issue' => $exception->issue(),
+                'debug_id' => $exception->debugId(),
+                'body' => $response->body(),
+            ]);
+
+            throw $exception;
         }
 
         return $response->json();
@@ -76,27 +85,34 @@ class PayPalService
 
     public function captureOrder(string $orderId): array
     {
-        $response = Http::timeout(15)
+        // The body has to be an empty JSON *object*. Http::post() with no data sends an
+        // empty array, which serialises to `[]`, and PayPal rejects that as malformed.
+        $capture = fn () => Http::timeout(15)
             ->withToken($this->getAccessToken())
             ->withHeaders(['Prefer' => 'return=representation'])
+            ->withBody('{}', 'application/json')
             ->post("{$this->baseUrl}/v2/checkout/orders/{$orderId}/capture");
+
+        $response = $capture();
 
         // Retry once on 401 (stale cached token)
         if ($response->status() === 401) {
             Cache::forget('paypal_access_token');
-            $response = Http::timeout(15)
-                ->withToken($this->getAccessToken())
-                ->withHeaders(['Prefer' => 'return=representation'])
-                ->post("{$this->baseUrl}/v2/checkout/orders/{$orderId}/capture");
+            $response = $capture();
         }
 
         if ($response->failed()) {
+            $exception = PayPalException::fromResponse('capture', $response);
+
             Log::error('PayPal capture failed', [
                 'order_id' => $orderId,
                 'status' => $response->status(),
+                'issue' => $exception->issue(),
+                'debug_id' => $exception->debugId(),
                 'body' => $response->body(),
             ]);
-            throw new \RuntimeException('Failed to capture PayPal payment: ' . $response->body());
+
+            throw $exception;
         }
 
         return $response->json();

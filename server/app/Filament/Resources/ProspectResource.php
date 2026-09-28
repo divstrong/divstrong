@@ -6,9 +6,13 @@ use App\Filament\Resources\ProspectResource\Pages;
 use App\Mail\AgencyIntro;
 use App\Mail\ClientIntro;
 use App\Mail\GeneralUpdate;
+use App\Models\Campaign;
+use App\Models\CampaignEnrollment;
+use App\Models\CampaignStep;
 use App\Models\Prospect;
 use App\Models\ProspectActivity;
 use App\Models\User;
+use App\Support\CampaignRunner;
 use App\Support\ProspectMailer;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -23,6 +27,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
@@ -168,6 +173,60 @@ class ProspectResource extends Resource
                                             ->maxLength(255)
                                             ->datalist(fn () => static::sourceOptions()),
                                     ]),
+
+                                Section::make('Website concept')
+                                    ->description('The design built for this prospect. A preview URL is what makes them eligible for the preview campaign — without one the emails have nothing to point at.')
+                                    ->collapsed(fn (?Prospect $record) => blank($record?->preview_url))
+                                    ->schema([
+                                        Forms\Components\TextInput::make('preview_url')
+                                            ->label('Preview URL')
+                                            ->url()
+                                            ->maxLength(255)
+                                            ->placeholder('https://www.divstrong.com/theirshop/')
+                                            ->helperText('Where their tailored design is deployed.'),
+
+                                        Forms\Components\FileUpload::make('preview_image')
+                                            ->label('Screenshot')
+                                            ->image()
+                                            ->disk('public')
+                                            ->directory('preview-shots')
+                                            ->imageEditor()
+                                            ->maxSize(4096)
+                                            ->helperText('Optional. Used as the hero of the campaign email and on their landing page — a picture of the thing sells it far better than a link.'),
+
+                                        Forms\Components\Placeholder::make('preview_landing')
+                                            ->label('Their landing page')
+                                            ->content(fn (?Prospect $record) => $record?->previewLandingUrl()
+                                                ? new \Illuminate\Support\HtmlString(
+                                                    '<a href="'.e($record->previewLandingUrl()).'" target="_blank" class="text-primary-600 underline">'
+                                                    .e($record->previewLandingUrl()).'</a>'
+                                                    .'<span class="block text-xs text-gray-500 mt-1">Tracked page with the design, both questions and the calendar. This is what the campaign emails link to.</span>'
+                                                )
+                                                : 'Save a preview URL to generate this.')
+                                            ->visible(fn (?Prospect $record) => $record?->exists ?? false),
+
+                                        Forms\Components\Placeholder::make('preview_comments_shown')
+                                            ->label('In their words')
+                                            ->content(fn (?Prospect $record) => filled($record?->preview_comments)
+                                                ? new \Illuminate\Support\HtmlString(nl2br(e($record->preview_comments)))
+                                                : '—')
+                                            ->columnSpanFull()
+                                            ->visible(fn (?Prospect $record) => filled($record?->preview_comments)),
+
+                                        Forms\Components\Placeholder::make('preview_answers')
+                                            ->label('What they said')
+                                            ->content(fn (?Prospect $record) => match (true) {
+                                                ! $record?->exists => '—',
+                                                $record->interested === true => 'Likes it and is interested — booked: '.($record->hasBookedMeeting() ? 'yes' : 'not yet'),
+                                                $record->interested === false => 'Not interested in switching',
+                                                $record->likes_design === true => 'Likes the design, not yet answered on switching',
+                                                $record->likes_design === false => 'Did not like the direction',
+                                                $record->preview_viewed_at !== null => 'Opened the page, no answer yet',
+                                                default => 'Not opened yet',
+                                            })
+                                            ->visible(fn (?Prospect $record) => $record?->exists ?? false),
+                                    ])
+                                    ->columns(2),
 
                                 Section::make('Contact')
                                     ->schema([
@@ -347,6 +406,47 @@ class ProspectResource extends Resource
                     // is what not-yet-assessed means.
                     ->selectablePlaceholder(false)
                     ->rules(['required', 'in:qualified,unqualified,dismissed'])
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('campaign')
+                    ->label('Campaign')
+                    ->placeholder('—')
+                    ->badge()
+                    ->color(fn (?string $state): string => match (true) {
+                        $state === null => 'gray',
+                        str_contains($state, 'Booked') => 'success',
+                        str_contains($state, 'Stopped') || str_contains($state, 'Not interested') => 'danger',
+                        str_contains($state, 'Done') => 'gray',
+                        default => 'info',
+                    })
+                    ->state(function (Prospect $record): ?string {
+                        $enrollment = $record->enrollments()->latest('id')->first();
+
+                        if (! $enrollment) {
+                            return null;
+                        }
+
+                        $step = $enrollment->last_step_position ?? 0;
+
+                        return match ($enrollment->status) {
+                            CampaignEnrollment::STATUS_ACTIVE => 'Step '.$step.' · next '
+                                .($enrollment->next_send_at?->diffForHumans() ?? 'unscheduled'),
+                            CampaignEnrollment::STATUS_COMPLETED => 'Done · '.$step.' sent',
+                            default => CampaignEnrollment::stopReasons()[$enrollment->stop_reason] ?? 'Stopped',
+                        };
+                    })
+                    ->toggleable(),
+
+                Tables\Columns\IconColumn::make('preview_url')
+                    ->label('Preview')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-globe-alt')
+                    ->falseIcon('heroicon-o-minus-small')
+                    ->trueColor('success')
+                    ->falseColor('gray')
+                    ->url(fn (Prospect $record): ?string => $record->previewLandingUrl())
+                    ->openUrlInNewTab()
+                    ->tooltip(fn (Prospect $record): ?string => $record->preview_url)
                     ->toggleable(),
             ])
             ->filters([
@@ -542,7 +642,7 @@ class ProspectResource extends Resource
                 // out, ProspectMailer refuses them anyway, but leaving a live Send button on
                 // the row invites a rep to try, get no error and no email, and conclude the
                 // tool is broken. Hidden is the honest state.
-                ActionGroup::make(static::emailActions())
+                ActionGroup::make([...static::emailActions(), ...static::campaignStepActions()])
                     ->label('Send')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('gray')
@@ -550,9 +650,14 @@ class ProspectResource extends Resource
                     ->tooltip('Send one of the outreach emails')
                     ->hidden(fn (Prospect $record) => $record->isUnsubscribed()),
 
+                static::enrollAction(),
+
                 EditAction::make(),
             ])
             ->toolbarActions([
+                BulkActionGroup::make([
+                    static::enrollBulkAction(),
+                ]),
                 BulkActionGroup::make([
                     BulkAction::make('assignOwner')
                         ->label('Assign owner')
@@ -663,6 +768,69 @@ class ProspectResource extends Resource
     }
 
     /**
+     * The campaign emails, sendable one at a time.
+     *
+     * The drip owns the timing, but the steps are still ordinary emails and there are real
+     * reasons to fire one by hand: a prospect whose preview was only just built, a reply
+     * asking for the detail that step three covers, or simply wanting to see one arrive
+     * before trusting the scheduler with a hundred of them.
+     *
+     * Sending one keeps the enrolment in step — see CampaignRunner::sendStepNow().
+     *
+     * @return array<int, Action>
+     */
+    public static function campaignStepActions(): array
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('campaign_steps')) {
+            return [];
+        }
+
+        return CampaignStep::query()
+            ->where('is_active', true)
+            ->whereHas('campaign', fn ($q) => $q->where('is_active', true))
+            ->with('campaign')
+            ->orderBy('campaign_id')
+            ->orderBy('position')
+            ->get()
+            ->map(fn (CampaignStep $step) => static::campaignStepAction($step))
+            ->all();
+    }
+
+    protected static function campaignStepAction(CampaignStep $step): Action
+    {
+        $label = $step->position . '. ' . $step->name;
+
+        return Action::make('sendStep' . $step->id)
+            ->label($label)
+            ->icon('heroicon-o-rectangle-stack')
+            ->color('gray')
+            ->modalHeading('Send "' . $label . '"')
+            ->modalDescription(fn (?Prospect $record): string => 'From ' . $step->campaign->name
+                . '. It links to the preview page built for them, and sending it here moves '
+                . 'their place in the sequence forward so the scheduler does not send it again.')
+            ->modalSubmitActionLabel('Send now')
+            // Needs a preview built, because that is the whole content of the email.
+            ->hidden(fn (?Prospect $record): bool => $record === null
+                || $record->isUnsubscribed()
+                || (CampaignRunner::needsPreview($step->campaign) && ! $record->hasPreview()))
+            ->action(function (Prospect $record) use ($step, $label) {
+                try {
+                    CampaignRunner::sendStepNow($record, $step);
+                } catch (\RuntimeException $e) {
+                    Notification::make()->warning()->title('Not sent')->body($e->getMessage())->send();
+
+                    return;
+                }
+
+                Notification::make()
+                    ->success()
+                    ->title($label . ' sent')
+                    ->body('Sent to ' . $record->email)
+                    ->send();
+            });
+    }
+
+    /**
      * One outreach email action. All three are the same shape — pick recipients, optionally
      * add a note, send, timeline it — so they are built rather than written out three times.
      *
@@ -717,6 +885,110 @@ class ProspectResource extends Resource
                     ->body('Sent to '.implode(', ', $data['emails']))
                     ->send();
             });
+    }
+
+    /**
+     * Put one prospect into a campaign.
+     *
+     * Hidden rather than disabled once they are already walking one: a greyed-out button
+     * on every row of a list is noise, and the campaign column already says where they are.
+     */
+    protected static function enrollAction(): Action
+    {
+        return Action::make('enroll')
+            ->label('Campaign')
+            ->icon('heroicon-o-rectangle-stack')
+            ->color('primary')
+            ->modalHeading('Start a campaign')
+            ->modalSubmitActionLabel('Enrol')
+            ->schema([
+                Forms\Components\Select::make('campaign_id')
+                    ->label('Campaign')
+                    ->options(fn () => Campaign::active()->orderBy('name')->pluck('name', 'id'))
+                    ->required()
+                    ->live()
+                    ->helperText('The first email goes out on the next scheduler run inside the sending window.'),
+
+                Forms\Components\Placeholder::make('preview_warning')
+                    ->label('')
+                    ->content('This campaign needs a preview URL on the prospect, and this one has none. Add it first.')
+                    ->visible(fn (Get $get, Prospect $record) => ($id = $get('campaign_id'))
+                        && ($campaign = Campaign::find($id))
+                        && CampaignRunner::needsPreview($campaign)
+                        && ! $record->hasPreview()),
+            ])
+            ->action(function (Prospect $record, array $data) {
+                $campaign = Campaign::find($data['campaign_id']);
+
+                if (! $campaign || ! CampaignRunner::enroll($campaign, $record)) {
+                    Notification::make()
+                        ->warning()
+                        ->title('Not enrolled')
+                        ->body(static::enrollmentBlocker($campaign, $record))
+                        ->send();
+
+                    return;
+                }
+
+                Notification::make()
+                    ->success()
+                    ->title('Enrolled in '.$campaign->name)
+                    ->body('The first email sends on the next scheduled run.')
+                    ->send();
+            })
+            ->hidden(fn (Prospect $record) => $record->isUnsubscribed() || $record->activeEnrollment() !== null);
+    }
+
+    /** The same thing for a selection — how a batch of newly built previews goes out. */
+    protected static function enrollBulkAction(): BulkAction
+    {
+        return BulkAction::make('enrollMany')
+            ->label('Start a campaign')
+            ->icon('heroicon-o-rectangle-stack')
+            ->schema([
+                Forms\Components\Select::make('campaign_id')
+                    ->label('Campaign')
+                    ->options(fn () => Campaign::active()->orderBy('name')->pluck('name', 'id'))
+                    ->required(),
+            ])
+            ->action(function (array $data, $records) {
+                $campaign = Campaign::find($data['campaign_id']);
+
+                if (! $campaign) {
+                    return;
+                }
+
+                $enrolled = 0;
+                $skipped = 0;
+
+                foreach ($records as $record) {
+                    CampaignRunner::enroll($campaign, $record) ? $enrolled++ : $skipped++;
+                }
+
+                // Skips are the interesting number here: they are almost always prospects
+                // with no preview built yet, which is a to-do rather than an error.
+                Notification::make()
+                    ->{$enrolled > 0 ? 'success' : 'warning'}()
+                    ->title($enrolled.' enrolled in '.$campaign->name)
+                    ->body($skipped > 0
+                        ? $skipped.' skipped — already enrolled, unsubscribed, or no preview URL yet.'
+                        : null)
+                    ->send();
+            })
+            ->deselectRecordsAfterCompletion();
+    }
+
+    /** Why a single enrolment was refused, in the words the operator needs. */
+    protected static function enrollmentBlocker(?Campaign $campaign, Prospect $prospect): string
+    {
+        return match (true) {
+            ! $campaign => 'That campaign no longer exists.',
+            blank($prospect->email) => 'This prospect has no email address.',
+            $prospect->isUnsubscribed() => 'This prospect has opted out.',
+            CampaignRunner::needsPreview($campaign) && ! $prospect->hasPreview() =>
+                'This campaign links to a preview page, and no preview URL is set on this prospect.',
+            default => 'They are already in this campaign.',
+        };
     }
 
     public static function getPages(): array

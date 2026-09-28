@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use Filament\Support\Enums\Width;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -103,6 +104,10 @@ class AdminPanelProvider extends PanelProvider
                 '),
             )
             ->sidebarCollapsibleOnDesktop()
+            // Filament centres pages in a max-width column by default, which leaves a wide
+            // monitor mostly empty beside tables that have more columns than fit. These are
+            // working screens, not reading screens.
+            ->maxContentWidth(Width::Full)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([

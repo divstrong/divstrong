@@ -18,6 +18,25 @@ class ProspectActivity extends Model
     /** They asked us to stop emailing them, or told their provider we were spam. */
     public const UNSUBSCRIBED = 'unsubscribed';
 
+    /** Preview campaign: they opened the page built for them. */
+    public const PREVIEW_VIEWED = 'preview_viewed';
+
+    /** Preview campaign: they clicked through to the design itself. */
+    public const PREVIEW_OPENED_SITE = 'preview_opened_site';
+
+    /** Preview campaign: "do you like it" — yes or no. */
+    public const PREVIEW_FEEDBACK = 'preview_feedback';
+
+    /** Preview campaign: "would you switch" — yes or no. The one that matters. */
+    public const PREVIEW_INTEREST = 'preview_interest';
+
+    /** Preview campaign: what they wrote after saying no. */
+    public const PREVIEW_COMMENT = 'preview_comment';
+
+    public const MEETING_BOOKED = 'meeting_booked';
+
+    public const MEETING_CANCELED = 'meeting_canceled';
+
     protected $fillable = [
         'prospect_id',
         'type',
@@ -75,6 +94,13 @@ class ProspectActivity extends Model
             self::STATUS_CHANGE => ['icon' => 'heroicon-o-flag', 'color' => 'warning', 'label' => 'Status change'],
             self::CONVERTED => ['icon' => 'heroicon-o-check-badge', 'color' => 'success', 'label' => 'Converted'],
             self::UNSUBSCRIBED => ['icon' => 'heroicon-o-no-symbol', 'color' => 'danger', 'label' => 'Unsubscribed'],
+            self::PREVIEW_VIEWED => ['icon' => 'heroicon-o-eye', 'color' => 'info', 'label' => 'Viewed their preview'],
+            self::PREVIEW_OPENED_SITE => ['icon' => 'heroicon-o-arrow-top-right-on-square', 'color' => 'info', 'label' => 'Opened the design'],
+            self::PREVIEW_FEEDBACK => ['icon' => 'heroicon-o-hand-thumb-up', 'color' => 'success', 'label' => 'Design feedback'],
+            self::PREVIEW_INTEREST => ['icon' => 'heroicon-o-sparkles', 'color' => 'success', 'label' => 'Interest'],
+            self::PREVIEW_COMMENT => ['icon' => 'heroicon-o-chat-bubble-bottom-center-text', 'color' => 'warning', 'label' => 'Feedback'],
+            self::MEETING_BOOKED => ['icon' => 'heroicon-o-calendar-days', 'color' => 'success', 'label' => 'Call booked'],
+            self::MEETING_CANCELED => ['icon' => 'heroicon-o-calendar', 'color' => 'warning', 'label' => 'Call canceled'],
             default => ['icon' => 'heroicon-o-chat-bubble-left-ellipsis', 'color' => 'gray', 'label' => 'Note'],
         };
     }

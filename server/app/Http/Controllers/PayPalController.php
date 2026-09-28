@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\PaymentReceived;
+use App\Exceptions\PayPalException;
 use App\Models\Proposal;
 use App\Models\ProposalMilestone;
 use App\Models\ProposalPayment;
@@ -69,7 +70,12 @@ class PayPalController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json(['error' => 'Failed to create payment'], 500);
+            return response()->json([
+                'error' => $e instanceof PayPalException
+                    ? $e->userMessage()
+                    : 'We were unable to start this payment. Please try again in a moment.',
+                'reference' => $e instanceof PayPalException ? $e->debugId() : null,
+            ], 500);
         }
     }
 
@@ -124,9 +130,35 @@ class PayPalController extends Controller
                 'paypal_response' => $captureData,
             ]);
 
+            Log::warning('PayPal capture not completed', [
+                'order_id' => $orderId,
+                'capture_status' => $captureStatus,
+            ]);
+
             return response()->json([
                 'status' => 'failed',
-                'details' => $captureData,
+                'error' => 'PayPal did not complete this payment. Your card has not been charged — please try again.',
+                'retryable' => true,
+            ], 422);
+        } catch (PayPalException $e) {
+            Log::error('PayPal capture error', [
+                'order_id' => $orderId,
+                'issue' => $e->issue(),
+                'debug_id' => $e->debugId(),
+                'error' => $e->getMessage(),
+            ]);
+
+            // Leave the payment pending when PayPal says it already captured: the money
+            // may well have moved, and marking it failed would hide a real payment.
+            if ($e->issue() !== 'ORDER_ALREADY_CAPTURED') {
+                $payment->update(['status' => 'failed']);
+            }
+
+            return response()->json([
+                'status' => 'failed',
+                'error' => $e->userMessage(),
+                'reference' => $e->debugId(),
+                'retryable' => $e->isRetryable(),
             ], 422);
         } catch (\Throwable $e) {
             Log::error('PayPal capture error', [
@@ -136,7 +168,11 @@ class PayPalController extends Controller
 
             $payment->update(['status' => 'failed']);
 
-            return response()->json(['error' => 'Payment capture failed'], 500);
+            return response()->json([
+                'status' => 'failed',
+                'error' => 'We could not reach PayPal to complete this payment. Your card has not been charged — please try again in a moment.',
+                'retryable' => true,
+            ], 500);
         }
     }
 }

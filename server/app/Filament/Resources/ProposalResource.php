@@ -25,6 +25,7 @@ use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Tables;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -568,20 +569,57 @@ class ProposalResource extends Resource
                 Action::make('send')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('success')
-                    ->requiresConfirmation()
                     ->modalHeading('Send Proposal')
                     ->modalDescription(fn (Proposal $record) =>
-                        "Send proposal to {$record->client_name} at {$record->client_email}?"
+                        "{$record->project_title} — for {$record->client_name}"
                     )
-                    ->action(function (Proposal $record) {
-                        Mail::to($record->client_email)->send(new ProposalSent($record));
+                    ->modalSubmitActionLabel('Send')
+                    ->modalWidth(Width::Large)
+                    ->fillForm(fn (Proposal $record) => [
+                        'recipients' => array_values(array_filter([$record->client_email])),
+                    ])
+                    ->schema([
+                        Forms\Components\TagsInput::make('recipients')
+                            ->label('Recipients')
+                            ->placeholder('Add an email address')
+                            ->helperText('Press Enter or comma after each address. Everyone listed receives the proposal.')
+                            ->splitKeys([',', ' ', 'Tab'])
+                            ->required()
+                            ->nestedRecursiveRules(['email'])
+                            ->reorderable(false),
+                        Forms\Components\Textarea::make('note')
+                            ->label('Note (optional)')
+                            ->placeholder('Add a short message to include in the email.')
+                            ->rows(4)
+                            ->maxLength(2000),
+                    ])
+                    ->action(function (Proposal $record, array $data) {
+                        $recipients = array_values(array_unique(array_filter(
+                            array_map('trim', $data['recipients'] ?? [])
+                        )));
+
+                        if (empty($recipients)) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Add at least one recipient')
+                                ->send();
+
+                            return;
+                        }
+
+                        $note = filled($data['note'] ?? null) ? trim($data['note']) : null;
+
+                        Mail::to($recipients)->send(new ProposalSent($record, $note));
+
                         $record->update([
                             'status' => ProposalStatus::Sent,
                             'sent_at' => now(),
                         ]);
+
                         Notification::make()
                             ->success()
-                            ->title('Proposal sent to ' . $record->client_email)
+                            ->title('Proposal sent')
+                            ->body(implode(', ', $recipients))
                             ->send();
                     })
                     ->visible(fn (Proposal $record) =>

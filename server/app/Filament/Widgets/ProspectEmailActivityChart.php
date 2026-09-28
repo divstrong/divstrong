@@ -31,7 +31,7 @@ class ProspectEmailActivityChart extends ChartWidget
     protected static ?int $sort = 2;
 
     /** One third of the header row; the stat tiles take the other two. */
-    protected int|string|array $columnSpan = 1;
+    protected int|string|array $columnSpan = 2;
 
     /** Roughly two rows of stat tiles, so the header row squares off. */
     protected ?string $maxHeight = '260px';

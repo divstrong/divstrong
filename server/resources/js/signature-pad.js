@@ -79,14 +79,23 @@ document.addEventListener('alpine:init', () => {
                 if (this.drawing) {
                     this.drawing = false;
                     const dataUrl = this.canvas.toDataURL('image/png');
-                    this.$wire.set(wireProperty, dataUrl);
+                    this.$wire.set(wireProperty, dataUrl, false);
+                    this.emitState();
                 }
             },
 
             clearSignature() {
                 this.setupCanvas();
                 this.hasSignature = false;
-                this.$wire.set(wireProperty, '');
+                this.$wire.set(wireProperty, '', false);
+                this.emitState();
+            },
+
+            // The pad sits behind wire:ignore, so a surrounding form can't read hasSignature
+            // off it. Announcing the change lets the form gate its submit button on a real
+            // signature rather than on whether the canvas happens to be in the DOM.
+            emitState() {
+                this.$dispatch('signature-changed', { hasSignature: this.hasSignature });
             },
         };
     }

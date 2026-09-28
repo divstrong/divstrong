@@ -187,7 +187,7 @@ class ListProspects extends ListRecords
         return Actions\Action::make('findProspects')
             ->label('Find Prospects')
             ->icon('heroicon-o-sparkles')
-            ->color('primary')
+            ->color('gray')
             ->modalHeading('Find New Prospects')
             ->modalDescription('Searches for creative and media teams — agencies, SEO firms, design studios, video and media houses — reads the contact details off their own sites, and adds the ones with a verified, named address.')
             ->modalWidth(Width::TwoExtraLarge)
@@ -308,12 +308,13 @@ class ListProspects extends ListRecords
     }
 
     /**
-     * Three columns so the stat tiles occupy two thirds and the activity chart stands
-     * beside them in the remaining third.
+     * Five columns: three for the stat tiles, two for the activity chart. The chart is the
+     * only thing up here that has to be read rather than glanced at, and a third of the
+     * width squeezed a month of data into an unreadable strip.
      */
     public function getHeaderWidgetsColumns(): int|array
     {
-        return 3;
+        return 5;
     }
 
     /**

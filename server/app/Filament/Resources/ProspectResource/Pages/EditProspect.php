@@ -17,10 +17,30 @@ class EditProspect extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('preview')
+                ->label('Preview')
+                ->icon('heroicon-o-eye')
+                ->color('success')
+                // Filament picks dark text on green for contrast; force white on a deeper green.
+                ->extraAttributes(['style' => '--bg: var(--success-600); --hover-bg: var(--success-700); --dark-bg: var(--success-600); --dark-hover-bg: var(--success-700); --text: #fff; --hover-text: #fff; --dark-text: #fff; --dark-hover-text: #fff;'])
+                ->url(fn () => $this->getRecord()?->preview_url, shouldOpenInNewTab: true)
+                ->visible(fn () => filled($this->getRecord()?->preview_url)),
+
+            // The landing page the drip emails link to, with the feedback questions.
+            Actions\Action::make('conversion')
+                ->label('Conversion')
+                ->icon('heroicon-o-chat-bubble-left-right')
+                ->color('gray')
+                ->url(fn () => $this->getRecord()?->previewLandingUrl(), shouldOpenInNewTab: true)
+                ->visible(fn () => filled($this->getRecord()?->preview_url)),
+
             // The same three emails as the list row, but nothing hidden: deliberately
             // re-sending an intro to a corrected address is a thing people do, and this is
             // the only place to do it. See ProspectResource::emailActions().
-            Actions\ActionGroup::make(ProspectResource::emailActions(hideSent: false))
+            Actions\ActionGroup::make([
+                ...ProspectResource::emailActions(hideSent: false),
+                ...ProspectResource::campaignStepActions(),
+            ])
                 ->label('Send')
                 ->icon('heroicon-o-paper-airplane')
                 ->color('gray')
@@ -83,7 +103,7 @@ class EditProspect extends EditRecord
         return Actions\Action::make('convertToClient')
             ->label('Convert to Client')
             ->icon('heroicon-o-arrow-right-circle')
-            ->color('success')
+            ->color('gray')
             ->visible(fn () => ! ($this->getRecord()?->isConverted() ?? true))
             ->requiresConfirmation()
             ->modalHeading('Convert Prospect to Client')

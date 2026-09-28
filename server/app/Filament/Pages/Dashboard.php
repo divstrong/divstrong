@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Filament\Resources\ClientResource;
 use App\Filament\Resources\ProposalResource;
+use App\Filament\Widgets\ActualRevenueChart;
 use App\Filament\Widgets\ProposalRevenueChart;
 use App\Filament\Widgets\ProposalStatsWidget;
 use App\Filament\Widgets\RevenueGoalWidget;
@@ -80,16 +81,17 @@ class Dashboard extends BaseDashboard
     {
         return $schema
             ->components([
-                Grid::make(3)
+                Grid::make(['default' => 1, 'lg' => 3])
+                    ->schema([
+                        EmbeddedSchema::make('filtersForm')
+                            ->columnStart(['lg' => 3]),
+                    ]),
+                Grid::make(['default' => 1, 'lg' => 3])
                     ->schema(fn (): array => [
                         ...$this->getWidgetsSchemaComponents([ProposalStatsWidget::class]),
                         ...$this->getWidgetsSchemaComponents([ProposalRevenueChart::class]),
-                        Grid::make(1)
-                            ->columnSpan(1)
-                            ->schema([
-                                EmbeddedSchema::make('filtersForm'),
-                                ...$this->getWidgetsSchemaComponents([RevenueGoalWidget::class]),
-                            ]),
+                        ...$this->getWidgetsSchemaComponents([ActualRevenueChart::class]),
+                        ...$this->getWidgetsSchemaComponents([RevenueGoalWidget::class]),
                     ]),
             ]);
     }
@@ -102,6 +104,7 @@ class Dashboard extends BaseDashboard
         return [
             ProposalStatsWidget::class,
             ProposalRevenueChart::class,
+            ActualRevenueChart::class,
             RevenueGoalWidget::class,
         ];
     }

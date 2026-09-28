@@ -2,6 +2,8 @@
 
 @source '../views/livewire/**/*.blade.php';
 @source '../views/layouts/proposal.blade.php';
+/* The preview/booking pages share this bundle. */
+@source '../views/layouts/preview.blade.php';
 
 @theme {
     --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',

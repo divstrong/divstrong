@@ -13,7 +13,10 @@ class ProposalSent extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Proposal $proposal) {}
+    public function __construct(
+        public Proposal $proposal,
+        public ?string $note = null,
+    ) {}
 
     public function envelope(): Envelope
     {
@@ -28,6 +31,7 @@ class ProposalSent extends Mailable
             view: 'emails.proposal-sent',
             with: [
                 'proposal' => $this->proposal,
+                'note' => $this->note,
                 'url' => $this->proposal->public_url,
             ],
         );

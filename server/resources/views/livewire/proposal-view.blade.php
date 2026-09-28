@@ -3340,7 +3340,7 @@
 
                 <ol class="space-y-3 list-none">
                     @foreach($proposal->terms as $index => $term)
-                    <li class="group/term flex items-start gap-4 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                    <li class="group/term flex items-start gap-3 sm:gap-4 py-3 px-0 sm:px-4 rounded-lg hover:bg-gray-50 transition-colors"
                         data-term-id="{{ $term->id }}"
                         @if($isAdmin)
                         draggable="true"
@@ -3352,7 +3352,7 @@
                         @endif>
 
                         {{-- Number --}}
-                        <span class="text-brand font-bold text-lg shrink-0 w-8 text-right">{{ $index + 1 }}.</span>
+                        <span class="text-brand font-bold text-base sm:text-lg shrink-0 w-5 sm:w-8 text-right">{{ $index + 1 }}.</span>
 
                         {{-- View mode --}}
                         <div x-show="editingTermId !== {{ $term->id }}" class="flex-1 min-w-0">
@@ -3429,13 +3429,19 @@
                     </div>
                 @elseif(!$isAdmin && !$converted && !$declined && !$expired)
                     {{-- Client signature form --}}
-                    <div class="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
+                    {{-- signerName tracks the input locally because wire:model is deferred, and
+                         hasSignature comes from the pad's own event: it lives behind wire:ignore,
+                         so its state can't be read from here. signTerms() still validates both. --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-8 shadow-sm"
+                         x-data="{ signerName: @js($tcSignatureName), hasSignature: @js($tcSignatureData !== '') }"
+                         x-on:signature-changed="hasSignature = $event.detail.hasSignature">
                         <h3 class="text-lg font-semibold text-gray-900 mb-1">Sign & Agree</h3>
                         <p class="text-sm text-gray-500 mb-6">By signing below, you acknowledge the change request policy and agree to the terms and conditions outlined above.</p>
 
                         <div class="mb-4">
                             <label class="block text-sm text-gray-600 mb-2 font-medium">Full Name</label>
                             <input type="text" wire:model="tcSignatureName"
+                                   x-on:input="signerName = $event.target.value"
                                    placeholder="Enter your full name"
                                    class="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition">
                             @error('tcSignatureName')
@@ -3464,10 +3470,18 @@
                         <button wire:click="signTerms"
                                 wire:loading.attr="disabled"
                                 wire:loading.class="opacity-50"
-                                class="w-full px-6 py-3 bg-brand hover:bg-gray-900 text-white font-semibold rounded-lg transition-colors cursor-pointer shadow-lg shadow-brand/20">
+                                x-bind:disabled="! signerName.trim() || ! hasSignature"
+                                @disabled(trim($tcSignatureName) === '' || $tcSignatureData === '')
+                                class="w-full px-6 py-3 bg-brand hover:bg-gray-900 text-white font-semibold rounded-lg transition-colors cursor-pointer shadow-lg shadow-brand/20
+                                       disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:bg-gray-200">
                             <span wire:loading.remove wire:target="signTerms">Sign & Agree</span>
                             <span wire:loading wire:target="signTerms">Processing...</span>
                         </button>
+
+                        <p x-show="! signerName.trim() || ! hasSignature" x-cloak
+                           class="text-xs text-gray-400 text-center mt-3">
+                            Enter your full name and sign above to continue.
+                        </p>
                     </div>
                 @endif
             </div>
@@ -3523,16 +3537,18 @@
                             @endphp
                             <div class="border rounded-xl p-4 transition-all
                                         {{ $milestone->payment_status === 'paid' ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-gray-200' }}">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <span class="font-semibold text-gray-900">{{ $milestone->title }}</span>
-                                        <span class="text-gray-500 text-sm ml-2">
+                                {{-- Stacks below sm: the title gets the full width and the pay button
+                                     becomes a full-width target instead of being squeezed against it. --}}
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div class="min-w-0">
+                                        <span class="block sm:inline font-semibold text-gray-900">{{ $milestone->title }}</span>
+                                        <span class="block sm:inline text-gray-500 text-sm sm:ml-2">
                                             {{ number_format($milestone->percentage, 0) }}% &mdash; ${{ number_format($msAmount, 2) }}
                                         </span>
                                     </div>
 
                                     @if($milestone->payment_status === 'paid')
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+                                        <span class="inline-flex self-start sm:self-auto shrink-0 items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                                             </svg>
@@ -3540,7 +3556,7 @@
                                         </span>
                                     @else
                                         <button wire:click="selectMilestoneForPayment({{ $milestone->id }})"
-                                                class="px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer
+                                                class="w-full sm:w-auto shrink-0 px-4 py-3 sm:py-2 bg-brand hover:bg-brand-dark text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer
                                                        {{ $payingMilestoneId === $milestone->id ? 'ring-2 ring-brand/30' : '' }}">
                                             Pay ${{ number_format($msAmount, 2) }}
                                         </button>
@@ -3553,6 +3569,23 @@
                                      x-data="paypalCheckout({{ $milestone->id }}, '{{ $proposal->uuid }}')"
                                      x-init="initPayPal()"
                                      wire:ignore.self>
+
+                                    {{-- Failure notice. Lives above both payment options and pulls
+                                         itself into view, because the payer is looking at whichever
+                                         button they just pressed, not at the bottom of the panel. --}}
+                                    <div x-show="error" x-cloak data-payment-alert role="alert" aria-live="assertive"
+                                         class="mb-4 flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                        <svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                        </svg>
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-semibold text-red-700">Payment not completed</p>
+                                            <p class="text-sm text-red-600 mt-0.5" x-text="error"></p>
+                                            <p x-show="errorReference" x-cloak class="text-xs text-red-400 mt-1.5">
+                                                Reference <span x-text="errorReference"></span>
+                                            </p>
+                                        </div>
+                                    </div>
 
                                     {{-- Card Fields (only shown when eligible) --}}
                                     <div x-show="cardFieldsEligible" x-cloak class="mb-4">
@@ -3583,9 +3616,6 @@
                                         <p x-show="!cardFieldsEligible" class="text-sm font-medium text-gray-700 mb-3">Pay with PayPal</p>
                                         <div id="paypal-button-{{ $milestone->id }}"></div>
                                     </div>
-
-                                    {{-- Error display --}}
-                                    <div x-show="error" x-cloak class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600" x-text="error"></div>
 
                                     {{-- Cancel --}}
                                     <button wire:click="cancelPayment"
@@ -3896,8 +3926,31 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('paypalCheckout', (milestoneId, proposalUuid) => ({
         processing: false,
         error: '',
+        errorReference: '',
         cardFields: null,
         cardFieldsEligible: false,
+
+        // Every failure path goes through here so the notice is always shown the same
+        // way and always scrolled to. PayPal's debug id is passed straight through:
+        // it is the reference their support asks for.
+        showError(message, reference = '') {
+            this.error = message;
+            this.errorReference = reference || '';
+            // Found by query rather than x-ref: Livewire re-morphs this panel, and the
+            // ref registered by the new node is then removed by the old node's cleanup,
+            // leaving $refs empty. No explicit behavior either — the page already sets
+            // scroll-behavior: smooth, and passing it here makes the scroll a no-op.
+            this.$nextTick(() => requestAnimationFrame(() => {
+                // The alert is x-show'd, and a hidden element cannot be scrolled to, so
+                // this waits for the frame in which it is actually painted.
+                this.$root?.querySelector('[data-payment-alert]')?.scrollIntoView({ block: 'center' });
+            }));
+        },
+
+        clearError() {
+            this.error = '';
+            this.errorReference = '';
+        },
 
         loadPayPalSdk() {
             return new Promise((resolve, reject) => {
@@ -3923,7 +3976,7 @@ document.addEventListener('alpine:init', () => {
             try {
                 await this.loadPayPalSdk();
             } catch (e) {
-                this.error = 'Payment system failed to load. Please check your connection and refresh the page.';
+                this.showError('The payment system failed to load. Check your connection and refresh the page.');
                 console.error('PayPal SDK error:', e.message);
                 return;
             }
@@ -3948,7 +4001,7 @@ document.addEventListener('alpine:init', () => {
 
             const onApproveFn = async (data) => {
                 self.processing = true;
-                self.error = '';
+                self.clearError();
                 try {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -3966,13 +4019,16 @@ document.addEventListener('alpine:init', () => {
                     if (result.status === 'completed') {
                         self.$wire.markMilestonePaid(milestoneId, result.capture_id);
                     } else {
-                        self.error = result.error || 'Payment was not completed. Please try again.';
+                        self.showError(
+                            result.error || 'The payment was not completed. Please try again.',
+                            result.reference,
+                        );
                     }
                 } catch (err) {
                     if (err.name === 'AbortError') {
-                        self.error = 'Payment request timed out. Please check your payment status before retrying.';
+                        self.showError('The payment request timed out. Check whether it went through before trying again.');
                     } else {
-                        self.error = 'Payment failed. Please try again.';
+                        self.showError('We could not reach the payment service. Your card has not been charged — please try again.');
                     }
                 } finally {
                     self.processing = false;
@@ -3981,7 +4037,7 @@ document.addEventListener('alpine:init', () => {
 
             const onErrorFn = (err) => {
                 console.error('PayPal error:', err);
-                self.error = 'A payment error occurred. Please try again.';
+                self.showError('Something went wrong with the payment. Your card has not been charged — please try again.');
                 self.processing = false;
             };
 
@@ -4040,16 +4096,18 @@ document.addEventListener('alpine:init', () => {
         async submitCard() {
             if (this.processing) return;
             if (!this.cardFields || !this.cardFieldsEligible) {
-                this.error = 'Card payment is not available. Please use the PayPal button below.';
+                this.showError('Card payment is not available right now. Use the PayPal button below instead.');
                 return;
             }
             this.processing = true;
-            this.error = '';
+            this.clearError();
 
             try {
                 await this.cardFields.submit();
             } catch (err) {
-                this.error = err.message || 'Card payment failed. Please check your details and try again.';
+                // PayPal's card field errors name the offending field, which is worth
+                // passing on; anything without a message gets neutral wording.
+                this.showError(err?.message || 'Check the card details and try again.');
                 this.processing = false;
             }
         },

@@ -6,10 +6,9 @@
     pipeline means a stale or missing manifest turns a missing page into a broken one. It also
     means this page cannot be repainted by an unrelated change to app.css.
 
-    Styled off the homepage hero — the dark ground, the red gradient and the Inter stack — but
-    the hero's background video is deliberately not reused: those files are 5-9MB each, and
-    nobody should wait on a download to be told the page they wanted does not exist. The
-    atmosphere is a couple of CSS gradients instead, which cost nothing.
+    Light ground, so it carries the wordmark as printed — logo.png, the same artwork the site
+    and the proposal mail use, whose "Strong" is near-black and needs a pale background to read
+    against. The only heavy element is the numerals; everything else is air.
 --}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -19,20 +18,23 @@
     {{-- A 404 has nothing worth indexing, and letting one into the index is how a dead URL
          outranks the live page it replaced. --}}
     <meta name="robots" content="noindex, follow">
+    <meta name="color-scheme" content="light">
     <title>404 — Page not found | divStrong</title>
     <link rel="icon" href="{{ asset('images/favicon.png') }}">
 
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=inter:400,600,700,800,900" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900" rel="stylesheet">
 
     <style>
         :root {
             --brand: #ed2537;
             --brand-light: #f43f4f;
             --brand-dark: #c91e2e;
-            --ink: #ffffff;
-            --muted: #a1a1aa;
-            --faint: #71717a;
+            --ink: #0f1115;
+            --body: #565e6b;
+            --faint: #8b919c;
+            --line: #e7e9ec;
+            --surface: #f7f8f9;
         }
 
         * { box-sizing: border-box; }
@@ -45,17 +47,17 @@
             min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            background: #0a0a0a;
-            color: var(--muted);
+            background: #ffffff;
+            color: var(--body);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
                 Helvetica, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
             overflow-x: hidden;
         }
 
-        /* Atmosphere: a red glow bleeding up from behind the numerals, and a faint grid that
-           reads as blueprint rather than decoration. Both are pointer-events:none so they can
-           never swallow a click on the links underneath. */
+        /* Atmosphere, kept to a whisper on a light ground: a warm brand wash behind the
+           numerals and a blueprint grid that fades out well before the edges. Both are
+           pointer-events:none so they can never swallow a click on the links underneath. */
         .glow,
         .grid {
             position: fixed;
@@ -65,24 +67,17 @@
 
         .glow {
             background:
-                radial-gradient(60rem 40rem at 50% 42%, rgba(237, 37, 55, 0.20), transparent 70%),
-                radial-gradient(40rem 30rem at 85% 8%, rgba(237, 37, 55, 0.08), transparent 70%);
-            animation: breathe 9s ease-in-out infinite;
+                radial-gradient(55rem 34rem at 50% 34%, rgba(237, 37, 55, 0.07), transparent 70%),
+                radial-gradient(38rem 26rem at 88% 4%, rgba(237, 37, 55, 0.05), transparent 70%);
         }
 
         .grid {
             background-image:
-                linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+                linear-gradient(rgba(15, 17, 21, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(15, 17, 21, 0.04) 1px, transparent 1px);
             background-size: 64px 64px;
-            /* Fades the grid out at the edges so it does not end in a hard line. */
-            mask-image: radial-gradient(70rem 50rem at 50% 40%, #000 20%, transparent 75%);
-            -webkit-mask-image: radial-gradient(70rem 50rem at 50% 40%, #000 20%, transparent 75%);
-        }
-
-        @keyframes breathe {
-            0%, 100% { opacity: 0.85; }
-            50% { opacity: 1; }
+            mask-image: radial-gradient(64rem 46rem at 50% 38%, #000 15%, transparent 72%);
+            -webkit-mask-image: radial-gradient(64rem 46rem at 50% 38%, #000 15%, transparent 72%);
         }
 
         .site-head {
@@ -91,8 +86,9 @@
         }
 
         .site-head img {
-            height: 2rem;
-            width: auto;
+            width: 132px;
+            max-width: 40vw;
+            height: auto;
             display: block;
         }
 
@@ -104,7 +100,9 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 2rem clamp(1.25rem, 5vw, 3rem) 4rem;
+            /* Matched top and bottom so the block sits optically centred between the
+               wordmark and the footer rather than riding high. */
+            padding: 1.5rem clamp(1.25rem, 5vw, 3rem) 2rem;
         }
 
         /* The requested path, echoed back. The one genuinely useful thing a 404 can tell you:
@@ -114,58 +112,55 @@
             align-items: center;
             gap: 0.5rem;
             max-width: 100%;
-            margin-bottom: 1.75rem;
-            padding: 0.4rem 0.85rem;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            margin: 0 0 2rem;
+            padding: 0.4rem 0.9rem;
+            border: 1px solid var(--line);
             border-radius: 9999px;
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--surface);
             font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
                 'Liberation Mono', monospace;
             font-size: 0.8125rem;
             color: var(--faint);
         }
 
-        .req__verb {
-            color: var(--muted);
-            font-weight: 600;
-        }
+        .req__verb { color: var(--body); font-weight: 600; }
 
         .req__path {
-            color: #e4e4e7;
+            color: var(--ink);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        .req__code { color: var(--brand-light); font-weight: 600; }
+        .req__code { color: var(--brand); font-weight: 700; }
 
         .numerals {
             margin: 0;
-            font-size: clamp(6rem, 26vw, 15rem);
+            font-size: clamp(5.5rem, 22vw, 12rem);
             font-weight: 900;
-            letter-spacing: -0.04em;
-            line-height: 0.85;
+            letter-spacing: -0.045em;
+            line-height: 0.82;
             /* Solid brand red first so the numerals are never invisible if a browser skips the
                gradient clip below — the whole page hangs on these being legible. */
             color: var(--brand);
-            background: linear-gradient(180deg, var(--brand-light) 0%, var(--brand) 45%, var(--brand-dark) 100%);
+            background: linear-gradient(180deg, var(--brand-light) 0%, var(--brand) 52%, var(--brand-dark) 100%);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 8px 40px rgba(237, 37, 55, 0.35));
+            filter: drop-shadow(0 14px 34px rgba(237, 37, 55, 0.22));
         }
 
         h1 {
-            margin: 1.25rem 0 0;
+            margin: 1.5rem 0 0;
             font-size: clamp(1.5rem, 4.5vw, 2.5rem);
             font-weight: 800;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.025em;
             color: var(--ink);
         }
 
         .lede {
             margin: 0.875rem auto 0;
-            max-width: 34rem;
+            max-width: 33rem;
             font-size: clamp(1rem, 2.2vw, 1.125rem);
             line-height: 1.65;
         }
@@ -181,14 +176,15 @@
         .btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 0.5rem;
             padding: 0.85rem 1.75rem;
-            border-radius: 0.5rem;
+            border-radius: 0.625rem;
             font-size: 0.9375rem;
             font-weight: 600;
             text-decoration: none;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, color 0.3s ease,
-                background-color 0.3s ease, border-color 0.3s ease;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, color 0.25s ease,
+                background-color 0.25s ease, border-color 0.25s ease;
         }
 
         .btn svg { width: 1.125rem; height: 1.125rem; }
@@ -198,30 +194,34 @@
         .btn--brand {
             background: linear-gradient(to bottom, var(--brand-light) 0%, var(--brand) 40%, var(--brand-dark) 100%);
             border: 1px solid #b91a27;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 8px rgba(237, 37, 55, 0.3);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 6px 18px rgba(237, 37, 55, 0.25);
             color: #ffffff;
         }
 
         .btn--brand:hover,
         .btn--brand:focus-visible {
-            transform: scale(1.06);
-            color: #ffd700;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 6px 20px rgba(237, 37, 55, 0.4);
+            transform: translateY(-1px);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 10px 24px rgba(237, 37, 55, 0.32);
         }
 
         .btn--ghost {
-            border: 2px solid rgba(255, 255, 255, 0.25);
-            color: #ffffff;
+            border: 1px solid var(--line);
+            background: #ffffff;
+            color: var(--ink);
+            box-shadow: 0 1px 2px rgba(15, 17, 21, 0.04);
         }
 
         .btn--ghost:hover,
         .btn--ghost:focus-visible {
-            border-color: #ffffff;
-            background: rgba(255, 255, 255, 0.08);
+            border-color: #c9ced6;
+            background: var(--surface);
         }
 
         .quick {
             margin-top: 3rem;
+            padding-top: 1.75rem;
+            border-top: 1px solid var(--line);
+            width: min(34rem, 100%);
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
@@ -231,7 +231,7 @@
         }
 
         .quick a {
-            color: var(--muted);
+            color: var(--body);
             text-decoration: none;
             padding: 0.25rem 0;
             border-bottom: 1px solid transparent;
@@ -240,7 +240,7 @@
 
         .quick a:hover,
         .quick a:focus-visible {
-            color: #ffffff;
+            color: var(--ink);
             border-bottom-color: var(--brand);
         }
 
@@ -249,18 +249,21 @@
             padding: 0 clamp(1.25rem, 5vw, 3rem) 2rem;
             text-align: center;
             font-size: 0.8125rem;
-            color: #52525b;
+            color: var(--faint);
         }
 
-        /* Keyboard users need to see where they are; the default outline vanishes on a dark
-           ground. */
         a:focus-visible {
-            outline: 2px solid var(--brand-light);
+            outline: 2px solid var(--brand);
             outline-offset: 3px;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 30rem) {
+            .actions { flex-direction: column; align-items: stretch; }
+            .btn { width: 100%; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .glow { animation: none; }
             .btn { transition: none; }
             .btn--brand:hover,
             .btn--brand:focus-visible { transform: none; }
@@ -272,10 +275,10 @@
     <div class="grid" aria-hidden="true"></div>
 
     <header class="site-head">
-        {{-- logo-dark.svg, not logo.png: the PNG is the nav's artwork and its "Strong" is
-             near-black, which disappears entirely on this ground. --}}
+        {{-- Served from this app rather than hot-linked from www: an error page should not
+             depend on another host answering, and it is the same artwork either way. --}}
         <a href="{{ url('/') }}" aria-label="divStrong home">
-            <img src="{{ asset('images/logo-dark.svg') }}" alt="divStrong">
+            <img src="{{ asset('images/logo.png') }}" alt="divStrong" width="132">
         </a>
     </header>
 

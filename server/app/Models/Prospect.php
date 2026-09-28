@@ -134,6 +134,14 @@ class Prospect extends Model
         'company',
         'title',
         'website',
+        'preview_url',
+        'preview_token',
+        'preview_image',
+        'preview_viewed_at',
+        'likes_design',
+        'interested',
+        'responded_at',
+        'preview_comments',
         'segment',
         'unsubscribed_at',
         'unsubscribe_source',
@@ -156,6 +164,10 @@ class Prospect extends Model
 
     protected $casts = [
         'converted_at' => 'datetime',
+        'preview_viewed_at' => 'datetime',
+        'responded_at' => 'datetime',
+        'likes_design' => 'boolean',
+        'interested' => 'boolean',
         'called_at' => 'datetime',
         'unsubscribed_at' => 'datetime',
         'priority' => 'integer',
@@ -401,5 +413,130 @@ class Prospect extends Model
         return $this->latestAttempt($label)
             ->where('type', $type)
             ->max('occurred_at');
+    }
+
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(CampaignEnrollment::class, 'prospect_id');
+    }
+
+    /** The live campaign walk, if there is one. */
+    public function activeEnrollment(): ?CampaignEnrollment
+    {
+        return $this->enrollments()
+            ->where('status', CampaignEnrollment::STATUS_ACTIVE)
+            ->latest('id')
+            ->first();
+    }
+
+    public function meetings(): HasMany
+    {
+        return $this->hasMany(Meeting::class, 'prospect_id');
+    }
+
+    public function hasBookedMeeting(): bool
+    {
+        return $this->meetings()->where('status', Meeting::STATUS_BOOKED)->exists();
+    }
+
+    /**
+     * The token the preview page is addressed by, minted on first use.
+     *
+     * Lazily rather than on create: most prospects never get a design built, and a
+     * column full of tokens for pages that will never exist is just surface area.
+     */
+    public function previewToken(): string
+    {
+        if (blank($this->preview_token)) {
+            // Six hex characters (16.7M) is plenty for a page nobody can do harm with,
+            // and short enough to read out over the phone; just don't reuse one.
+            do {
+                $token = bin2hex(random_bytes(3));
+            } while (static::where('preview_token', $token)->exists());
+
+            $this->forceFill(['preview_token' => $token])->save();
+        }
+
+        return $this->preview_token;
+    }
+
+    /** The tracked landing page — what the campaign emails actually link to. */
+    public function previewLandingUrl(): ?string
+    {
+        if (blank($this->preview_url)) {
+            return null;
+        }
+
+        return url('/p/' . $this->previewToken());
+    }
+
+    /** A prospect can only be enrolled in the preview campaign once there is a preview. */
+    public function hasPreview(): bool
+    {
+        return filled($this->preview_url);
+    }
+
+    public function firstName(): string
+    {
+        $name = trim((string) $this->name);
+
+        return $name === '' ? ($this->company ?: 'there') : (\Illuminate\Support\Str::before($name, ' ') ?: $name);
+    }
+
+    /**
+     * What they wrote after saying no.
+     *
+     * Appended rather than overwritten: somebody who disliked the design AND explained why
+     * they would not move has told you two different things, and the second should not
+     * erase the first. Each entry is stamped with the question it answered so the pair
+     * still reads as a conversation months later.
+     */
+    public function recordPreviewComment(string $question, string $comment): void
+    {
+        $comment = trim($comment);
+
+        if ($comment === '') {
+            return;
+        }
+
+        $heading = $question === 'interested' ? 'On switching' : 'On the design';
+        $entry = $heading . ' (' . now()->format('M j, Y') . '): ' . $comment;
+
+        $this->forceFill([
+            'preview_comments' => trim(($this->preview_comments ? $this->preview_comments . "
+
+" : '') . $entry),
+        ])->save();
+
+        ProspectActivity::record([
+            'prospect_id' => $this->id,
+            'type' => ProspectActivity::PREVIEW_COMMENT,
+            'description' => $heading . ': ' . \Illuminate\Support\Str::limit($comment, 120),
+            'meta' => ['question' => $question, 'comment' => $comment],
+        ]);
+    }
+
+    /**
+     * Record one of the two preview answers.
+     *
+     * Both the column and the timeline get written: the column is what the list filters
+     * and the campaign guards read, the activity is what tells you when they said it.
+     */
+    public function recordPreviewAnswer(string $question, bool $answer): void
+    {
+        $column = $question === 'interested' ? 'interested' : 'likes_design';
+
+        $this->forceFill([$column => $answer, 'responded_at' => now()])->save();
+
+        ProspectActivity::record([
+            'prospect_id' => $this->id,
+            'type' => $question === 'interested'
+                ? ProspectActivity::PREVIEW_INTEREST
+                : ProspectActivity::PREVIEW_FEEDBACK,
+            'description' => $question === 'interested'
+                ? ($answer ? 'Interested in switching' : 'Not interested in switching')
+                : ($answer ? 'Likes the design' : 'Does not like the design'),
+            'meta' => ['question' => $question, 'answer' => $answer],
+        ]);
     }
 }
