@@ -65,9 +65,11 @@ class Dashboard extends BaseDashboard
                     ->live(),
                 DatePicker::make('date_start')
                     ->label('Start Date')
+                    ->columnSpanFull()
                     ->visible(fn (Get $get) => $get('date_range') === 'custom'),
                 DatePicker::make('date_end')
                     ->label('End Date')
+                    ->columnSpanFull()
                     ->visible(fn (Get $get) => $get('date_range') === 'custom'),
             ]);
     }
@@ -81,10 +83,12 @@ class Dashboard extends BaseDashboard
     {
         return $schema
             ->components([
-                Grid::make(['default' => 1, 'lg' => 3])
+                // Right-aligned and narrow: one column of a finer grid, so it sits at the
+                // edge instead of stretching across a third of the page.
+                Grid::make(['default' => 1, 'md' => 3, 'lg' => 4, 'xl' => 6])
                     ->schema([
                         EmbeddedSchema::make('filtersForm')
-                            ->columnStart(['lg' => 3]),
+                            ->columnStart(['md' => 3, 'lg' => 4, 'xl' => 6]),
                     ]),
                 Grid::make(['default' => 1, 'lg' => 3])
                     ->schema(fn (): array => [

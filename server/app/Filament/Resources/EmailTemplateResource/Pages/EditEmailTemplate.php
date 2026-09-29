@@ -52,7 +52,7 @@ class EditEmailTemplate extends EditRecord
             ->color('gray')
             ->icon('heroicon-o-paper-airplane')
             ->modalHeading('Send a test of this template')
-            ->modalDescription('Sends what is currently in the editor, including unsaved changes. The recipient name replaces the placeholders, so you can check the personalisation reads correctly.')
+            ->modalDescription('Sends what is currently in the editor, including unsaved changes. The recipient name replaces the placeholders, so you can check the personalization reads correctly.')
             ->modalSubmitActionLabel('Send test')
             ->schema([
                 Forms\Components\TextInput::make('name')

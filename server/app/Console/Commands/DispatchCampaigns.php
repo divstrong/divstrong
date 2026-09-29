@@ -33,7 +33,7 @@ class DispatchCampaigns extends Command
         if ($this->option('dry')) {
             $due = \App\Models\CampaignEnrollment::due()->with('prospect', 'campaign')->get();
 
-            $this->info($due->count() . ' enrolment(s) due:');
+            $this->info($due->count() . ' enrollment(s) due:');
 
             foreach ($due as $enrollment) {
                 $this->line(sprintf(

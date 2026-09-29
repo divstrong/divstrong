@@ -200,7 +200,7 @@ class ProspectResource extends Resource
                                                 ? new \Illuminate\Support\HtmlString(
                                                     '<a href="'.e($record->previewLandingUrl()).'" target="_blank" class="text-primary-600 underline">'
                                                     .e($record->previewLandingUrl()).'</a>'
-                                                    .'<span class="block text-xs text-gray-500 mt-1">Tracked page with the design, both questions and the calendar. This is what the campaign emails link to.</span>'
+                                                    .'<span class="block text-xs text-gray-500 mt-1">Tracked page with the design, the three questions and the calendar. This is what the campaign emails link to.</span>'
                                                 )
                                                 : 'Save a preview URL to generate this.')
                                             ->visible(fn (?Prospect $record) => $record?->exists ?? false),
@@ -225,6 +225,13 @@ class ProspectResource extends Resource
                                                 default => 'Not opened yet',
                                             })
                                             ->visible(fn (?Prospect $record) => $record?->exists ?? false),
+
+                                        Forms\Components\Placeholder::make('fit_rating_shown')
+                                            ->label('Fit rating')
+                                            ->content(fn (?Prospect $record) => str_repeat('★', $record->fit_rating)
+                                                .str_repeat('☆', 5 - $record->fit_rating)
+                                                .'  '.$record->fit_rating.'/5')
+                                            ->visible(fn (?Prospect $record) => filled($record?->fit_rating)),
                                     ])
                                     ->columns(2),
 
@@ -356,18 +363,6 @@ class ProspectResource extends Resource
                         ])->render(),
                     )),
 
-                Tables\Columns\TextColumn::make('segment')
-                    ->label('Segment')
-                    ->badge()
-                    ->formatStateUsing(fn (?string $state) => Prospect::segments()[$state] ?? 'Agency')
-                    ->color(fn (?string $state) => match ($state) {
-                        Prospect::SEGMENT_CLIENT => 'info',
-                        Prospect::SEGMENT_GENERAL => 'warning',
-                        default => 'success',
-                    })
-                    ->sortable()
-                    ->toggleable(),
-
                 Tables\Columns\TextColumn::make('phone')
                     ->searchable()
                     ->placeholder('—')
@@ -408,45 +403,32 @@ class ProspectResource extends Resource
                     ->rules(['required', 'in:qualified,unqualified,dismissed'])
                     ->toggleable(),
 
+                // One chip per step — sent / opened / clicked, like the outreach chips — with
+                // where the sequence stands underneath. Also shown for a prospect who was
+                // never enrolled but had steps sent by hand, so those opens are not hidden.
                 Tables\Columns\TextColumn::make('campaign')
                     ->label('Campaign')
                     ->placeholder('—')
-                    ->badge()
-                    ->color(fn (?string $state): string => match (true) {
-                        $state === null => 'gray',
-                        str_contains($state, 'Booked') => 'success',
-                        str_contains($state, 'Stopped') || str_contains($state, 'Not interested') => 'danger',
-                        str_contains($state, 'Done') => 'gray',
-                        default => 'info',
-                    })
-                    ->state(function (Prospect $record): ?string {
-                        $enrollment = $record->enrollments()->latest('id')->first();
+                    ->html()
+                    ->state(function (Prospect $record): ?HtmlString {
+                        $enrollment = $record->enrollments->sortByDesc('id')->first();
 
-                        if (! $enrollment) {
+                        $campaign = $enrollment
+                            ? static::campaignsWithSteps()->get($enrollment->campaign_id)
+                            : static::campaignsWithSteps()->first(fn (Campaign $campaign) => $campaign->steps->contains(
+                                fn (CampaignStep $step) => $record->hasSentEmail($step->activityLabel()),
+                            ));
+
+                        if (! $campaign || $campaign->steps->isEmpty()) {
                             return null;
                         }
 
-                        $step = $enrollment->last_step_position ?? 0;
-
-                        return match ($enrollment->status) {
-                            CampaignEnrollment::STATUS_ACTIVE => 'Step '.$step.' · next '
-                                .($enrollment->next_send_at?->diffForHumans() ?? 'unscheduled'),
-                            CampaignEnrollment::STATUS_COMPLETED => 'Done · '.$step.' sent',
-                            default => CampaignEnrollment::stopReasons()[$enrollment->stop_reason] ?? 'Stopped',
-                        };
+                        return new HtmlString(view('filament.prospects.campaign-steps', [
+                            'record' => $record,
+                            'campaign' => $campaign,
+                            'enrollment' => $enrollment,
+                        ])->render());
                     })
-                    ->toggleable(),
-
-                Tables\Columns\IconColumn::make('preview_url')
-                    ->label('Preview')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-globe-alt')
-                    ->falseIcon('heroicon-o-minus-small')
-                    ->trueColor('success')
-                    ->falseColor('gray')
-                    ->url(fn (Prospect $record): ?string => $record->previewLandingUrl())
-                    ->openUrlInNewTab()
-                    ->tooltip(fn (Prospect $record): ?string => $record->preview_url)
                     ->toggleable(),
             ])
             ->filters([
@@ -708,7 +690,7 @@ class ProspectResource extends Resource
             // The chips and the row actions ask emailEngagement()/hasSentEmail() per
             // prospect. Without this the page costs four extra queries per row just to
             // decide which chips to draw.
-            ->modifyQueryUsing(fn (Builder $query) => $query->with('checklistActivities'));
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['checklistActivities', 'enrollments']));
     }
 
     /**
@@ -779,6 +761,29 @@ class ProspectResource extends Resource
      *
      * @return array<int, Action>
      */
+    /**
+     * Every campaign with its active steps, keyed by id, loaded once per request — the
+     * Campaign column reads it for every row, and a step list is not worth a query each.
+     *
+     * @return \Illuminate\Support\Collection<int, Campaign>
+     */
+    protected static function campaignsWithSteps(): \Illuminate\Support\Collection
+    {
+        static $campaigns = null;
+
+        if (! \Illuminate\Support\Facades\Schema::hasTable('campaign_steps')) {
+            return collect();
+        }
+
+        return $campaigns ??= Campaign::query()
+            ->with(['steps' => fn ($q) => $q->where('is_active', true)->orderBy('position')])
+            ->orderBy('id')
+            ->get()
+            // activityLabel() reads the step's campaign; hand it the parent we already have.
+            ->each(fn (Campaign $campaign) => $campaign->steps->each->setRelation('campaign', $campaign))
+            ->keyBy('id');
+    }
+
     public static function campaignStepActions(): array
     {
         if (! \Illuminate\Support\Facades\Schema::hasTable('campaign_steps')) {
@@ -813,9 +818,17 @@ class ProspectResource extends Resource
             ->hidden(fn (?Prospect $record): bool => $record === null
                 || $record->isUnsubscribed()
                 || (CampaignRunner::needsPreview($step->campaign) && ! $record->hasPreview()))
-            ->action(function (Prospect $record) use ($step, $label) {
+            ->schema([
+                Forms\Components\TagsInput::make('emails')
+                    ->label('Email Address(es)')
+                    ->required()
+                    ->placeholder('Add email and press Enter')
+                    ->default(fn (?Prospect $record) => array_values(array_filter([$record?->email])))
+                    ->nestedRecursiveRules(['email']),
+            ])
+            ->action(function (Prospect $record, array $data) use ($step, $label) {
                 try {
-                    CampaignRunner::sendStepNow($record, $step);
+                    CampaignRunner::sendStepNow($record, $step, emails: $data['emails']);
                 } catch (\RuntimeException $e) {
                     Notification::make()->warning()->title('Not sent')->body($e->getMessage())->send();
 
@@ -825,7 +838,7 @@ class ProspectResource extends Resource
                 Notification::make()
                     ->success()
                     ->title($label . ' sent')
-                    ->body('Sent to ' . $record->email)
+                    ->body('Sent to ' . implode(', ', $data['emails']))
                     ->send();
             });
     }
@@ -900,7 +913,7 @@ class ProspectResource extends Resource
             ->icon('heroicon-o-rectangle-stack')
             ->color('primary')
             ->modalHeading('Start a campaign')
-            ->modalSubmitActionLabel('Enrol')
+            ->modalSubmitActionLabel('Enroll')
             ->schema([
                 Forms\Components\Select::make('campaign_id')
                     ->label('Campaign')

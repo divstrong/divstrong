@@ -74,6 +74,28 @@ class ProspectMailer
     }
 
     /**
+     * A label as it comes back from Postmark, restored to the one we sent.
+     *
+     * Headers are ASCII, so a label with a "·" in it — every campaign step's — leaves as
+     * RFC 2047 encoded-words ("Promo shops =?utf-8?Q?=C2=B7?= preview …"), folded across
+     * lines, and Postmark echoes that back verbatim. Unrepaired, no open or click on a
+     * campaign email ever matched its send.
+     */
+    public static function normalizeLabel(?string $label): ?string
+    {
+        if ($label === null || $label === '') {
+            return $label;
+        }
+
+        if (str_contains($label, '=?')) {
+            $decoded = iconv_mime_decode($label, ICONV_MIME_DECODE_CONTINUE_ON_ERROR, 'UTF-8');
+            $label = $decoded !== false ? $decoded : $label;
+        }
+
+        return trim(preg_replace('/\s+/u', ' ', $label) ?? $label);
+    }
+
+    /**
      * Registered once for the whole recipient loop. The callback removes before adding so that
      * re-sending the same mailable instance cannot stack duplicate headers.
      */

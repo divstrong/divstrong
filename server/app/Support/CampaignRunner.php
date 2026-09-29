@@ -205,15 +205,19 @@ class CampaignRunner
      * twice — once because somebody pressed the button, once because the scheduler still
      * believed it was owed.
      *
+     * @param  array<int, string>|null  $emails  who to send to; defaults to the prospect's own address
+     *
      * @throws \RuntimeException when the send would be unlawful or pointless
      */
-    public static function sendStepNow(Prospect $prospect, CampaignStep $step, ?User $sender = null): void
+    public static function sendStepNow(Prospect $prospect, CampaignStep $step, ?User $sender = null, ?array $emails = null): void
     {
         if ($prospect->isUnsubscribed()) {
             throw new \RuntimeException('This prospect has opted out of email.');
         }
 
-        if (blank($prospect->email)) {
+        $emails = array_values(array_filter($emails ?? [$prospect->email]));
+
+        if ($emails === []) {
             throw new \RuntimeException('This prospect has no email address.');
         }
 
@@ -226,7 +230,7 @@ class CampaignRunner
         ProspectMailer::send(
             $prospect,
             new CampaignMail($prospect, $step, $sender ?? auth()->user()),
-            [$prospect->email],
+            $emails,
             $step->activityLabel(),
         );
 

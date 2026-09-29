@@ -33,7 +33,20 @@ class PostmarkWebhookController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $payload = $request->all();
+        return response()->json($this->record($request->all()));
+    }
+
+    /**
+     * Timeline one Postmark event. Shared by the webhook and prospects:sync-postmark, which
+     * replays events from Postmark's API with the same payload shape.
+     *
+     * Idempotent: Postmark retries a webhook it thinks failed, and a backfill overlaps what
+     * the webhook already delivered, so the same event arriving twice is recorded once.
+     *
+     * @return array<string, mixed>
+     */
+    public function record(array $payload): array
+    {
         $recordType = $payload['RecordType'] ?? null;
         $messageId = $payload['MessageID'] ?? null;
 
@@ -41,7 +54,7 @@ class PostmarkWebhookController extends Controller
 
         if (! $prospectId) {
             // Not a prospect email (could be an order/quote email sharing the account).
-            return response()->json(['status' => 'ignored', 'reason' => 'unattributable event']);
+            return ['status' => 'ignored', 'reason' => 'unattributable event'];
         }
 
         $mapped = match ($recordType) {
@@ -106,7 +119,17 @@ class PostmarkWebhookController extends Controller
         }
 
         if (! $mapped) {
-            return response()->json(['status' => 'ok', 'recordType' => $recordType]);
+            return ['status' => 'ok', 'recordType' => $recordType];
+        }
+
+        $duplicate = $messageId && ProspectActivity::where('prospect_id', $prospectId)
+            ->where('type', $mapped['type'])
+            ->where('external_id', $messageId)
+            ->where('occurred_at', $mapped['occurred_at'])
+            ->exists();
+
+        if ($duplicate) {
+            return ['status' => 'duplicate', 'type' => $mapped['type']];
         }
 
         ProspectActivity::record(array_merge($mapped, [
@@ -114,7 +137,7 @@ class PostmarkWebhookController extends Controller
             'external_id' => $messageId,
         ]));
 
-        return response()->json(['status' => 'recorded', 'type' => $mapped['type']]);
+        return ['status' => 'recorded', 'type' => $mapped['type']];
     }
 
     /**
@@ -138,7 +161,10 @@ class PostmarkWebhookController extends Controller
             $exists = Prospect::whereKey((int) $metaProspectId)->exists();
 
             if ($exists) {
-                return [(int) $metaProspectId, $this->metadata($payload, ProspectMailer::META_LABEL)];
+                return [
+                    (int) $metaProspectId,
+                    ProspectMailer::normalizeLabel($this->metadata($payload, ProspectMailer::META_LABEL)),
+                ];
             }
 
             Log::info('Postmark webhook: event for a prospect that no longer exists', [
@@ -204,7 +230,11 @@ class PostmarkWebhookController extends Controller
     protected function timestamp(?string $value): \Illuminate\Support\Carbon
     {
         try {
-            return $value ? \Illuminate\Support\Carbon::parse($value) : now();
+            // Postmark stamps UTC; the columns hold app-time wall clock with no zone, so an
+            // unconverted value landed hours in the future and sorted after later sends.
+            return $value
+                ? \Illuminate\Support\Carbon::parse($value)->setTimezone(config('app.timezone'))
+                : now();
         } catch (\Throwable) {
             return now();
         }

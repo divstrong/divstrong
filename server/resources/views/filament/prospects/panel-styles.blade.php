@@ -90,6 +90,16 @@
         --ds-ink-dark: #fbbf24;
     }
 
+    /* Campaign steps: one hue for the whole sequence, so the steps read as one campaign
+       rather than as four more unrelated emails beside the outreach chips. */
+    .ds-chip[data-hue='campaign'] {
+        --ds-hue: #7c3aed;
+        --ds-edge: #6d28d9;
+        --ds-tint: rgba(124, 58, 237, 0.14);
+        --ds-ink: #6d28d9;
+        --ds-ink-dark: #a78bfa;
+    }
+
     .ds-chip[data-state='none'] {
         border-style: dashed;
         border-color: #d4d4d8;

@@ -19,7 +19,9 @@ use Illuminate\Console\Command;
  */
 class SeedEmailTemplates extends Command
 {
-    protected $signature = 'email:seed-templates {--force : Overwrite templates that already exist}';
+    protected $signature = 'email:seed-templates
+        {--force : Overwrite templates that already exist}
+        {--only=* : Limit to these template keys, e.g. --only=promo_preview_intro}';
 
     protected $description = 'Create or refresh the editable outreach email templates';
 
@@ -103,7 +105,13 @@ class SeedEmailTemplates extends Command
     {
         $force = (bool) $this->option('force');
 
+        $only = (array) $this->option('only');
+
         foreach ($this->definitions() as $key => $definition) {
+            if ($only !== [] && ! in_array($key, $only, true)) {
+                continue;
+            }
+
             $existing = EmailTemplate::where('key', $key)->first();
 
             if ($existing && ! $force) {

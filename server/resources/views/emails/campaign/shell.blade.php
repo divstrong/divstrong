@@ -70,6 +70,18 @@
         </tr>
     </table>
 
+    {{-- Copy the template placed after its {{ concept }} marker. --}}
+    @if(! empty($afterConceptHtml))
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr><td style="height: 28px; line-height: 28px; font-size: 0;">&nbsp;</td></tr>
+            <tr>
+                <td style="color: #4b5563; font-size: 16px; line-height: 1.65;">
+                    {!! $afterConceptHtml !!}
+                </td>
+            </tr>
+        </table>
+    @endif
+
     {{-- Sign-off, after the concept card: signing off and then showing the thing you are
          pitching reads backwards. Skipped when the copy placed its own. --}}
     @if($signatureHtml)

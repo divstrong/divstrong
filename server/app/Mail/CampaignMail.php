@@ -38,6 +38,15 @@ class CampaignMail extends Mailable
 
     public const SIGNATURE_SLOT = '<!--signature-->';
 
+    /**
+     * Where the concept card sits. Written in the copy as a {{ concept }} paragraph rather
+     * than a comment, because the rich editor drops HTML comments on save.
+     */
+    public const CONCEPT_SLOT = '<!--concept-->';
+
+    /** Copy written after the {{ concept }} marker, rendered below the card. */
+    protected string $afterConceptHtml = '';
+
     public const FALLBACK_SENDER_NAME = 'Jim Cotter';
 
     public const FALLBACK_SENDER_EMAIL = 'jim@divstrong.com';
@@ -120,10 +129,15 @@ class CampaignMail extends Mailable
         // Both paths run through interpolate(): the fallback partials carry the same
         // literal {{ tokens }} as the stored rows, so copy cannot mean one thing in the
         // editor and another when the row is deactivated.
+        //
+        // The concept marker is swapped for its slot on the raw copy, before any
+        // interpolation, or it would be blanked as an unknown placeholder.
         $body = EmailTemplate::interpolate(
-            $this->template
-                ? $this->template->renderBody($this->templateVars())
-                : view($this->fallbackView(), $this->templateVars())->render(),
+            static::markConceptSlot(
+                $this->template
+                    ? $this->template->body
+                    : view($this->fallbackView(), $this->templateVars())->render()
+            ),
             $this->templateVars(),
         );
 
@@ -133,6 +147,7 @@ class CampaignMail extends Mailable
                 // fillSlots() runs first: it decides whether the copy places its own
                 // sign-off, which the shell needs to know before it renders one.
                 'bodyHtml' => $bodyHtml = $this->fillSlots($body),
+                'afterConceptHtml' => $this->afterConceptHtml,
                 'signatureHtml' => $this->signatureInBody ? null : static::signatureHtml($this->senderName),
                 'prospect' => $this->prospect,
                 'previewUrl' => $this->previewUrl(),
@@ -212,6 +227,20 @@ class CampaignMail extends Mailable
         // would otherwise show a stray comment.
         $body = str_replace(static::CTA_SLOT, '', $body);
 
+        // The rich editor drops inline styles on save, and a bare link in grey body copy
+        // reads as plain text in most clients. Give any unstyled link the brand treatment.
+        $body = preg_replace(
+            '/<a(?![^>]*\bstyle=)(?=[\s>])/i',
+            '<a style="color:#ed2537; text-decoration:underline;"',
+            $body,
+        ) ?? $body;
+
+        // Everything after the concept marker moves below the card.
+        if (str_contains($body, static::CONCEPT_SLOT)) {
+            [$body, $after] = explode(static::CONCEPT_SLOT, $body, 2);
+            $this->afterConceptHtml = trim(str_replace(static::CONCEPT_SLOT, '', $after));
+        }
+
         // Default position for the sign-off is AFTER the concept card — signing off and
         // then showing the thing you are pitching reads backwards. Copy that marks its
         // own slot overrides that.
@@ -222,6 +251,19 @@ class CampaignMail extends Mailable
         }
 
         return $body;
+    }
+
+    /**
+     * Turn a {{ concept }} marker — bare, or the paragraph the editor wraps it in — into the
+     * slot comment. Runs before interpolate() so the token is not blanked as unknown.
+     */
+    protected static function markConceptSlot(string $body): string
+    {
+        return preg_replace(
+            '/(?:<p[^>]*>\s*)?\{\{\s*concept\s*\}\}(?:\s*<\/p>)?/i',
+            static::CONCEPT_SLOT,
+            $body,
+        ) ?? $body;
     }
 
     public static function greetingHtml(string $firstName): string

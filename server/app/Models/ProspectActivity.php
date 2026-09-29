@@ -33,6 +33,9 @@ class ProspectActivity extends Model
     /** Preview campaign: what they wrote after saying no. */
     public const PREVIEW_COMMENT = 'preview_comment';
 
+    /** Preview campaign: how well the concept fits them, 1–5 stars. */
+    public const PREVIEW_RATING = 'preview_rating';
+
     public const MEETING_BOOKED = 'meeting_booked';
 
     public const MEETING_CANCELED = 'meeting_canceled';
@@ -99,6 +102,7 @@ class ProspectActivity extends Model
             self::PREVIEW_FEEDBACK => ['icon' => 'heroicon-o-hand-thumb-up', 'color' => 'success', 'label' => 'Design feedback'],
             self::PREVIEW_INTEREST => ['icon' => 'heroicon-o-sparkles', 'color' => 'success', 'label' => 'Interest'],
             self::PREVIEW_COMMENT => ['icon' => 'heroicon-o-chat-bubble-bottom-center-text', 'color' => 'warning', 'label' => 'Feedback'],
+            self::PREVIEW_RATING => ['icon' => 'heroicon-o-star', 'color' => 'warning', 'label' => 'Fit rating'],
             self::MEETING_BOOKED => ['icon' => 'heroicon-o-calendar-days', 'color' => 'success', 'label' => 'Call booked'],
             self::MEETING_CANCELED => ['icon' => 'heroicon-o-calendar', 'color' => 'warning', 'label' => 'Call canceled'],
             default => ['icon' => 'heroicon-o-chat-bubble-left-ellipsis', 'color' => 'gray', 'label' => 'Note'],

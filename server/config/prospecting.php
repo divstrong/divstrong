@@ -136,6 +136,9 @@ return [
         // Where the emails send people to book time.
         'schedule_url' => env('OUTREACH_SCHEDULE_URL', 'https://divstrong.com/contact'),
 
+        // Who hears about it when a prospect answers the questions on their preview page.
+        'feedback_email' => env('PREVIEW_FEEDBACK_EMAIL', 'jim@divstrong.com'),
+
         /*
         | The window drip campaigns may send in, as hours in the booking timezone,
         | weekdays only. Cold email landing at 3am local reads as automated before it

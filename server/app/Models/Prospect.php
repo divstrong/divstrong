@@ -140,6 +140,7 @@ class Prospect extends Model
         'preview_viewed_at',
         'likes_design',
         'interested',
+        'fit_rating',
         'responded_at',
         'preview_comments',
         'segment',
@@ -168,6 +169,7 @@ class Prospect extends Model
         'responded_at' => 'datetime',
         'likes_design' => 'boolean',
         'interested' => 'boolean',
+        'fit_rating' => 'integer',
         'called_at' => 'datetime',
         'unsubscribed_at' => 'datetime',
         'priority' => 'integer',
@@ -537,6 +539,30 @@ class Prospect extends Model
                 ? ($answer ? 'Interested in switching' : 'Not interested in switching')
                 : ($answer ? 'Likes the design' : 'Does not like the design'),
             'meta' => ['question' => $question, 'answer' => $answer],
+        ]);
+    }
+
+    /**
+     * The third question: how well the concept fits them, 1–5.
+     *
+     * They can change their mind, so a re-rate overwrites the column but still timelines —
+     * a 2 that becomes a 4 after a second look is worth knowing about.
+     */
+    public function recordFitRating(int $rating): void
+    {
+        $rating = max(1, min(5, $rating));
+
+        if ($this->fit_rating === $rating) {
+            return;
+        }
+
+        $this->forceFill(['fit_rating' => $rating, 'responded_at' => now()])->save();
+
+        ProspectActivity::record([
+            'prospect_id' => $this->id,
+            'type' => ProspectActivity::PREVIEW_RATING,
+            'description' => "Rated the fit {$rating}/5",
+            'meta' => ['question' => 'fit', 'rating' => $rating],
         ]);
     }
 }

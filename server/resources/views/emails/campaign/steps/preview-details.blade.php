@@ -14,7 +14,7 @@
 </p>
 
 <p style="margin:0 0 16px; color:#4b5563; font-size:16px; line-height:1.65;">
-    Customising and launching it is $950. After that, hosting, maintenance and human support —
+    Customizing and launching it is $950. After that, hosting, maintenance and human support —
     a person who answers, not a ticket queue — is $360 a year. No retainer, no lock-in, and the
     site is yours.
 </p>

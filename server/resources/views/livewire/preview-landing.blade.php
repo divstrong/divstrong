@@ -1,8 +1,15 @@
 @php
     $company = $prospect->company ?: 'your shop';
     $answeredLike = $prospect->likes_design !== null;
+    $rated = $prospect->fit_rating !== null;
     $answeredInterest = $prospect->interested !== null;
     $hasMeeting = $prospect->hasBookedMeeting();
+
+    // Answer buttons: white until chosen, red/gold on hover, and the chosen one stays red.
+    // They remain clickable afterwards, so changing your mind is one click.
+    $choice = 'flex-1 rounded-lg border-2 px-5 py-3 font-semibold transition disabled:opacity-60';
+    $open = 'border-gray-200 bg-white text-gray-700 hover:border-brand hover:bg-amber-50 hover:text-brand';
+    $chosen = 'border-brand bg-brand text-white';
 @endphp
 
 <div class="min-h-screen bg-gray-50">
@@ -20,15 +27,15 @@
 
         {{-- Hero --}}
         <section class="text-center">
-            <p class="text-xs font-bold uppercase tracking-[0.15em] text-brand">A concept, already built</p>
+            <p class="text-xs font-bold uppercase tracking-[0.15em] text-brand">A concept, partially built</p>
 
             <h1 class="mt-3 text-3xl font-bold leading-tight tracking-tight text-gray-900 sm:text-4xl">
-                {{ $company }}, here is the site we built you.
+                {{ $company }}, this could be your new website.
             </h1>
 
             <p class="mx-auto mt-4 max-w-xl text-base leading-relaxed text-gray-600 sm:text-lg">
                 It is live and working — not a mockup. Have a look around, then tell us what you
-                think with the buttons below. Two taps, and you are done.
+                think using the feedback buttons below:
             </p>
 
             <a href="{{ $prospect->preview_url }}"
@@ -62,23 +69,20 @@
         {{-- The two questions --}}
         <section class="mt-12 sm:mt-16">
             <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
-                <h2 class="text-lg font-bold text-gray-900">What do you think?</h2>
-                <p class="mt-1 text-sm text-gray-500">
-                    Honest answers welcome — a "no" is genuinely useful, and it stops the emails.
-                </p>
-
                 {{-- Question one --}}
-                <div class="mt-6 border-t border-gray-100 pt-5">
-                    <p class="font-medium text-gray-800">Do you like the direction?</p>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900">Do you like the direction?</h2>
+
+                    <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                        <button wire:click="answerLike(true)" wire:loading.attr="disabled" @class([$choice, $chosen => $prospect->likes_design === true, $open => $prospect->likes_design !== true])>
+                            Yes, I like it
+                        </button>
+                        <button wire:click="answerLike(false)" wire:loading.attr="disabled" @class([$choice, $chosen => $prospect->likes_design === false, $open => $prospect->likes_design !== false])>
+                            Not quite
+                        </button>
+                    </div>
 
                     @if($answeredLike)
-                        <p class="mt-3 inline-flex items-center gap-2 rounded-lg bg-gray-50 px-4 py-2.5 text-sm text-gray-600">
-                            <svg class="h-4 w-4 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            You said {{ $prospect->likes_design ? 'yes — glad it landed' : 'not quite — noted, thank you' }}.
-                        </p>
-
                         @if($prospect->likes_design === false)
                             @if($likeCommentSent)
                                 <p class="mt-3 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -90,7 +94,7 @@
                                         What would you change?
                                     </label>
                                     <p class="mt-0.5 text-xs text-gray-500">
-                                        Layout, colours, the wording, the photos — whatever put you off. No wrong answers.
+                                        Layout, colors, the wording, the photos — whatever put you off. No wrong answers.
                                     </p>
 
                                     <textarea wire:model="likeComment" rows="3"
@@ -106,26 +110,59 @@
                                 </div>
                             @endif
                         @endif
-                    @else
-                        <div class="mt-3 flex flex-col gap-2 sm:flex-row">
-                            <button wire:click="answerLike(true)"
-                                    class="flex-1 rounded-lg border-2 border-brand bg-brand px-5 py-3 font-semibold text-white transition hover:bg-gray-900 hover:border-gray-900">
-                                Yes, I like it
-                            </button>
-                            <button wire:click="answerLike(false)"
-                                    class="flex-1 rounded-lg border-2 border-gray-200 px-5 py-3 font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50">
-                                Not quite
-                            </button>
-                        </div>
                     @endif
                 </div>
 
-                {{-- Question two, revealed once the first is answered --}}
+                {{-- Question two, revealed once the first is answered. Re-rating is allowed. --}}
                 @if($answeredLike)
+                    @php($fit = (int) $prospect->fit_rating)
                     <div class="mt-5 border-t border-gray-100 pt-5">
-                        <p class="font-medium text-gray-800">
-                            Would you consider moving {{ $company }} onto it?
+                        <h2 class="text-lg font-bold text-gray-900">
+                            How well does it fit {{ $company }}?
+                        </h2>
+
+                        <div class="mt-3 flex items-center gap-1" x-data="{ hover: 0 }" @mouseleave="hover = 0">
+                            @foreach(range(1, 5) as $star)
+                                <button type="button"
+                                        wire:click="rateFit({{ $star }})"
+                                        @mouseenter="hover = {{ $star }}"
+                                        aria-label="{{ $star }} out of 5"
+                                        class="p-0.5 transition hover:scale-110">
+                                    <svg class="h-9 w-9 transition-colors"
+                                         :class="(hover || {{ $fit }}) >= {{ $star }} ? 'text-amber-400' : 'text-gray-200'"
+                                         fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M11.48 3.5a.56.56 0 0 1 1.04 0l2.12 5.11a.56.56 0 0 0 .48.35l5.52.44c.5.04.7.66.32.99l-4.2 3.6a.56.56 0 0 0-.19.56l1.29 5.38a.56.56 0 0 1-.84.61l-4.73-2.89a.56.56 0 0 0-.58 0l-4.73 2.89a.56.56 0 0 1-.84-.61l1.29-5.38a.56.56 0 0 0-.19-.56l-4.2-3.6a.56.56 0 0 1 .32-.99l5.52-.44a.56.56 0 0 0 .48-.35l2.12-5.11Z"/>
+                                    </svg>
+                                </button>
+                            @endforeach
+                        </div>
+
+                        <p class="mt-2 text-sm text-gray-500">
+                            @if($fit)
+                                You rated it {{ $fit }} out of 5 — thank you. Tap a star to change it.
+                            @else
+                                1 is nowhere near, 5 is exactly right.
+                            @endif
                         </p>
+                    </div>
+                @endif
+
+                {{-- Question three, the one that leads to the call. Revealed once they have rated;
+                     also shown to anyone who answered it before the rating question existed. --}}
+                @if($answeredLike && ($rated || $answeredInterest))
+                    <div class="mt-5 border-t border-gray-100 pt-5">
+                        <h2 class="text-lg font-bold text-gray-900">
+                            Would you consider moving {{ $company }} onto it?
+                        </h2>
+
+                        <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                            <button wire:click="answerInterest(true)" wire:loading.attr="disabled" @class([$choice, $chosen => $prospect->interested === true, $open => $prospect->interested !== true])>
+                                Yes, I'm interested
+                            </button>
+                            <button wire:click="answerInterest(false)" wire:loading.attr="disabled" @class([$choice, $chosen => $prospect->interested === false, $open => $prospect->interested !== false])>
+                                No thanks
+                            </button>
+                        </div>
 
                         @if($answeredInterest)
                             @if($prospect->interested)
@@ -164,20 +201,10 @@
                                     </div>
                                 @endif
                             @endif
-                        @else
-                            <div class="mt-3 flex flex-col gap-2 sm:flex-row">
-                                <button wire:click="answerInterest(true)"
-                                        class="flex-1 rounded-lg border-2 border-brand bg-brand px-5 py-3 font-semibold text-white transition hover:bg-gray-900 hover:border-gray-900">
-                                    Yes, I'm interested
-                                </button>
-                                <button wire:click="answerInterest(false)"
-                                        class="flex-1 rounded-lg border-2 border-gray-200 px-5 py-3 font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50">
-                                    No thanks
-                                </button>
-                            </div>
                         @endif
                     </div>
                 @endif
+
             </div>
         </section>
 
@@ -193,14 +220,5 @@
             </p>
         @endif
 
-        {{-- Footer --}}
-        <footer class="mt-14 border-t border-gray-200 pt-8 text-center">
-            <p class="text-sm text-gray-500">
-                Built by divStrong in Richmond, VA — shipping software since 2009.
-            </p>
-            <p class="mt-2 text-sm text-gray-400">
-                <a href="mailto:{{ config('scheduling.contact_email') }}" class="text-brand hover:underline">Questions?</a>
-            </p>
-        </footer>
     </main>
 </div>

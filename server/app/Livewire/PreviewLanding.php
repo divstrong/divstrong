@@ -3,10 +3,13 @@
 namespace App\Livewire;
 
 use App\Livewire\Concerns\BooksMeetings;
+use App\Mail\PreviewFeedbackReceived;
 use App\Models\CampaignEnrollment;
 use App\Models\Meeting;
 use App\Models\Prospect;
 use App\Models\ProspectActivity;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 
 /**
@@ -110,8 +113,16 @@ class PreviewLanding extends Component
 
     public function answerInterest(bool $answer): void
     {
+        $firstAnswer = $this->prospect->interested === null;
+
         $this->prospect->recordPreviewAnswer('interested', $answer);
         $this->prospect->refresh();
+
+        // The last question, so this is when they have finished. Changing the answer later
+        // is still timelined, but does not send the completion email again.
+        if ($firstAnswer) {
+            $this->notifyFeedback(PreviewFeedbackReceived::COMPLETED);
+        }
 
         if ($answer) {
             $this->showBooking = true;
@@ -127,6 +138,12 @@ class PreviewLanding extends Component
             ->each(fn (CampaignEnrollment $enrollment) => $enrollment->stop(CampaignEnrollment::STOP_NOT_INTERESTED));
     }
 
+    public function rateFit(int $rating): void
+    {
+        $this->prospect->recordFitRating($rating);
+        $this->prospect->refresh();
+    }
+
     public function submitLikeComment(): void
     {
         $this->validate(['likeComment' => 'required|string|max:2000'], [
@@ -135,6 +152,8 @@ class PreviewLanding extends Component
 
         $this->prospect->recordPreviewComment('like', $this->likeComment);
         $this->likeCommentSent = true;
+
+        $this->notifyComment($this->likeComment);
     }
 
     public function submitInterestComment(): void
@@ -145,6 +164,41 @@ class PreviewLanding extends Component
 
         $this->prospect->recordPreviewComment('interested', $this->interestComment);
         $this->interestCommentSent = true;
+
+        $this->notifyComment($this->interestComment);
+    }
+
+    /**
+     * A comment written before they finish rides along in the completion email; only one
+     * written after it needs an email of its own.
+     */
+    protected function notifyComment(string $comment): void
+    {
+        $this->prospect->refresh();
+
+        if ($this->prospect->interested !== null) {
+            $this->notifyFeedback(PreviewFeedbackReceived::COMMENT, trim($comment));
+        }
+    }
+
+    /** Sent after the response, and never allowed to break the page they are answering on. */
+    protected function notifyFeedback(string $trigger, ?string $comment = null): void
+    {
+        $to = config('prospecting.outreach.feedback_email');
+
+        if (blank($to)) {
+            return;
+        }
+
+        $mailable = new PreviewFeedbackReceived($this->prospect->fresh(), $trigger, $comment);
+
+        dispatch(function () use ($to, $mailable) {
+            try {
+                Mail::to($to)->send($mailable);
+            } catch (\Throwable $e) {
+                Log::error('Preview feedback notification failed', ['to' => $to, 'error' => $e->getMessage()]);
+            }
+        })->afterResponse();
     }
 
     public function startBooking(): void

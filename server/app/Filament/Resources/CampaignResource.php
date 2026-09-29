@@ -68,7 +68,7 @@ class CampaignResource extends Resource
 
                     Forms\Components\Toggle::make('is_active')
                         ->label('Active')
-                        ->helperText('Pausing stops every enrolment in this campaign from sending, without ending them.')
+                        ->helperText('Pausing stops every enrollment in this campaign from sending, without ending them.')
                         ->default(true),
 
                     Forms\Components\Toggle::make('stop_on_booking')

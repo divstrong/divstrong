@@ -30,7 +30,7 @@
                             @elseif ($run->status === \App\Models\ProspectDiscoveryRun::STATUS_COMPLETE)
                                 Discovery complete
                             @elseif ($run->status === \App\Models\ProspectDiscoveryRun::STATUS_CANCELLED)
-                                Discovery cancelled
+                                Discovery canceled
                             @else
                                 Discovery failed
                             @endif
