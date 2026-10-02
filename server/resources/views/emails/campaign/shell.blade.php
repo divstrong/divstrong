@@ -7,7 +7,7 @@
     those need and a campaign email with a dead CTA is worse than no campaign at all.
 --}}
 <x-mail.layout
-    :title="'A website concept for ' . ($prospect->company ?: 'your shop')"
+    :title="'A website concept for ' . ($prospect->company ?: 'your business')"
     :preheader="$preheader"
     :footer="$postalAddress ?? null"
 >

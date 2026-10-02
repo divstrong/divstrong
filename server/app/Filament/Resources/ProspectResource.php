@@ -790,20 +790,27 @@ class ProspectResource extends Resource
             return [];
         }
 
-        return CampaignStep::query()
+        $steps = CampaignStep::query()
             ->where('is_active', true)
             ->whereHas('campaign', fn ($q) => $q->where('is_active', true))
             ->with('campaign')
             ->orderBy('campaign_id')
             ->orderBy('position')
-            ->get()
-            ->map(fn (CampaignStep $step) => static::campaignStepAction($step))
+            ->get();
+
+        // With more than one campaign live, "1. The concept" appears once per campaign, so
+        // each is prefixed with the campaign's short name ("Promo shops", "General website").
+        $prefixed = $steps->pluck('campaign_id')->unique()->count() > 1;
+
+        return $steps
+            ->map(fn (CampaignStep $step) => static::campaignStepAction($step, $prefixed))
             ->all();
     }
 
-    protected static function campaignStepAction(CampaignStep $step): Action
+    protected static function campaignStepAction(CampaignStep $step, bool $prefixed = false): Action
     {
-        $label = $step->position . '. ' . $step->name;
+        $label = ($prefixed ? \Illuminate\Support\Str::before($step->campaign->name, ' ·') . ' · ' : '')
+            . $step->position . '. ' . $step->name;
 
         return Action::make('sendStep' . $step->id)
             ->label($label)

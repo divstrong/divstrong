@@ -121,7 +121,7 @@ class CampaignMail extends Mailable
 
         return filled($subject)
             ? $subject
-            : 'A website concept for ' . ($this->prospect->company ?: 'your shop');
+            : 'A website concept for ' . ($this->prospect->company ?: 'your business');
     }
 
     public function content(): Content
@@ -192,7 +192,7 @@ class CampaignMail extends Mailable
 
     protected function preheader(): string
     {
-        return 'We built a website concept for ' . ($this->prospect->company ?: 'your shop') . ' — take a look.';
+        return 'We built a website concept for ' . ($this->prospect->company ?: 'your business') . ' — take a look.';
     }
 
     protected function ctaLabel(): string

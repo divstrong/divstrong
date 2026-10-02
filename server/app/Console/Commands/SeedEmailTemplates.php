@@ -90,6 +90,41 @@ class SeedEmailTemplates extends Command
                     .'is what earns the occasional late reply. Placeholders: {{ company }}.',
             ],
 
+            /*
+             * The General website campaign: the same four-step drip for any business,
+             * without the promotional products framing — our track record and the speed
+             * AI now gives us carry the pitch instead. {{ concept }} marks where the
+             * screenshot and button sit.
+             */
+            'general_preview_intro' => [
+                'name' => 'General preview · 1. The concept',
+                'subject' => 'A website concept for {{ company }}',
+                'view' => 'emails.campaign.steps.general-preview-intro',
+                'description' => 'Step 1, sent on enrollment. No price, no industry talk. '
+                    .'Placeholders: {{ company }}, {{ first_name }}, {{ preview_url }}, {{ sender_name }}.',
+            ],
+            'general_preview_nudge' => [
+                'name' => 'General preview · 2. Nudge',
+                'subject' => 'Did the concept for {{ company }} land?',
+                'view' => 'emails.campaign.steps.general-preview-nudge',
+                'description' => 'Step 2, three days later. A reminder, not a second pitch. '
+                    .'Placeholders: {{ company }}, {{ first_name }}.',
+            ],
+            'general_preview_details' => [
+                'name' => 'General preview · 3. What launching looks like',
+                'subject' => 'What it takes to put {{ company }} live',
+                'view' => 'emails.campaign.steps.general-preview-details',
+                'description' => 'Step 3, a week in, and the first email that mentions money. '
+                    .'Placeholders: {{ company }}, {{ first_name }}.',
+            ],
+            'general_preview_last' => [
+                'name' => 'General preview · 4. Last note',
+                'subject' => 'Last note on the concept for {{ company }}',
+                'view' => 'emails.campaign.steps.general-preview-last',
+                'description' => 'Step 4, two weeks in. A real close with an easy out. '
+                    .'Placeholders: {{ company }}.',
+            ],
+
             EmailTemplate::GENERAL_UPDATE => [
                 'name' => 'General Update',
                 'subject' => 'What we have been building at divStrong',

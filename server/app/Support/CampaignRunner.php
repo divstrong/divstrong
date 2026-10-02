@@ -80,7 +80,10 @@ class CampaignRunner
     /** Campaigns whose emails link to a prospect's own preview page. */
     public static function needsPreview(Campaign $campaign): bool
     {
-        return $campaign->steps()->where('template_key', 'like', 'promo_preview%')->exists();
+        return $campaign->steps()
+            ->where(fn ($q) => $q->where('template_key', 'like', 'promo_preview%')
+                ->orWhere('template_key', 'like', 'general_preview%'))
+            ->exists();
     }
 
     /**

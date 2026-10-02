@@ -1,5 +1,5 @@
 @php
-    $company = $prospect->company ?: 'your shop';
+    $company = $prospect->company ?: 'your business';
     $answeredLike = $prospect->likes_design !== null;
     $rated = $prospect->fit_rating !== null;
     $answeredInterest = $prospect->interested !== null;
@@ -99,7 +99,7 @@
 
                                     <textarea wire:model="likeComment" rows="3"
                                               class="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 outline-none transition focus:border-brand focus:ring-1 focus:ring-brand"
-                                              placeholder="It feels too corporate for our shop…"></textarea>
+                                              placeholder="It feels too corporate for us…"></textarea>
                                     @error('likeComment') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
 
                                     <button wire:click="submitLikeComment" wire:loading.attr="disabled"

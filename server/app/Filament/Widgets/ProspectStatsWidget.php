@@ -130,11 +130,14 @@ class ProspectStatsWidget extends BaseWidget
      *
      * Filament reads table filter state straight off the query string, so the tile only has
      * to name the filter and its value — no session juggling, and the URL is shareable.
+     *
+     * The key is `filters`: ListRecords binds $tableFilters with #[Url(as: 'filters')]. The
+     * v3-era `tableFilters` key is silently ignored, so the tile reloaded an unfiltered list.
      */
     protected function filterUrl(string $filter, mixed $value): string
     {
         return ProspectResource::getUrl('index', [
-            'tableFilters' => [$filter => ['value' => $value]],
+            'filters' => [$filter => ['value' => $value]],
         ]);
     }
 
