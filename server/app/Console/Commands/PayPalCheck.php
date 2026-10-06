@@ -39,14 +39,35 @@ class PayPalCheck extends Command
             return self::FAILURE;
         }
 
-        $response = Http::timeout(15)->asForm()
-            ->withBasicAuth($clientId, (string) config('paypal.client_secret'))
-            ->post("{$base}/v1/oauth2/token", ['grant_type' => 'client_credentials']);
+        $secret = (string) config('paypal.client_secret');
+
+        // Copy-paste damage: quotes or whitespace inside the value are sent to PayPal as part
+        // of the key. Raw .env is checked too, since config() may already have trimmed it.
+        foreach (['PAYPAL_CLIENT_ID' => $clientId, 'PAYPAL_CLIENT_SECRET' => $secret] as $name => $value) {
+            $raw = $this->rawEnv($name);
+            $this->line(str_pad($name . ':', 22) . strlen($value) . ' chars'
+                . ($raw !== null && $raw !== trim($raw, " \t\"'") ? '  ⚠ .env value has quotes/spaces around it' : '')
+                . (preg_match('/\s/', $value) ? '  ⚠ contains whitespace' : ''));
+        }
+
+        $response = $this->token($base, $clientId, $secret);
 
         if ($response->failed()) {
             $this->error('Keys REJECTED by ' . ($live ? 'live' : 'sandbox') . ' PayPal: '
                 . $response->status() . ' ' . ($response->json('error_description') ?? $response->json('error') ?? ''));
-            $this->line('Sandbox keys do not work in live mode and vice versa — the mode and the keys must match.');
+
+            // Try the other environment: tells "wrong kind of keys" apart from "wrong keys".
+            $otherBase = $live ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com';
+
+            if ($this->token($otherBase, $clientId, $secret)->successful()) {
+                $this->warn('These keys DO work on ' . ($live ? 'sandbox' : 'live') . ' PayPal — they are '
+                    . ($live ? 'sandbox' : 'live') . ' keys. Copy the ' . ($live ? 'Live' : 'Sandbox')
+                    . ' app\'s Client ID and Secret from developer.paypal.com (toggle at the top).');
+            } else {
+                $this->warn('They fail on both live and sandbox, so the ID and secret do not belong together.');
+                $this->line('In developer.paypal.com → Apps & Credentials → Live, open the app and copy BOTH');
+                $this->line('the Client ID and the Secret from that same app (secrets are not shared across apps).');
+            }
 
             return self::FAILURE;
         }
@@ -57,10 +78,43 @@ class PayPalCheck extends Command
         $this->info('Keys ACCEPTED by ' . ($live ? 'live' : 'sandbox') . ' PayPal'
             . ($response->json('app_id') ? ' (app ' . $response->json('app_id') . ')' : '') . '.');
 
+        // Hosting renewals use the Invoicing API, which is a separate feature on the PayPal app.
+        $invoicing = str_contains((string) $response->json('scope'), 'uri.paypal.com/services/invoicing');
+        $invoicing
+            ? $this->info('Invoicing:   enabled (hosting renewal invoices will work).')
+            : $this->warn('Invoicing:   NOT enabled — hosting renewal invoices will fail. In developer.paypal.com → Apps & Credentials → this app, switch on Invoicing.');
+
         if (! $live) {
             $this->warn('This server is in SANDBOX mode: payments here are tests and move no money.');
         }
 
         return self::SUCCESS;
+    }
+
+    private function token(string $base, string $clientId, string $secret): \Illuminate\Http\Client\Response
+    {
+        return Http::timeout(15)->asForm()
+            ->withBasicAuth($clientId, $secret)
+            ->post("{$base}/v1/oauth2/token", ['grant_type' => 'client_credentials']);
+    }
+
+    /** The value exactly as written in .env, or null if it is not there. */
+    private function rawEnv(string $name): ?string
+    {
+        $path = base_path('.env');
+
+        if (! is_readable($path)) {
+            return null;
+        }
+
+        $matches = preg_grep('/^\s*' . preg_quote($name, '/') . '\s*=/', file($path, FILE_IGNORE_NEW_LINES) ?: []);
+
+        if (count($matches) > 1) {
+            $this->warn("{$name} is defined " . count($matches) . ' times in .env — only the first one is used.');
+        }
+
+        $line = reset($matches);
+
+        return $line === false ? null : substr($line, strpos($line, '=') + 1);
     }
 }

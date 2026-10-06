@@ -18,6 +18,7 @@ class Role extends Model
             'dashboard' => 'Dashboard',
             'clients' => 'Clients',
             'proposals' => 'Proposals',
+            'hosting' => 'Hosting',
             'categories' => 'Categories',
             'services' => 'Services',
             'scope_items' => 'Scope Items',

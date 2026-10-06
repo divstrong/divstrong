@@ -26,3 +26,10 @@ Schedule::command('campaigns:dispatch')
     ->everyFifteenMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Hosting renewals: check PayPal for paid invoices (extending those terms), and — only when
+// HOSTING_AUTO_INVOICE is on — send the renewal invoices that have come due.
+Schedule::command('hosting:renewals')
+    ->dailyAt('09:00')
+    ->timezone(config('scheduling.timezone', config('app.timezone')))
+    ->withoutOverlapping();
