@@ -48,10 +48,14 @@ class PayPalInvoicing
                 'term' => $invoice['term'] ?? null,
                 'payment_term' => ['due_date' => $invoice['due_date']],
             ],
-            'invoicer' => array_filter([
+            // Sent in full every time: the API does not fall back to the business profile
+            // saved in PayPal, so anything left out here is simply missing from the invoice.
+            'invoicer' => [
                 'business_name' => config('hosting.business_name'),
+                'address' => array_filter((array) config('hosting.address')),
                 'website' => config('hosting.website'),
-            ]),
+                'logo_url' => config('hosting.logo_url'),
+            ],
             'primary_recipients' => $recipients,
             'additional_recipients' => collect($emails)->slice(1)
                 ->map(fn (string $email) => ['email_address' => $email])->values()->all(),

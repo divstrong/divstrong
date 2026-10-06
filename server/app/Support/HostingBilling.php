@@ -33,6 +33,8 @@ class HostingBilling
             throw new \RuntimeException('This hosting account is canceled.');
         }
 
+        $this->refusePlaceholders($emails);
+
         if ($emails === []) {
             throw new \RuntimeException('Add a billing email first — there is nobody to send the invoice to.');
         }
@@ -62,7 +64,7 @@ class HostingBilling
             'due_date' => $due->toDateString(),
             'item_name' => 'Annual hosting · ' . $account->domain,
             'item_description' => 'Hosting, maintenance and support, ' . $start->format('M j, Y') . ' – ' . $end->format('M j, Y'),
-            'note' => 'Thank you for extending your hosting with ' . config('hosting.business_name') . ' for another year.',
+            'note' => 'Thank you for extending your hosting with divStrong for another year.',
         ], $emails);
 
         $paymentUrl = $this->invoicing->send($created['id']);
@@ -100,6 +102,8 @@ class HostingBilling
         if (! $invoice->isOpen()) {
             throw new \RuntimeException('This invoice is ' . $invoice->status . ' — there is nothing to remind about.');
         }
+
+        $this->refusePlaceholders($emails);
 
         if ($emails === []) {
             throw new \RuntimeException('Add at least one email address.');
@@ -181,6 +185,17 @@ class HostingBilling
         }
 
         $invoice->forceFill(['status' => HostingInvoice::STATUS_CANCELED])->save();
+    }
+
+    /** @param  array<int, string>  $emails */
+    private function refusePlaceholders(array $emails): void
+    {
+        $placeholders = array_filter($emails, fn (string $e) => HostingAccount::isPlaceholderEmail($e));
+
+        if ($placeholders) {
+            throw new \RuntimeException(implode(', ', $placeholders) . ' is a placeholder from the import, not a real contact. '
+                . 'Update the client (or set a billing email on the account) first.');
+        }
     }
 
     /** @param  array<int, string>  $emails */

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * One hosted site and the term it is paid up to.
@@ -20,6 +21,12 @@ class HostingAccount extends Model
     public const STATUS_ACTIVE = 'active';
 
     public const STATUS_CANCELED = 'canceled';
+
+    /**
+     * The mailbox placeholder clients are created with (doe@their-domain.com) until the real
+     * contact is filled in. A real stranger may own that address, so it is never invoiced.
+     */
+    public const PLACEHOLDER_MAILBOX = 'doe';
 
     protected $fillable = [
         'client_id', 'name', 'domain', 'billing_email',
@@ -96,9 +103,17 @@ class HostingAccount extends Model
         return $invoice && $invoice->term_start->isSameDay($this->nextTermStart()) ? $invoice : null;
     }
 
-    /** Where invoices go: the account's own billing address, else the client's. */
+    /** Where invoices go: the account's own billing address, else the client's — never a placeholder. */
     public function billingEmails(): array
     {
-        return array_values(array_filter([$this->billing_email ?: $this->client?->email]));
+        return array_values(array_filter(
+            [$this->billing_email ?: $this->client?->email],
+            fn (?string $email) => filled($email) && ! static::isPlaceholderEmail($email),
+        ));
+    }
+
+    public static function isPlaceholderEmail(string $email): bool
+    {
+        return Str::lower(Str::before(trim($email), '@')) === self::PLACEHOLDER_MAILBOX;
     }
 }

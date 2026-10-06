@@ -45,7 +45,8 @@ class ServerLogFiles
     /** @return array<string, mixed>|null */
     public static function find(string $name): ?array
     {
-        return self::all()->firstWhere('id', $name);
+        // The name itself is accepted too, so an old link with ".log" still resolves.
+        return self::all()->first(fn (array $file) => $file['id'] === $name || $file['name'] === $name);
     }
 
     /**
@@ -107,7 +108,10 @@ class ServerLogFiles
         $counts = $size <= self::COUNTABLE_BYTES ? self::count($path) : null;
 
         return [
-            'id' => $name,
+            // The URL key, without ".log": Plesk's nginx denies any request path ending in
+            // .log (to stop log files being downloaded), so a viewer URL ending in the file
+            // name was refused with a 403 before it ever reached Laravel.
+            'id' => preg_replace('/\.log$/i', '', $name),
             'name' => $name,
             'path' => $path,
             'date' => self::dateFrom($name),

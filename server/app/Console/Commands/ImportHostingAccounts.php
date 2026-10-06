@@ -6,21 +6,32 @@ use App\Models\Client;
 use App\Models\HostingAccount;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
- * Loads hosting accounts from a CSV: name, domain, term_start, term_end, rate, total.
+ * Loads hosting accounts from a CSV of company, domain, term start, term end, rate, total.
  *
- * Each row is linked to an existing client by company, name or domain where one matches;
- * the rest import unlinked and are listed, to be assigned in the admin. Clients are never
- * created here — a client needs an email address, and a spreadsheet of domains does not
- * have one. Re-running updates accounts by domain instead of duplicating them.
+ * Columns are read by position, so the header row's wording does not matter, and "$" or
+ * thousands separators in the money columns are fine. Blank and total rows are skipped.
+ *
+ * Each row is linked to an existing client where one matches — same company, a contact
+ * email on the same domain, or a domain one typo away (winnerscirleprint.com vs
+ * winnerscircleprint.com). With --create-clients, the rest get a placeholder client
+ * ("Jane Doe", doe@their-domain) to be filled in later; placeholder addresses are never
+ * sent invoices (see HostingAccount::billingEmails()).
+ *
+ * Re-running updates accounts by domain rather than duplicating them. --dry-run shows the
+ * whole plan without writing anything.
  */
 class ImportHostingAccounts extends Command
 {
-    protected $signature = 'hosting:import {file=database/data/hosting-accounts.csv : CSV to import}';
+    protected $signature = 'hosting:import
+        {file=database/data/hosting-accounts.csv : CSV to import, relative to the app folder}
+        {--create-clients : Create a placeholder client for rows with no matching client}
+        {--dry-run : Show what would happen without changing anything}';
 
-    protected $description = 'Import hosting accounts from a CSV';
+    protected $description = 'Import hosting accounts from a CSV, linking or creating clients';
 
     public function handle(): int
     {
@@ -32,65 +43,125 @@ class ImportHostingAccounts extends Command
             return self::FAILURE;
         }
 
-        $rows = array_map('str_getcsv', file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
-        $header = array_map(fn ($h) => Str::snake(trim((string) $h)), array_shift($rows));
+        $handle = fopen($path, 'r');
+        fgetcsv($handle); // header
         $clients = Client::all();
+        $dry = (bool) $this->option('dry-run');
         $table = [];
+        $created = 0;
 
-        foreach ($rows as $line => $cells) {
-            $row = array_combine($header, array_pad($cells, count($header), ''));
-            $domain = Str::lower(preg_replace('#^https?://#i', '', rtrim(trim($row['domain']), '/')));
-            $name = trim($row['name']);
+        while (($cells = fgetcsv($handle)) !== false) {
+            [$name, $domain, $start, $end, $rate, $total] = array_pad(array_map(fn ($c) => trim((string) $c), $cells), 6, '');
+            $domain = Str::lower(preg_replace(['#^https?://#i', '#/.*$#'], '', $domain));
 
-            if ($domain === '' || $name === '') {
-                $this->warn('Row ' . ($line + 2) . ': missing name or domain — skipped.');
-
-                continue;
+            if ($name === '' || $domain === '') {
+                continue; // blank and "Total" rows
             }
 
-            $start = Carbon::parse($row['term_start']);
-            $end = Carbon::parse($row['term_end']);
-            $rate = (float) preg_replace('/[^0-9.]/', '', $row['rate']);
-            $total = (float) preg_replace('/[^0-9.]/', '', $row['total']);
+            $start = Carbon::parse($start);
+            $end = Carbon::parse($end);
+            $rate = $this->money($rate);
+            $total = $this->money($total) ?: $rate * 12;
 
-            $client = $this->matchClient($clients, $name, $domain);
+            [$client, $how] = $this->matchClient($clients, $name, $domain);
 
-            HostingAccount::updateOrCreate(['domain' => $domain], [
-                'client_id' => $client?->id,
-                'name' => $name,
-                'term_start' => $start->toDateString(),
-                'term_end' => $end->toDateString(),
-                'monthly_rate' => $rate,
-                'term_amount' => $total ?: $rate * 12,
-                'status' => HostingAccount::STATUS_ACTIVE,
-            ]);
+            if (! $client && $this->option('create-clients')) {
+                $how = 'NEW client';
+                $client = new Client([
+                    'name' => 'Jane Doe',
+                    'email' => HostingAccount::PLACEHOLDER_MAILBOX . '@' . $this->root($domain),
+                    'company' => $name,
+                    'domain' => $domain,
+                ]);
 
-            $flags = array_filter([
-                $client ? null : 'no client match',
-                $end->lt($start) ? 'END BEFORE START' : null,
-                $end->isPast() ? 'term already ended' : null,
-                abs(($total ?: $rate * 12) - $rate * 12) > 0.009 ? 'total ≠ rate × 12' : null,
-            ]);
+                if (! $dry) {
+                    $client->save();
+                    $clients->push($client);
+                }
 
-            $table[] = [$name, $domain, $start->format('n/j/Y') . ' – ' . $end->format('n/j/Y'), '$' . number_format($total ?: $rate * 12, 2), $client ? ($client->company ?: $client->name) : '—', implode(', ', $flags)];
+                $created++;
+            }
+
+            if (! $dry) {
+                HostingAccount::updateOrCreate(['domain' => $domain], [
+                    'client_id' => $client?->id,
+                    'name' => $name,
+                    'term_start' => $start->toDateString(),
+                    'term_end' => $end->toDateString(),
+                    'monthly_rate' => $rate,
+                    'term_amount' => $total,
+                    'status' => HostingAccount::STATUS_ACTIVE,
+                ]);
+            }
+
+            $table[] = [
+                $name,
+                $domain,
+                $start->format('n/j/Y') . ' – ' . $end->format('n/j/Y'),
+                '$' . number_format($total, 2),
+                $client ? trim(($client->company ?: '') . ' · ' . $client->name, ' ·') . " ({$how})" : '— none',
+                implode(', ', array_filter([
+                    $end->lt($start) ? 'END BEFORE START' : null,
+                    $end->isPast() ? 'term already ended' : null,
+                    abs($total - $rate * 12) > 0.009 ? 'total ≠ rate × 12' : null,
+                ])),
+            ];
         }
 
+        fclose($handle);
+
         $this->table(['Account', 'Domain', 'Term', 'Total', 'Client', 'Check'], $table);
-        $this->info(count($table) . ' account(s) imported or updated. Fix anything under "Check" in Admin → Hosting.');
+
+        $this->info(($dry ? '[dry run — nothing saved] ' : '')
+            . count($table) . ' hosting account(s) ' . ($dry ? 'would be ' : '') . 'imported; '
+            . $created . ' placeholder client(s) ' . ($dry ? 'would be ' : '') . 'created.');
+
+        if ($created && ! $this->option('create-clients')) {
+            $this->line('Re-run with --create-clients to create clients for the unmatched rows.');
+        }
 
         return self::SUCCESS;
     }
 
-    private function matchClient($clients, string $name, string $domain): ?Client
+    /** @return array{0: ?Client, 1: string} */
+    private function matchClient(Collection $clients, string $name, string $domain): array
     {
         $norm = fn (?string $s) => Str::lower(preg_replace('/[^a-z0-9]/i', '', (string) $s));
-        $bare = fn (?string $d) => Str::lower(preg_replace(['#^https?://#i', '#^www\.#i', '#/.*$#'], '', trim((string) $d)));
+        $root = $this->root($domain);
+        $rootOf = fn (Client $c) => array_filter([
+            $c->domain ? $this->root($c->domain) : null,
+            str_contains((string) $c->email, '@') ? $this->root(Str::after($c->email, '@')) : null,
+        ]);
 
-        // The registrable part, so app.awhearn.com matches a client on awhearn.com.
-        $root = implode('.', array_slice(explode('.', $bare($domain)), -2));
+        if ($c = $clients->first(fn (Client $c) => $norm($c->company) !== '' && $norm($c->company) === $norm($name))) {
+            return [$c, 'same company'];
+        }
 
-        return $clients->first(fn (Client $c) => $norm($c->company) !== '' && $norm($c->company) === $norm($name))
-            ?? $clients->first(fn (Client $c) => filled($c->domain) && implode('.', array_slice(explode('.', $bare($c->domain)), -2)) === $root)
-            ?? $clients->first(fn (Client $c) => $norm($c->name) === $norm($name));
+        if ($c = $clients->first(fn (Client $c) => in_array($root, $rootOf($c), true))) {
+            return [$c, 'same domain'];
+        }
+
+        // One slip either way, on a name long enough that it is not a coincidence.
+        $near = fn (Client $c) => collect($rootOf($c))->contains(fn (string $r) => strlen($r) > 10 && $r !== $root
+            && levenshtein(Str::before($r, '.'), Str::before($root, '.')) <= 2);
+
+        if ($c = $clients->first($near)) {
+            return [$c, 'near-match domain — check'];
+        }
+
+        return [null, ''];
+    }
+
+    /** The registrable part of a host: app.awhearn.com → awhearn.com. */
+    private function root(string $host): string
+    {
+        $host = Str::lower(preg_replace(['#^https?://#i', '#^www\.#i', '#[/:].*$#'], '', trim($host)));
+
+        return implode('.', array_slice(explode('.', $host), -2));
+    }
+
+    private function money(string $value): float
+    {
+        return (float) preg_replace('/[^0-9.]/', '', $value);
     }
 }
