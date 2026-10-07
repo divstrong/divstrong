@@ -136,6 +136,10 @@ return [
         // Where the emails send people to book time.
         'schedule_url' => env('OUTREACH_SCHEDULE_URL', 'https://divstrong.com/contact'),
 
+        // How the drip campaign emails are signed: "Best, / Jim Doyle, / Founder".
+        'signature_name' => env('OUTREACH_SIGNATURE_NAME', 'Jim Doyle'),
+        'signature_title' => env('OUTREACH_SIGNATURE_TITLE', 'Founder'),
+
         // Who hears about it when a prospect answers the questions on their preview page.
         'feedback_email' => env('PREVIEW_FEEDBACK_EMAIL', 'jim@divstrong.com'),
 

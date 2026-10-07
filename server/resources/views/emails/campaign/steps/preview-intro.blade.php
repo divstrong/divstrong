@@ -14,14 +14,15 @@
 </p>
 
 <p style="margin:0; color:#4b5563; font-size:16px; line-height:1.65;">
-    We created a draft of a real, working site — not a mockup. Nothing about it is fixed: the
-    words, the colors, the photography and the pages are all yours to change.
+    We created a draft of a real, working website for your business — not a mockup. It still
+    needs more work to be production ready, but I wanted to share an example of what's possible
+    in an AI-enabled world:
 </p>
 
 <p>@{{ concept }}</p>
 
 <p style="margin:0; color:#4b5563; font-size:16px; line-height:1.65;">
     We have been in business since 2009, and we are shipping better work in less time than at any
-    point in that run. Have a look and tell me what you think — there are two buttons on the page
-    for exactly that. No pressure at all; I just thought you might enjoy seeing what is possible.
+    point in the past twenty years. Would love to get some feedback on the concept and ideally
+    schedule an introductory call if interested...
 </p>

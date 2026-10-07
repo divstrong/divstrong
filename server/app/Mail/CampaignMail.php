@@ -47,7 +47,7 @@ class CampaignMail extends Mailable
     /** Copy written after the {{ concept }} marker, rendered below the card. */
     protected string $afterConceptHtml = '';
 
-    public const FALLBACK_SENDER_NAME = 'Jim Cotter';
+    public const FALLBACK_SENDER_NAME = 'Jim Doyle';
 
     public const FALLBACK_SENDER_EMAIL = 'jim@divstrong.com';
 
@@ -272,11 +272,20 @@ class CampaignMail extends Mailable
             . e($firstName) . ',</p>';
     }
 
+    /**
+     * The sign-off. A fixed signer from config rather than whoever pressed the button: the
+     * campaign is pitched in the founder's voice, and a user account named "Jim" signing
+     * cold mail reads as half-finished.
+     */
     public static function signatureHtml(string $senderName): string
     {
+        $name = config('prospecting.outreach.signature_name') ?: $senderName;
+        $title = config('prospecting.outreach.signature_title');
+
         return '<p style="margin:28px 0 0; color:#4b5563; font-size:16px; line-height:1.65;">Best,<br />'
-            . '<strong style="color:#0f1115;">' . e($senderName) . '</strong><br />'
-            . '<span style="color:#8b919c; font-size:14px;">divStrong · building since 2009</span></p>';
+            . '<strong style="color:#0f1115;">' . e($name) . ($title ? ',' : '') . '</strong>'
+            . ($title ? '<br />' . e($title) : '')
+            . '</p>';
     }
 
     public function attachments(): array
