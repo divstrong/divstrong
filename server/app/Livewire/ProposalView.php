@@ -552,60 +552,76 @@ class ProposalView extends Component
         $this->proposal->refresh();
     }
 
-    public function addCostItem(): void
+    /*
+     * The Investment table runs in the browser and calls these to persist: each change is
+     * already on screen before the request goes out. add/duplicate return the new row so
+     * the table can swap its temporary id for the real one.
+     */
+
+    public function addCostItem(string $description = 'New Line Item', float $quantity = 1, float $unitPrice = 0): ?array
     {
-        if (! $this->isAdmin) return;
+        if (! $this->isAdmin) return null;
 
         $maxSort = $this->proposal->costItems()->max('sort_order') ?? 0;
+        $quantity = max(0, round($quantity, 2));
 
-        $this->proposal->costItems()->create([
-            'description' => 'New Line Item',
-            'quantity' => 1,
-            'unit_price' => 0,
-            'amount' => 0,
+        $item = $this->proposal->costItems()->create([
+            'description' => trim($description) !== '' ? trim($description) : 'New Line Item',
+            'quantity' => $quantity,
+            'unit_price' => $unitPrice,
+            'amount' => round($quantity * $unitPrice, 2),
             'sort_order' => $maxSort + 1,
         ]);
 
         $this->proposal->load('costItems');
+
+        return $item->toRow();
     }
 
-    public function updateCostItem(int $id, string $description, int $quantity, float $unitPrice): void
+    public function updateCostItem(int $id, string $description, float $quantity, float $unitPrice): void
     {
         if (! $this->isAdmin) return;
 
         $item = $this->proposal->costItems()->find($id);
         if ($item) {
+            $quantity = max(0, round($quantity, 2));
+
             $item->update([
                 'description' => $description,
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
-                'amount' => $quantity * $unitPrice,
+                'amount' => round($quantity * $unitPrice, 2),
             ]);
             $this->proposal->load('costItems');
         }
     }
 
-    public function duplicateCostItem(int $id): void
+    public function duplicateCostItem(int $id): ?array
     {
-        if (! $this->isAdmin) return;
+        if (! $this->isAdmin) return null;
 
         $item = $this->proposal->costItems()->find($id);
-        if ($item) {
-            $this->proposal->costItems()->create([
-                'description' => $item->description,
-                'quantity' => $item->quantity,
-                'unit_price' => $item->unit_price,
-                'amount' => $item->amount,
-                'sort_order' => $item->sort_order + 1,
-            ]);
+        if (! $item) return null;
 
-            $allItems = $this->proposal->costItems()->orderBy('sort_order')->get();
-            foreach ($allItems as $index => $costItem) {
-                $costItem->update(['sort_order' => $index]);
-            }
+        $copy = $this->proposal->costItems()->create([
+            'description' => $item->description,
+            'quantity' => $item->quantity,
+            'unit_price' => $item->unit_price,
+            'amount' => $item->amount,
+            'sort_order' => $item->sort_order,
+        ]);
 
-            $this->proposal->load('costItems');
+        // Straight after the original, which is where the table already shows it.
+        $ordered = $this->proposal->costItems()->orderBy('sort_order')->orderBy('id')->pluck('id')->reject(fn ($i) => $i === $copy->id)->values();
+        $ordered->splice($ordered->search($item->id) + 1, 0, [$copy->id]);
+
+        foreach ($ordered as $index => $costId) {
+            $this->proposal->costItems()->where('id', $costId)->update(['sort_order' => $index]);
         }
+
+        $this->proposal->load('costItems');
+
+        return $copy->toRow();
     }
 
     public function deleteCostItem(int $id): void

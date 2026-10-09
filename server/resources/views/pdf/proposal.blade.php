@@ -215,7 +215,7 @@
                 @foreach($proposal->costItems as $cost)
                     <tr>
                         <td>{{ $cost->description }}</td>
-                        <td class="num">{{ $cost->quantity }}</td>
+                        <td class="num">{{ $cost->displayQuantity() }}</td>
                         <td class="num">${{ number_format((float) $cost->unit_price, 2) }}</td>
                         <td class="num">${{ number_format((float) $cost->amount, 2) }}</td>
                     </tr>

@@ -158,11 +158,11 @@ class ProposalController extends Controller
     {
         $data = $request->validate([
             'description' => ['required', 'string', 'max:255'],
-            'quantity' => ['required', 'integer', 'min:1'],
+            'quantity' => ['required', 'numeric', 'min:0.01'],
             'unit_price' => ['required', 'numeric', 'min:0'],
         ]);
 
-        $data['amount'] = $data['quantity'] * $data['unit_price'];
+        $data['amount'] = round($data['quantity'] * $data['unit_price'], 2);
         $data['sort_order'] = $proposal->costItems()->max('sort_order') + 1;
         $item = $proposal->costItems()->create($data);
 
@@ -174,13 +174,13 @@ class ProposalController extends Controller
         $item = $proposal->costItems()->findOrFail($itemId);
         $data = $request->validate([
             'description' => ['nullable', 'string', 'max:255'],
-            'quantity' => ['nullable', 'integer', 'min:1'],
+            'quantity' => ['nullable', 'numeric', 'min:0.01'],
             'unit_price' => ['nullable', 'numeric', 'min:0'],
         ]);
         if (isset($data['quantity']) || isset($data['unit_price'])) {
             $qty = $data['quantity'] ?? $item->quantity;
             $price = $data['unit_price'] ?? $item->unit_price;
-            $data['amount'] = $qty * $price;
+            $data['amount'] = round($qty * $price, 2);
         }
         $item->update($data);
 

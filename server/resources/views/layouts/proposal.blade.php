@@ -54,6 +54,9 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     @stack('scripts')
     @livewireScripts
-    <script src="https://www.divstrong.com/bug-reporter.js" data-site-key="bk_mXPKI0XMTPeSgOSWHqfhcwUrNwwpcgwSYnDayfsy" defer></script>
+    {{-- Staff only: the client opening their proposal must never see a bug-report button. --}}
+    @auth
+        <script src="https://www.divstrong.com/bug-reporter.js" data-site-key="bk_mXPKI0XMTPeSgOSWHqfhcwUrNwwpcgwSYnDayfsy" defer></script>
+    @endauth
 </body>
 </html>

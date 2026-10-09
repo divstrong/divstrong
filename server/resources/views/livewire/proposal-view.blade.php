@@ -1892,7 +1892,7 @@
                 <h2 class="text-3xl font-bold text-gray-900">Investment</h2>
 
                 @if($isAdmin)
-                    <button wire:click="addCostItem"
+                    <button @click="$dispatch('investment-add')"
                             class="ml-auto inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand border border-brand/30 rounded-lg hover:bg-brand hover:text-white transition-colors cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                         Add Row
@@ -1937,54 +1937,142 @@
                 @endif
             @endif
 
-            {{-- Cost table --}}
-            <div x-data="{
-                    editingCostId: null,
-                    editDesc: '',
-                    editQty: 1,
-                    editPrice: 0,
-                    deleteCostId: null,
-                    deleteCostTitle: '',
-                    costDragId: null,
-                    costDragOver: null,
-                    startCostEdit(id, desc, qty, price) {
-                        this.editingCostId = id;
-                        this.editDesc = desc;
-                        this.editQty = qty;
-                        this.editPrice = price;
+            {{-- Cost table.
+                 Runs in the browser: adding, editing, duplicating, deleting and dragging rows
+                 change the table and its totals immediately, and the server is told in the
+                 background. wire:ignore keeps Livewire's re-render from redrawing the rows
+                 underneath an edit in progress — nothing else on this page changes them, and
+                 a reload always starts again from the server's copy. --}}
+            <div wire:ignore
+                 x-data="{
+                    isAdmin: @js($isAdmin),
+                    rows: @js($proposal->costItems->map(fn ($c) => $c->toRow())->values()),
+                    // Clients see the saved discount; admins see it change as they edit it.
+                    savedDiscount: @js(['enabled' => (bool) $proposal->discount_enabled, 'type' => $proposal->discount_type ?? 'percent', 'value' => (float) ($proposal->discount_value ?? 0)]),
+                    seq: 0,
+                    editingKey: null,
+                    draft: { description: '', quantity: 1, unit_price: 0 },
+                    deleteKey: null,
+                    dragKey: null,
+                    dragStartOrder: '',
+
+                    init() {
+                        this.rows = this.rows.map(r => ({ ...r, key: 'r' + r.id }));
                     },
-                    saveCostEdit() {
-                        if (this.editingCostId && this.editDesc.trim()) {
-                            $wire.updateCostItem(this.editingCostId, this.editDesc, parseInt(this.editQty), parseFloat(this.editPrice));
+
+                    // ---- money ----
+                    round2(n) { return Math.round((Number(n) || 0) * 100) / 100; },
+                    amount(r) { return this.round2(r.quantity * r.unit_price); },
+                    money(n) {
+                        n = this.round2(n);
+                        const cents = Math.abs(n % 1) > 0.0001;
+                        return (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: 2 });
+                    },
+                    qty(q) { return String(this.round2(q)); },
+                    get subtotal() { return this.round2(this.rows.reduce((sum, r) => sum + this.amount(r), 0)); },
+                    get discountSettings() {
+                        return this.isAdmin
+                            ? { enabled: $wire.editingDiscountEnabled, type: $wire.editingDiscountType, value: $wire.editingDiscountValue }
+                            : this.savedDiscount;
+                    },
+                    get discount() {
+                        const d = this.discountSettings;
+                        if (! d.enabled) return 0;
+                        const value = Number(d.value) || 0;
+                        if (value <= 0) return 0;
+                        return d.type === 'percent'
+                            ? this.round2(this.subtotal * value / 100)
+                            : Math.min(value, this.subtotal);
+                    },
+                    get total() { return this.round2(this.subtotal - this.discount); },
+
+                    // ---- persistence: every call waits for the row's id if it is still being created ----
+                    persist(row, call) {
+                        row.ready = (row.ready || Promise.resolve()).then(() => call(row.id)).catch(() => {});
+                        return row.ready;
+                    },
+                    savedOrder() { return this.rows.filter(r => r.id).map(r => r.id); },
+
+                    // ---- editing ----
+                    edit(row) {
+                        this.editingKey = row.key;
+                        this.draft = { description: row.isNew ? '' : row.description, quantity: row.quantity, unit_price: row.unit_price };
+                        this.$nextTick(() => this.$root.querySelector('[data-edit-desc]')?.focus());
+                    },
+                    save() {
+                        const row = this.rows.find(r => r.key === this.editingKey);
+                        if (! row) return;
+                        const description = this.draft.description.trim();
+                        if (! description) { this.$root.querySelector('[data-edit-desc]')?.focus(); return; }
+
+                        row.description = description;
+                        row.quantity = Math.max(0, this.round2(String(this.draft.quantity).replace(/[^0-9.]/g, '')));
+                        row.unit_price = Math.max(0, this.round2(String(this.draft.unit_price).replace(/[^0-9.]/g, '')));
+                        this.editingKey = null;
+
+                        if (row.isNew) {
+                            row.isNew = false;
+                            row.ready = $wire.addCostItem(row.description, row.quantity, row.unit_price)
+                                .then(saved => { if (saved) row.id = saved.id; });
+                        } else {
+                            this.persist(row, id => $wire.updateCostItem(id, row.description, row.quantity, row.unit_price));
                         }
-                        this.editingCostId = null;
                     },
-                    confirmCostDelete(id, title) {
-                        this.deleteCostId = id;
-                        this.deleteCostTitle = title;
+                    cancel() {
+                        const row = this.rows.find(r => r.key === this.editingKey);
+                        this.editingKey = null;
+                        // A row that was never saved simply goes away.
+                        if (row?.isNew) this.rows = this.rows.filter(r => r !== row);
                     },
-                    executeCostDelete() {
-                        if (this.deleteCostId) {
-                            $wire.deleteCostItem(this.deleteCostId);
-                        }
-                        this.deleteCostId = null;
+                    add() {
+                        if (this.editingKey) this.save();
+                        const row = { id: null, key: 'n' + (++this.seq), description: '', quantity: 1, unit_price: 0, isNew: true };
+                        this.rows.push(row);
+                        this.edit(row);
                     },
-                    handleCostDrop(e, targetId) {
-                        this.costDragOver = null;
-                        const sourceId = parseInt(e.dataTransfer.getData('cost-item'));
-                        if (!sourceId || sourceId === targetId) return;
-                        const allRows = document.querySelectorAll('[data-cost-id]');
-                        const ordered = Array.from(allRows).map(el => parseInt(el.dataset.costId));
-                        const fromIdx = ordered.indexOf(sourceId);
-                        const toIdx = ordered.indexOf(targetId);
-                        ordered.splice(fromIdx, 1);
-                        ordered.splice(toIdx, 0, sourceId);
-                        $wire.reorderCostItems(ordered);
-                    }
-                 }">
+                    duplicate(row) {
+                        const copy = { ...row, id: null, key: 'n' + (++this.seq), ready: null };
+                        this.rows.splice(this.rows.indexOf(row) + 1, 0, copy);
+                        copy.ready = (row.ready || Promise.resolve())
+                            .then(() => $wire.duplicateCostItem(row.id))
+                            .then(saved => { if (saved) copy.id = saved.id; });
+                    },
+                    confirmDelete(row) { this.deleteKey = row.key; },
+                    get deleteTitle() { return this.rows.find(r => r.key === this.deleteKey)?.description ?? ''; },
+                    remove() {
+                        const row = this.rows.find(r => r.key === this.deleteKey);
+                        this.deleteKey = null;
+                        if (! row) return;
+                        this.rows = this.rows.filter(r => r !== row);
+                        this.persist(row, id => id && $wire.deleteCostItem(id));
+                    },
+
+                    // ---- drag to reorder: rows move as you drag, saved once on drop ----
+                    dragStart(row, e) {
+                        this.dragKey = row.key;
+                        this.dragStartOrder = this.rows.map(r => r.key).join();
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', row.key);
+                    },
+                    dragOver(row) {
+                        if (! this.dragKey || this.dragKey === row.key) return;
+                        const from = this.rows.findIndex(r => r.key === this.dragKey);
+                        const to = this.rows.indexOf(row);
+                        const [moved] = this.rows.splice(from, 1);
+                        this.rows.splice(to, 0, moved);
+                    },
+                    dragEnd() {
+                        if (! this.dragKey) return;
+                        this.dragKey = null;
+                        if (this.rows.map(r => r.key).join() === this.dragStartOrder) return;
+                        // Wait for any row still being created, so its id is in the order.
+                        Promise.all(this.rows.map(r => r.ready)).then(() => $wire.reorderCostItems(this.savedOrder()));
+                    },
+                 }"
+                 @investment-add.window="add()">
 
                 {{-- Delete confirmation modal --}}
-                <div x-show="deleteCostId" x-cloak
+                <div x-show="deleteKey" x-cloak
                      x-transition:enter="transition ease-out duration-200"
                      x-transition:enter-start="opacity-0"
                      x-transition:enter-end="opacity-100"
@@ -1992,23 +2080,20 @@
                      x-transition:leave-start="opacity-100"
                      x-transition:leave-end="opacity-0"
                      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-                     @keydown.escape.window="deleteCostId = null">
-                    <div @click.outside="deleteCostId = null"
-                         x-transition:enter="transition ease-out duration-200"
-                         x-transition:enter-start="opacity-0 scale-95"
-                         x-transition:enter-end="opacity-100 scale-100"
+                     @keydown.escape.window="deleteKey = null">
+                    <div @click.outside="deleteKey = null"
                          class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
                         <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                         </div>
                         <h3 class="text-lg font-bold text-gray-900 mb-1">Remove Line Item</h3>
-                        <p class="text-sm text-gray-500 mb-6">Are you sure you want to remove <span class="font-medium text-gray-700" x-text="deleteCostTitle"></span>? This cannot be undone.</p>
+                        <p class="text-sm text-gray-500 mb-6">Are you sure you want to remove <span class="font-medium text-gray-700" x-text="deleteTitle"></span>? This cannot be undone.</p>
                         <div class="flex items-center gap-3">
-                            <button @click="deleteCostId = null"
+                            <button @click="deleteKey = null"
                                     class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
                                 Cancel
                             </button>
-                            <button @click="executeCostDelete()"
+                            <button @click="remove()"
                                     class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-gray-900 transition-colors cursor-pointer">
                                 Remove
                             </button>
@@ -2029,153 +2114,127 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
-                            @foreach($proposal->costItems as $index => $item)
-                            <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50' }} group/row hover:bg-gray-50 transition-colors"
-                                data-cost-id="{{ $item->id }}"
-                                @if($isAdmin)
-                                draggable="true"
-                                @dragstart="$event.dataTransfer.setData('cost-item', '{{ $item->id }}'); $event.dataTransfer.effectAllowed = 'move'"
-                                @dragover.prevent="costDragOver = {{ $item->id }}"
-                                @dragleave="costDragOver = null"
-                                @drop.prevent="handleCostDrop($event, {{ $item->id }})"
-                                :class="{ '!border-brand !border-dashed': costDragOver === {{ $item->id }} }"
-                                @endif>
+                            <template x-for="(row, index) in rows" :key="row.key">
+                                <tr class="group/row hover:bg-gray-50 transition-colors"
+                                    :class="{
+                                        'bg-white': index % 2 === 0,
+                                        'bg-gray-50/50': index % 2 === 1,
+                                        'opacity-40': dragKey === row.key,
+                                    }"
+                                    @if($isAdmin)
+                                    :draggable="editingKey !== row.key"
+                                    @dragstart="dragStart(row, $event)"
+                                    @dragover.prevent="dragOver(row)"
+                                    @drop.prevent="dragEnd()"
+                                    @dragend="dragEnd()"
+                                    @endif>
 
-                                {{-- Drag handle --}}
-                                @if($isAdmin)
-                                <td class="pl-3 pr-0 py-4">
-                                    <span class="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 opacity-0 group-hover/row:opacity-100 transition-opacity">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
-                                    </span>
-                                </td>
-                                @endif
-
-                                {{-- View mode --}}
-                                <template x-if="editingCostId !== {{ $item->id }}">
-                                    <td class="px-3 sm:px-6 py-4 text-gray-900 {{ $isAdmin ? 'cursor-pointer' : '' }}"
-                                        @if($isAdmin) @click="startCostEdit({{ $item->id }}, @js($item->description), {{ $item->quantity }}, {{ $item->unit_price }})" @endif>
-                                        {{ $item->description }}
+                                    @if($isAdmin)
+                                    <td class="pl-3 pr-0 py-4">
+                                        <span class="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 opacity-0 group-hover/row:opacity-100 transition-opacity">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                                        </span>
                                     </td>
-                                </template>
-                                <template x-if="editingCostId !== {{ $item->id }}">
-                                    <td class="px-2 sm:px-6 py-4 text-center text-gray-500">{{ $item->quantity }}</td>
-                                </template>
-                                <template x-if="editingCostId !== {{ $item->id }}">
-                                    <td class="px-2 sm:px-6 py-4 text-center text-gray-500">${{ number_format($item->unit_price, 0) }}</td>
-                                </template>
-                                <template x-if="editingCostId !== {{ $item->id }}">
-                                    <td class="px-3 sm:px-6 py-4 text-right text-gray-900 font-semibold">${{ number_format($item->amount, 0) }}</td>
-                                </template>
+                                    @endif
 
-                                {{-- Edit mode --}}
-                                <template x-if="editingCostId === {{ $item->id }}">
-                                    <td class="px-4 py-2">
-                                        <input type="text" x-model="editDesc"
-                                               @keydown.enter="saveCostEdit()" @keydown.escape="editingCostId = null"
+                                    {{-- View mode --}}
+                                    <td x-show="editingKey !== row.key"
+                                        class="px-3 sm:px-6 py-4 text-gray-900 {{ $isAdmin ? 'cursor-pointer' : '' }}"
+                                        @if($isAdmin) @click="edit(row)" @endif
+                                        x-text="row.description"></td>
+                                    <td x-show="editingKey !== row.key" class="px-2 sm:px-6 py-4 text-center text-gray-500" x-text="qty(row.quantity)"></td>
+                                    <td x-show="editingKey !== row.key" class="px-2 sm:px-6 py-4 text-center text-gray-500" x-text="money(row.unit_price)"></td>
+                                    <td x-show="editingKey !== row.key" class="px-3 sm:px-6 py-4 text-right text-gray-900 font-semibold" x-text="money(amount(row))"></td>
+
+                                    @if($isAdmin)
+                                    {{-- Edit mode: Enter saves, Escape cancels, the amount updates as you type --}}
+                                    <td x-show="editingKey === row.key" class="px-4 py-2">
+                                        <input type="text" x-model="draft.description" data-edit-desc x-show="editingKey === row.key"
+                                               @keydown.enter.prevent="save()" @keydown.escape="cancel()"
                                                class="w-full text-sm text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none"
                                                placeholder="Service description">
                                     </td>
-                                </template>
-                                <template x-if="editingCostId === {{ $item->id }}">
-                                    <td class="px-2 py-2">
-                                        <input type="number" x-model="editQty" min="1"
-                                               @keydown.enter="saveCostEdit()" @keydown.escape="editingCostId = null"
+                                    <td x-show="editingKey === row.key" class="px-2 py-2">
+                                        <input type="number" x-model="draft.quantity" min="0" step="any" inputmode="decimal"
+                                               @keydown.enter.prevent="save()" @keydown.escape="cancel()"
                                                class="w-20 text-sm text-center text-gray-900 bg-white border border-gray-200 rounded-lg px-2 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
                                     </td>
-                                </template>
-                                <template x-if="editingCostId === {{ $item->id }}">
-                                    <td class="px-2 py-2">
-                                        <input type="number" x-model="editPrice" min="0" step="1"
-                                               @keydown.enter="saveCostEdit()" @keydown.escape="editingCostId = null"
+                                    <td x-show="editingKey === row.key" class="px-2 py-2">
+                                        <input type="number" x-model="draft.unit_price" min="0" step="any" inputmode="decimal"
+                                               @keydown.enter.prevent="save()" @keydown.escape="cancel()"
                                                class="w-28 text-sm text-right text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none"
                                                placeholder="0">
                                     </td>
-                                </template>
-                                <template x-if="editingCostId === {{ $item->id }}">
-                                    <td class="px-4 py-2 text-right">
-                                        <button @click="saveCostEdit()"
+                                    <td x-show="editingKey === row.key" class="px-3 sm:px-6 py-2 text-right text-gray-900 font-semibold whitespace-nowrap"
+                                        x-text="money(round2(draft.quantity) * round2(draft.unit_price))"></td>
+                                    <td x-show="editingKey === row.key" class="px-3 py-2 text-right whitespace-nowrap">
+                                        <button @click="save()"
                                                 class="px-3 py-1.5 bg-brand text-white text-xs font-medium rounded-lg hover:bg-gray-900 transition-colors cursor-pointer">Save</button>
+                                        <button @click="cancel()" title="Cancel (Esc)"
+                                                class="ml-1 p-1 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer align-middle">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
                                     </td>
-                                </template>
 
-                                {{-- Actions --}}
-                                @if($isAdmin)
-                                <template x-if="editingCostId !== {{ $item->id }}">
-                                    <td class="px-3 py-4">
+                                    {{-- Actions --}}
+                                    <td x-show="editingKey !== row.key" class="px-3 py-4">
                                         <div class="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity justify-end">
-                                            <button wire:click="duplicateCostItem({{ $item->id }})"
-                                                    title="Duplicate"
+                                            <button @click="duplicate(row)" title="Duplicate"
                                                     class="p-1.5 text-gray-300 hover:text-brand transition-colors cursor-pointer">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                                             </button>
-                                            <button @click="startCostEdit({{ $item->id }}, @js($item->description), {{ $item->quantity }}, {{ $item->unit_price }})"
-                                                    title="Edit"
+                                            <button @click="edit(row)" title="Edit"
                                                     class="p-1.5 text-gray-300 hover:text-brand transition-colors cursor-pointer">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                             </button>
-                                            <button @click="confirmCostDelete({{ $item->id }}, @js($item->description))"
-                                                    title="Delete"
+                                            <button @click="confirmDelete(row)" title="Delete"
                                                     class="p-1.5 text-gray-300 hover:text-red-500 transition-colors cursor-pointer">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                             </button>
                                         </div>
                                     </td>
-                                </template>
-                                @endif
+                                    @endif
+                                </tr>
+                            </template>
+
+                            @if($isAdmin)
+                            <tr x-show="rows.length === 0">
+                                <td colspan="6" class="px-6 py-8 text-center">
+                                    <button @click="add()" class="text-sm text-gray-400 hover:text-brand transition-colors cursor-pointer">+ Add the first line item</button>
+                                </td>
                             </tr>
-                            @endforeach
+                            @endif
                         </tbody>
                         <tfoot>
-                            @if($proposal->discount_enabled && $proposal->discount_amount > 0)
-                                {{-- Subtotal row --}}
-                                <tr class="border-t border-gray-200">
-                                    <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-3 sm:px-6 py-3 text-right">
-                                        <span class="text-gray-600 font-medium">Subtotal</span>
-                                    </td>
-                                    <td class="px-3 sm:px-6 py-3 text-right">
-                                        <span class="text-gray-600 font-medium text-lg">${{ number_format($proposal->subtotal, 0) }}</span>
-                                    </td>
-                                    @if($isAdmin)<td></td>@endif
-                                </tr>
-
-                                {{-- Discount row --}}
-                                <tr class="border-t border-gray-100">
-                                    <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-3 sm:px-6 py-3 text-right">
-                                        <span class="text-green-600 font-medium">
-                                            Discount
-                                            @if($proposal->discount_type === 'percent')
-                                                ({{ number_format($proposal->discount_value, 0) }}%)
-                                            @endif
-                                        </span>
-                                    </td>
-                                    <td class="px-3 sm:px-6 py-3 text-right">
-                                        <span class="text-green-600 font-medium text-lg">(${{ number_format($proposal->discount_amount, 0) }})</span>
-                                    </td>
-                                    @if($isAdmin)<td></td>@endif
-                                </tr>
-
-                                {{-- Total row --}}
-                                <tr class="bg-gray-50 border-t-2 border-gray-200">
-                                    <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-3 sm:px-6 py-5 text-right">
-                                        <span class="text-gray-900 font-bold text-lg">Total</span>
-                                    </td>
-                                    <td class="px-3 sm:px-6 py-5 text-right">
-                                        <span class="text-gray-900 font-bold text-xl sm:text-2xl">${{ number_format($proposal->total, 0) }}</span>
-                                    </td>
-                                    @if($isAdmin)<td></td>@endif
-                                </tr>
-                            @else
-                                {{-- No discount: single Total row --}}
-                                <tr class="bg-gray-50 border-t-2 border-gray-200">
-                                    <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-3 sm:px-6 py-5 text-right">
-                                        <span class="text-gray-900 font-bold text-lg">Total</span>
-                                    </td>
-                                    <td class="px-3 sm:px-6 py-5 text-right">
-                                        <span class="text-gray-900 font-bold text-xl sm:text-2xl">${{ number_format($proposal->subtotal, 0) }}</span>
-                                    </td>
-                                    @if($isAdmin)<td></td>@endif
-                                </tr>
-                            @endif
+                            <tr x-show="discount > 0" class="border-t border-gray-200">
+                                <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-3 sm:px-6 py-3 text-right">
+                                    <span class="text-gray-600 font-medium">Subtotal</span>
+                                </td>
+                                <td class="px-3 sm:px-6 py-3 text-right">
+                                    <span class="text-gray-600 font-medium text-lg" x-text="money(subtotal)"></span>
+                                </td>
+                                @if($isAdmin)<td></td>@endif
+                            </tr>
+                            <tr x-show="discount > 0" class="border-t border-gray-100">
+                                <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-3 sm:px-6 py-3 text-right">
+                                    <span class="text-green-600 font-medium">
+                                        Discount<span x-show="discountSettings.type === 'percent'" x-text="' (' + qty(discountSettings.value) + '%)'"></span>
+                                    </span>
+                                </td>
+                                <td class="px-3 sm:px-6 py-3 text-right">
+                                    <span class="text-green-600 font-medium text-lg" x-text="'(' + money(discount) + ')'"></span>
+                                </td>
+                                @if($isAdmin)<td></td>@endif
+                            </tr>
+                            <tr class="bg-gray-50 border-t-2 border-gray-200">
+                                <td colspan="{{ $isAdmin ? 4 : 3 }}" class="px-3 sm:px-6 py-5 text-right">
+                                    <span class="text-gray-900 font-bold text-lg">Total</span>
+                                </td>
+                                <td class="px-3 sm:px-6 py-5 text-right">
+                                    <span class="text-gray-900 font-bold text-xl sm:text-2xl" x-text="money(total)"></span>
+                                </td>
+                                @if($isAdmin)<td></td>@endif
+                            </tr>
                         </tfoot>
                     </table>
                 </div>

@@ -535,15 +535,25 @@ class ProposalResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            // Cost items for the Total column's discount maths, and their sum for sorting by it.
+            ->modifyQueryUsing(fn (Builder $query) => $query->with('costItems')->withSum('costItems', 'amount'))
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(50)
             ->columns([
                 Tables\Columns\TextColumn::make('client_name')
                     ->label('Client')
-                    ->searchable()
+                    ->weight('medium')
+                    ->description(fn (Proposal $record): ?string => $record->client_company ?: null)
+                    ->searchable(['client_name', 'client_company'])
                     ->sortable(),
-                Tables\Columns\TextColumn::make('client_company')
-                    ->label('Company')
-                    ->searchable()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('total')
+                    ->label('Total')
+                    ->state(fn (Proposal $record): float => $record->total)
+                    ->money('USD')
+                    ->alignEnd()
+                    ->color(fn (Proposal $record): ?string => $record->total > 0 ? null : 'gray')
+                    // Sorted by the line items' sum; a discount only ever lowers a row a little.
+                    ->sortable(query: fn (Builder $query, string $direction) => $query->orderBy('cost_items_sum_amount', $direction)),
                 Tables\Columns\TextColumn::make('estimator.name')
                     ->label('Estimator')
                     ->placeholder('—')
