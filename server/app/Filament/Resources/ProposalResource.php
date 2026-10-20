@@ -554,11 +554,6 @@ class ProposalResource extends Resource
                     ->color(fn (Proposal $record): ?string => $record->total > 0 ? null : 'gray')
                     // Sorted by the line items' sum; a discount only ever lowers a row a little.
                     ->sortable(query: fn (Builder $query, string $direction) => $query->orderBy('cost_items_sum_amount', $direction)),
-                Tables\Columns\TextColumn::make('estimator.name')
-                    ->label('Estimator')
-                    ->placeholder('—')
-                    ->sortable()
-                    ->toggleable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge(),
                 Tables\Columns\TextColumn::make('valid_until')
@@ -567,7 +562,13 @@ class ProposalResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('view_count')
                     ->label('Views')
+                    ->alignCenter()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('estimator.name')
+                    ->label('Estimator')
+                    ->placeholder('—')
+                    ->sortable()
+                    ->toggleable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
@@ -644,6 +645,11 @@ class ProposalResource extends Resource
                     ->icon('heroicon-o-document-duplicate')
                     ->color('gray')
                     ->action(function (Proposal $record) {
+                        // Copy from a fresh load, not the list's row: the list adds computed
+                        // columns (cost_items_sum_amount for the Total sort) that replicate()
+                        // would carry across and save() would try to insert as real columns.
+                        $record = $record->fresh();
+
                         $clone = $record->replicate([
                             'uuid', 'status', 'sent_at', 'first_viewed_at',
                             'last_viewed_at', 'view_count', 'accepted_at',

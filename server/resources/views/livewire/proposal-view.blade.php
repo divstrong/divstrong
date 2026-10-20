@@ -1170,24 +1170,124 @@
                 {{-- Import + Add Item buttons --}}
                 @if($isAdmin)
                 <div class="ml-auto flex items-center gap-4">
-                    {{-- Import scope from another proposal --}}
+                    {{-- Draft scope with Claude: prompt → preview → add. Nothing is saved until "Add to scope". --}}
+                    <div x-data="{
+                             open: false,
+                             prompt: '',
+                             busy: false,
+                             error: '',
+                             draft: null,
+                             json: '',
+                             adding: false,
+                             async generate() {
+                                 this.error = '';
+                                 if (this.prompt.trim().length < 10) { this.error = 'Describe what the scope should cover — paste a sprint table, a feature list, or a brief.'; return; }
+                                 this.busy = true; this.draft = null;
+                                 try {
+                                     const result = await $wire.draftScopeWithClaude(this.prompt);
+                                     if (result?.ok) { this.draft = result.sections; this.json = result.json; }
+                                     else { this.error = result?.message || 'The draft failed.'; }
+                                 } catch (e) {
+                                     this.error = 'The request did not finish — long drafts can take a minute or two. Please try again.';
+                                 } finally { this.busy = false; }
+                             },
+                             async accept() {
+                                 this.adding = true;
+                                 const result = await $wire.importScopeJson(this.json);
+                                 this.adding = false;
+                                 if (result?.ok) { this.open = false; this.draft = null; this.prompt = ''; }
+                                 else { this.error = result?.message || 'Could not add the draft.'; }
+                             },
+                             get itemCount() { return (this.draft || []).reduce((n, s) => n + s.items.length, 0); },
+                         }"
+                         @keydown.escape.window="if (! busy) open = false">
+                        <button @click="open = true"
+                                class="inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:text-gray-900 transition-colors cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg>
+                            Draft with Claude
+                        </button>
+
+                        <div x-show="open" x-cloak x-transition.opacity
+                             class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                            <div @click.outside="if (! busy && ! adding) open = false"
+                                 class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                                <div class="p-6 border-b border-gray-100">
+                                    <h3 class="text-lg font-bold text-gray-900">Draft Scope with Claude</h3>
+                                    <p class="text-sm text-gray-500 mt-1">Paste a sprint table, a feature list, or describe the work. Claude writes the sections in the proposal's voice — you preview them before anything is added.</p>
+                                </div>
+
+                                <div class="p-6 space-y-4 overflow-y-auto">
+                                    <textarea x-model="prompt" rows="7" x-bind:disabled="busy"
+                                              placeholder="e.g. 12 sprints — 1 Discovery and foundation: confirm workflows, permissions…"
+                                              class="w-full text-sm text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none"></textarea>
+
+                                    <p x-show="busy" x-cloak class="text-sm text-gray-500 flex items-center gap-2">
+                                        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle><path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                        Drafting — this usually takes 30–90 seconds.
+                                    </p>
+                                    <p x-show="error" x-text="error" x-cloak class="text-sm text-red-600"></p>
+
+                                    <template x-if="draft">
+                                        <div class="border border-gray-200 rounded-xl divide-y divide-gray-100">
+                                            <template x-for="section in draft" :key="section.title">
+                                                <div class="p-4">
+                                                    <p class="text-sm font-bold text-gray-900" x-text="section.title"></p>
+                                                    <template x-for="item in section.items" :key="item.title">
+                                                        <div class="mt-2 pl-3 border-l-2 border-brand/30">
+                                                            <p class="text-sm font-medium text-gray-800" x-text="item.title"></p>
+                                                            <p class="text-xs text-gray-500" x-text="item.description"></p>
+                                                            <ul class="mt-1 list-disc list-inside text-xs text-gray-600">
+                                                                <template x-for="b in item.bullets"><li x-text="b"></li></template>
+                                                            </ul>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <div class="p-6 border-t border-gray-100 flex items-center justify-end gap-3">
+                                    <button @click="open = false" x-bind:disabled="busy || adding"
+                                            class="text-sm text-gray-500 hover:text-gray-700 cursor-pointer disabled:opacity-50">Close</button>
+                                    <button x-show="draft" x-cloak @click="generate()" x-bind:disabled="busy || adding"
+                                            class="text-sm font-medium text-brand hover:text-gray-900 cursor-pointer disabled:opacity-50">Redraft</button>
+                                    <button x-show="! draft" @click="generate()" x-bind:disabled="busy"
+                                            class="px-5 py-2.5 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-60 disabled:cursor-wait cursor-pointer"
+                                            x-text="busy ? 'Drafting…' : 'Draft scope'"></button>
+                                    <button x-show="draft" x-cloak @click="accept()" x-bind:disabled="busy || adding"
+                                            class="px-5 py-2.5 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-60 cursor-pointer"
+                                            x-text="adding ? 'Adding…' : 'Add ' + itemCount + ' items to scope'"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Import scope: from another proposal's code, or from scope JSON (pasted or a file).
+                         Export writes the same JSON, which is how scope moves between local and live. --}}
                     <div x-data="{
                              importOpen: false,
+                             mode: 'code',
                              importUuid: '',
+                             importJson: '',
                              importBusy: false,
                              importError: '',
                              importSuccess: '',
+                             reset() { this.importOpen = false; this.importError = ''; this.importSuccess = ''; },
                              async runImport() {
                                  this.importError = '';
                                  this.importSuccess = '';
-                                 if (! this.importUuid.trim()) { this.importError = 'Enter a proposal identifier.'; return; }
+                                 const value = this.mode === 'code' ? this.importUuid.trim() : this.importJson.trim();
+                                 if (! value) { this.importError = this.mode === 'code' ? 'Enter a proposal identifier.' : 'Paste scope JSON or choose a file.'; return; }
                                  this.importBusy = true;
                                  try {
-                                     const result = await $wire.importScopeFromProposal(this.importUuid.trim());
+                                     const result = this.mode === 'code'
+                                         ? await $wire.importScopeFromProposal(value)
+                                         : await $wire.importScopeJson(value);
                                      if (result?.ok) {
                                          this.importSuccess = result.message;
-                                         this.importUuid = '';
-                                         setTimeout(() => { this.importOpen = false; this.importSuccess = ''; }, 1400);
+                                         this.importUuid = ''; this.importJson = '';
+                                         setTimeout(() => this.reset(), 1400);
                                      } else {
                                          this.importError = result?.message || 'Import failed.';
                                      }
@@ -1196,15 +1296,31 @@
                                  } finally {
                                      this.importBusy = false;
                                  }
-                             }
+                             },
+                             readFile(e) {
+                                 const file = e.target.files[0];
+                                 if (! file) return;
+                                 const reader = new FileReader();
+                                 reader.onload = () => { this.importJson = reader.result; };
+                                 reader.readAsText(file);
+                             },
+                             async exportJson() {
+                                 const json = await $wire.exportScopeJson();
+                                 const blob = new Blob([json], { type: 'application/json' });
+                                 const a = Object.assign(document.createElement('a'), {
+                                     href: URL.createObjectURL(blob),
+                                     download: 'scope-{{ $proposal->uuid }}.json',
+                                 });
+                                 a.click();
+                                 URL.revokeObjectURL(a.href);
+                                 try { await navigator.clipboard.writeText(json); this.importSuccess = 'Downloaded, and copied to the clipboard.'; } catch (e) {}
+                             },
                          }">
-                        {{-- Import link --}}
                         <button @click="importOpen = true"
                                 class="text-sm font-medium text-brand hover:text-gray-900 transition-colors cursor-pointer">
                             Import
                         </button>
 
-                        {{-- Import modal --}}
                         <div x-show="importOpen" x-cloak
                              x-transition:enter="transition ease-out duration-200"
                              x-transition:enter-start="opacity-0"
@@ -1213,15 +1329,22 @@
                              x-transition:leave-start="opacity-100"
                              x-transition:leave-end="opacity-0"
                              class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-                             @keydown.escape.window="importOpen = false; importError = ''; importSuccess = '';">
-                            <div @click.outside="importOpen = false; importError = ''; importSuccess = '';"
-                                 class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+                             @keydown.escape.window="reset()">
+                            <div @click.outside="reset()"
+                                 class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4">
                                 <div class="p-6 border-b border-gray-100">
-                                    <h3 class="text-lg font-bold text-gray-900">Import Scope from Another Proposal</h3>
-                                    <p class="text-sm text-gray-500 mt-1">Enter the source proposal's 6-character code (the part after <code class="text-gray-700">/proposal/</code> in its URL). All of its scope items will be appended below the existing ones.</p>
+                                    <h3 class="text-lg font-bold text-gray-900">Import Scope</h3>
+                                    <div class="mt-3 inline-flex rounded-lg bg-gray-100 p-1 text-sm">
+                                        <button @click="mode = 'code'; importError = ''" :class="mode === 'code' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'"
+                                                class="px-3 py-1.5 rounded-md font-medium cursor-pointer">From a proposal</button>
+                                        <button @click="mode = 'json'; importError = ''" :class="mode === 'json' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'"
+                                                class="px-3 py-1.5 rounded-md font-medium cursor-pointer">From JSON</button>
+                                    </div>
+                                    <p x-show="mode === 'code'" class="text-sm text-gray-500 mt-3">Enter the source proposal's 6-character code (the part after <code class="text-gray-700">/proposal/</code> in its URL). All of its scope items will be appended below the existing ones.</p>
+                                    <p x-show="mode === 'json'" x-cloak class="text-sm text-gray-500 mt-3">Paste scope JSON or choose a <code class="text-gray-700">.json</code> file — e.g. one exported from another proposal or server. Items are appended below the existing ones.</p>
                                 </div>
                                 <div class="p-6 space-y-3">
-                                    <label class="block">
+                                    <label x-show="mode === 'code'" class="block">
                                         <span class="text-xs font-medium text-gray-700">Proposal code</span>
                                         <input type="text" x-model="importUuid"
                                                @keydown.enter.prevent="if(!importBusy) runImport()"
@@ -1231,13 +1354,22 @@
                                                class="mt-1 block w-full text-sm font-mono tracking-widest bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none uppercase"
                                                x-bind:disabled="importBusy">
                                     </label>
+                                    <div x-show="mode === 'json'" x-cloak class="space-y-2">
+                                        <input type="file" accept=".json,application/json" @change="readFile($event)"
+                                               class="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer">
+                                        <textarea x-model="importJson" rows="8" x-bind:disabled="importBusy"
+                                                  placeholder='{ "sections": [ { "title": "Sprint #1 — …", "items": [ { "title": "…", "description": "…", "bullets": ["…"] } ] } ] }'
+                                                  class="w-full text-xs font-mono text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none"></textarea>
+                                    </div>
                                     <p x-show="importError" x-text="importError" x-cloak
                                        class="text-sm text-red-600"></p>
                                     <p x-show="importSuccess" x-text="importSuccess" x-cloak
                                        class="text-sm text-emerald-600"></p>
                                 </div>
-                                <div class="p-6 border-t border-gray-100 flex items-center justify-end gap-3">
-                                    <button @click="importOpen = false; importError = ''; importSuccess = '';"
+                                <div class="p-6 border-t border-gray-100 flex items-center gap-3">
+                                    <button @click="exportJson()" title="Download this proposal's scope as JSON"
+                                            class="mr-auto text-sm text-gray-500 hover:text-brand cursor-pointer">Export this scope</button>
+                                    <button @click="reset()"
                                             x-bind:disabled="importBusy"
                                             class="text-sm text-gray-500 hover:text-gray-700 cursor-pointer disabled:opacity-50">Cancel</button>
                                     <button @click="runImport()"

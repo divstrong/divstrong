@@ -886,4 +886,75 @@ class ClaudeService
             return null;
         }
     }
+
+    /**
+     * Draft scope sections for an existing proposal from a free-text instruction — a sprint
+     * table pasted in, a list of features, "same as last time but add a mobile app".
+     *
+     * Returns rows in App\Support\ScopeJson's shape, ready to preview and then import. Nothing
+     * is saved here: the person who asked looks at it first.
+     *
+     * @param  array{project_title?: ?string, client_company?: ?string, introduction?: ?string, existing_sections?: array<int, string>}  $context
+     * @return array<int, array{category: string, title: string, description: string, bullets: array<int, string>}>
+     */
+    public function draftScope(string $instructions, array $context = []): array
+    {
+        @set_time_limit(0);
+
+        $project = $this->cleanContactField($context['project_title'] ?? null) ?? 'this project';
+        $client = $this->cleanContactField($context['client_company'] ?? null) ?? 'the client';
+        $intro = trim(preg_replace('/\s+/', ' ', strip_tags((string) ($context['introduction'] ?? ''))));
+        $intro = $intro !== '' ? mb_substr($intro, 0, 4000) : 'Not written yet.';
+        $existing = collect($context['existing_sections'] ?? [])->filter()->implode("\n- ");
+        $existing = $existing !== '' ? "- {$existing}" : 'None yet.';
+
+        $prompt = <<<PROMPT
+        You are writing the Scope of Work section of a divStrong proposal: the part that tells the client, section by section, exactly what they get.
+
+        PROJECT: {$project}
+        CLIENT: {$client}
+
+        PROPOSAL OVERVIEW (for context; do not repeat it):
+        {$intro}
+
+        SECTIONS ALREADY IN THE SCOPE (do not duplicate them; continue the numbering if you add more sprints):
+        {$existing}
+
+        WHAT TO WRITE — the proposal lead's instructions:
+        """
+        {$instructions}
+        """
+
+        {$this->clientVoiceBlock()}
+
+        STRUCTURE:
+        - Follow the instructions' structure exactly. If they list sprints or phases, write one section per sprint or phase, in that order, and do not merge, split, or add any.
+        - Sprint sections are titled "Sprint #N — Theme In Title Case" (an em dash, a 2-5 word theme). Other sections get a short Title Case name.
+        - Each section holds 2-4 scope items. Each item has a specific Title Case title, a one-or-two sentence description in plain language, and 2-4 concrete deliverable bullets — things handed over, not activities.
+        - Cover everything the instructions put in each section. Never add systems, vendors, numbers, or features the instructions and overview do not mention; where the instructions say something is conditional ("if retained", "agreed"), keep it conditional.
+
+        RESPOND WITH JSON ONLY, IN THIS EXACT SHAPE:
+        ```json
+        {
+            "sections": [
+                {
+                    "title": "<section title>",
+                    "items": [
+                        { "title": "<item title>", "description": "<one or two sentences>", "bullets": ["<deliverable>", "<deliverable>"] }
+                    ]
+                }
+            ]
+        }
+        ```
+        PROMPT;
+
+        $response = $this->sendWithRetry([['type' => 'text', 'text' => $prompt]]);
+        $parsed = $this->decodeJsonBlock($this->firstTextBlock($response));
+
+        if (! is_array($parsed)) {
+            throw new \RuntimeException('Claude did not return a scope I could read. Try again, or simplify the instructions.');
+        }
+
+        return \App\Support\ScopeJson::parse($parsed);
+    }
 }

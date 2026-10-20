@@ -1,0 +1,391 @@
+{
+    "format": "divstrong-scope",
+    "version": 1,
+    "title": "Freight brokerage platform — 12 sprints",
+    "sections": [
+        {
+            "title": "Sprint #1 — Discovery And Foundation",
+            "items": [
+                {
+                    "title": "Workflow And Acceptance Plan",
+                    "description": "We walk through how your team books, dispatches, and bills loads today and agree, in writing, what each later sprint delivers and how you will judge it done.",
+                    "bullets": [
+                        "Documented workflows for booking, dispatch, documents, and billing",
+                        "Acceptance criteria for every sprint, agreed before build starts",
+                        "Confirmed list of vendor accounts and API access needed for later sprints"
+                    ]
+                },
+                {
+                    "title": "Roles, Permissions And Data Ownership",
+                    "description": "Everyone gets the access their job needs and nothing more, and it is clear who owns each kind of record from day one.",
+                    "bullets": [
+                        "Agreed role list with what each role can view, edit, and approve",
+                        "Data ownership map covering customers, carriers, loads, and financials",
+                        "Working sign-in with role-based access in place"
+                    ]
+                },
+                {
+                    "title": "Load Plus Assessment And Audit History",
+                    "description": "We review what your Load Plus exports contain and how they map across, and we switch on an audit trail so every change in the new platform is recorded from the start.",
+                    "bullets": [
+                        "Load Plus import assessment with a field-by-field mapping",
+                        "Sample import run on a copy of your data, with findings",
+                        "Audit history recording who changed what, and when"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Sprint #2 — Customers And Contacts",
+            "items": [
+                {
+                    "title": "Customer Records And Locations",
+                    "description": "Each customer has one record holding everything about them, including every location you pick up from or deliver to on their behalf.",
+                    "bullets": [
+                        "Customer record with company details and notes",
+                        "Multiple locations per customer with addresses and hours",
+                        "Search and filter across all customers"
+                    ]
+                },
+                {
+                    "title": "Contacts And Billing Preferences",
+                    "description": "Every person you deal with at a customer is on file with their role, and billing goes to the right place in the right way every time.",
+                    "bullets": [
+                        "Multiple contacts per customer, each with a role and contact details",
+                        "Billing preferences per customer, including invoice recipients",
+                        "Credit settings with limits visible to the people booking loads"
+                    ]
+                },
+                {
+                    "title": "Customer Load Defaults",
+                    "description": "The details a customer always wants are filled in for you, so repeat loads take less typing and fewer mistakes.",
+                    "bullets": [
+                        "Customer-specific defaults applied when a new load is started",
+                        "Defaults editable per customer by permitted roles",
+                        "Clear indication on the load of which values came from defaults"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Sprint #3 — Carrier Management",
+            "items": [
+                {
+                    "title": "Carrier Records And Identifiers",
+                    "description": "Every carrier you work with has one record, keyed on the identifiers your team already uses to look them up.",
+                    "bullets": [
+                        "Carrier record with company and contact details",
+                        "MC and DOT numbers stored and searchable",
+                        "Insurance and authority fields with expiry dates"
+                    ]
+                },
+                {
+                    "title": "Preferred And Blocked Carriers",
+                    "description": "Your team can see at a glance who you prefer to use and who you never use, along with the notes that explain why.",
+                    "bullets": [
+                        "Preferred and blocked status on each carrier",
+                        "Priority notes shown wherever the carrier is selected",
+                        "History of status changes with who made them"
+                    ]
+                },
+                {
+                    "title": "Booking Restriction Rules",
+                    "description": "The platform stops a load being booked with a carrier that should not have it, instead of relying on someone to remember.",
+                    "bullets": [
+                        "Booking rules covering blocked status, insurance, and authority",
+                        "Clear warning explaining why a carrier cannot be booked",
+                        "Rules configurable by permitted roles"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Sprint #4 — Pre-Load And Load Building",
+            "items": [
+                {
+                    "title": "Load Details And Equipment",
+                    "description": "Everything a carrier needs to know about the freight is captured once, in a consistent shape, before the load goes anywhere.",
+                    "bullets": [
+                        "Equipment type and refrigeration requirements",
+                        "Cargo description, weight, and dimensions",
+                        "PO and reference numbers attached to the load"
+                    ]
+                },
+                {
+                    "title": "Stops And Appointments",
+                    "description": "A load can carry as many pickups and deliveries as it needs, each with its own appointment, in the order the truck will run them.",
+                    "bullets": [
+                        "Multiple stops per load, reorderable",
+                        "Appointment date and time window for each stop",
+                        "Stop-level references and instructions"
+                    ]
+                },
+                {
+                    "title": "Templates And Load Duplication",
+                    "description": "Lanes you run again and again become one-click starts, so your team builds repeat freight in seconds.",
+                    "bullets": [
+                        "Saved load templates for recurring lanes",
+                        "Duplicate any historical load as the start of a new one",
+                        "Duplicated loads clearly marked as new until saved"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Sprint #5 — Dispatch And Booking",
+            "items": [
+                {
+                    "title": "Dispatch Board",
+                    "description": "One screen shows every active load and where it stands, so dispatchers know what needs attention without asking around.",
+                    "bullets": [
+                        "Dispatch board with filters by status, date, and dispatcher",
+                        "Status workflow from booked through delivered",
+                        "Load detail available from the board in one click"
+                    ]
+                },
+                {
+                    "title": "Carrier, Driver And Dispatcher Assignment",
+                    "description": "Each load clearly shows which carrier, driver, and dispatcher own it, and hand-offs between dispatchers are recorded.",
+                    "bullets": [
+                        "Carrier and driver assignment on each load",
+                        "Dispatcher ownership with reassignment",
+                        "Assignment history on the load"
+                    ]
+                },
+                {
+                    "title": "Booking Checks And Recorded Overrides",
+                    "description": "The platform checks each booking against your rules before it is confirmed. When someone has a good reason to proceed anyway, their override is permitted, recorded, and visible.",
+                    "bullets": [
+                        "Booking checks with warnings shown before confirmation",
+                        "Permission-controlled overrides with a required reason",
+                        "Override log showing who overrode what, and why"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Sprint #6 — Rates And Commissions",
+            "items": [
+                {
+                    "title": "Rate Tables And Supporting Uploads",
+                    "description": "Customer rates and carrier costs live in the platform with the paperwork that backs them up, instead of in spreadsheets and inboxes.",
+                    "bullets": [
+                        "Rate tables for customer revenue and carrier costs",
+                        "Supporting documents uploaded against rates",
+                        "Accessorial charges added to customer and carrier sides"
+                    ]
+                },
+                {
+                    "title": "Margin Visibility",
+                    "description": "Every load shows what it earns before and after it is booked, so nobody finds a thin load at month end.",
+                    "bullets": [
+                        "Margin calculated per load from revenue, costs, and accessorials",
+                        "Margin shown on the load and on the dispatch board",
+                        "Pricing amendments recorded with the change and who made it"
+                    ]
+                },
+                {
+                    "title": "Commission Allocations",
+                    "description": "When more than one person earns on a load, the split is set on the load itself and carries through to reporting.",
+                    "bullets": [
+                        "Multiple commission allocations per load",
+                        "Allocation rules by percentage or amount",
+                        "Commission figures available for reporting"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Sprint #7 — Documents And Acceptance",
+            "items": [
+                {
+                    "title": "BOLs, Rate Confirmations And Agreements",
+                    "description": "The documents every load needs are generated from the load itself, so the details always match what was booked.",
+                    "bullets": [
+                        "Bill of lading generated from the load",
+                        "Rate confirmations and agreements generated from the load",
+                        "Email and print straight from the load"
+                    ]
+                },
+                {
+                    "title": "Secure Carrier Acceptance",
+                    "description": "Carriers review and accept a rate confirmation on a secure page and fill in their driver details there, so nothing has to be keyed in twice.",
+                    "bullets": [
+                        "Secure acceptance page for each rate confirmation",
+                        "Driver details, seal number, and PRO number captured on acceptance",
+                        "Acceptance recorded on the load with date and time"
+                    ]
+                },
+                {
+                    "title": "Document Versions And POD Uploads",
+                    "description": "Every version of every document is kept, and proof of delivery lands on the load as soon as it arrives.",
+                    "bullets": [
+                        "Document version history on each load",
+                        "POD upload attached to the load",
+                        "Loads missing a POD flagged for follow-up"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Sprint #8 — Tracking Integrations",
+            "items": [
+                {
+                    "title": "Tracking Provider Connections",
+                    "description": "We connect the tracking functions you need from Trucker Tools, MacroPoint, and Samsara, so location updates arrive on the load without anyone copying them across.",
+                    "bullets": [
+                        "Agreed functions connected for Trucker Tools, MacroPoint, and Samsara",
+                        "Tracking provider selected per load",
+                        "Connection status visible to dispatchers"
+                    ]
+                },
+                {
+                    "title": "Location And Milestone Updates",
+                    "description": "Each load builds its own timeline of where the truck was and when it reached each stop.",
+                    "bullets": [
+                        "Location updates stored with timestamps",
+                        "Stop milestones updated from tracking data",
+                        "Tracking timeline on the load"
+                    ]
+                },
+                {
+                    "title": "Tracking Exceptions",
+                    "description": "When tracking goes quiet or a truck is running late, the load is flagged so someone can act before the customer calls.",
+                    "bullets": [
+                        "Exception rules for missed updates and late arrivals",
+                        "Exceptions surfaced on the dispatch board",
+                        "Exception history recorded on the load"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Sprint #9 — Carrier-Service Integrations",
+            "items": [
+                {
+                    "title": "Highway, MyCarrierPackets And RMIS Connections",
+                    "description": "We connect the carrier-service functions you rely on, so verification and onboarding information is in the platform rather than in separate tabs.",
+                    "bullets": [
+                        "Agreed functions connected for Highway, MyCarrierPackets, and RMIS",
+                        "Connection status and last sync time visible on the carrier",
+                        "Errors from each service logged and surfaced"
+                    ]
+                },
+                {
+                    "title": "Carrier Matching And Verification Status",
+                    "description": "Results from each service are matched to the right carrier record and shown where your team makes booking decisions.",
+                    "bullets": [
+                        "Carrier matching against MC and DOT numbers",
+                        "Onboarding and verification status on each carrier",
+                        "Mismatches flagged for review"
+                    ]
+                },
+                {
+                    "title": "Operational Controls",
+                    "description": "Verification results feed straight into the booking rules from Sprint 3, so an unverified carrier is caught at the point of booking.",
+                    "bullets": [
+                        "Booking rules extended with verification results",
+                        "Warnings when a carrier's status changes",
+                        "Controls configurable by permitted roles"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Sprint #10 — Accounting Integration",
+            "items": [
+                {
+                    "title": "Sage 50 Data Exchange",
+                    "description": "Customer and financial data moves between the platform and Sage 50 in the ways agreed during discovery, without re-keying.",
+                    "bullets": [
+                        "Agreed customer data exchange with Sage 50",
+                        "Agreed financial data exchange with Sage 50",
+                        "Sync history showing what moved and when"
+                    ]
+                },
+                {
+                    "title": "Invoice-Ready Handoff And Credit Visibility",
+                    "description": "Delivered loads are handed to accounting ready to invoice, and the people booking loads can see a customer's credit position.",
+                    "bullets": [
+                        "Invoice-ready handoff for delivered loads",
+                        "Customer credit position visible when booking",
+                        "Loads held from handoff until required documents are in"
+                    ]
+                },
+                {
+                    "title": "Reconciliation And Sync Errors",
+                    "description": "When the two systems disagree, someone is told, and the discrepancy can be worked through rather than discovered later.",
+                    "bullets": [
+                        "Reconciliation view comparing platform and Sage 50 figures",
+                        "Sync errors logged with a clear reason",
+                        "Retry for failed syncs once the cause is fixed"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Sprint #11 — Reporting And Automation",
+            "items": [
+                {
+                    "title": "Operational And Financial Dashboards",
+                    "description": "Managers see how the business is running today and how it is performing financially, from data that is already in the platform.",
+                    "bullets": [
+                        "Operational dashboard covering active loads and exceptions",
+                        "Financial dashboard covering revenue, costs, margin, and commissions",
+                        "Date and team filters on both dashboards"
+                    ]
+                },
+                {
+                    "title": "Priority Notes And Activity-Triggered Emails",
+                    "description": "The right people hear about the right things automatically, from a load that needs attention to a step that has just been completed.",
+                    "bullets": [
+                        "Priority notes and exceptions summarized for each team",
+                        "Activity-triggered emails for agreed events",
+                        "Email rules editable by permitted roles"
+                    ]
+                },
+                {
+                    "title": "DAT Posting",
+                    "description": "If DAT stays in the agreed scope, loads can be posted, updated, and removed on DAT from the load itself.",
+                    "bullets": [
+                        "Post, update, and remove loads on DAT from the platform",
+                        "DAT posting status visible on the load",
+                        "Confirmed during discovery whether DAT remains in scope"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Sprint #12 — Pilot And Launch",
+            "items": [
+                {
+                    "title": "Final Migration And End-To-End Testing",
+                    "description": "Your live data comes across from Load Plus, and we run real loads through every step together before anyone relies on the new platform.",
+                    "bullets": [
+                        "Final data migration from Load Plus",
+                        "End-to-end test of booking, dispatch, documents, tracking, and accounting",
+                        "Test results recorded against the acceptance criteria from Sprint 1"
+                    ]
+                },
+                {
+                    "title": "Client Acceptance And Corrections",
+                    "description": "Your team signs off against the criteria agreed at the start, and anything that falls short is corrected before launch.",
+                    "bullets": [
+                        "Acceptance session with your team",
+                        "Corrections made and re-tested",
+                        "Written sign-off"
+                    ]
+                },
+                {
+                    "title": "Training, Cutover And Launch Verification",
+                    "description": "Your team is trained on the platform they will use every day, the switch from Load Plus happens on a planned date, and we confirm everything is working once it is live.",
+                    "bullets": [
+                        "Role-based training sessions for your team",
+                        "Planned cutover from Load Plus",
+                        "Post-launch verification checks"
+                    ]
+                }
+            ]
+        }
+    ]
+}

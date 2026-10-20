@@ -463,6 +463,93 @@ class ProposalView extends Component
         ];
     }
 
+    /**
+     * Add scope from JSON — an exported scope from another proposal or environment, a file
+     * written by hand, or a Claude draft the person has just previewed. Appends; never replaces.
+     */
+    public function importScopeJson(string $json): array
+    {
+        if (! $this->isAdmin) {
+            return ['ok' => false, 'message' => 'Not authorized.'];
+        }
+
+        try {
+            $rows = \App\Support\ScopeJson::parse($json);
+        } catch (\InvalidArgumentException $e) {
+            return ['ok' => false, 'message' => $e->getMessage()];
+        }
+
+        $maxSort = $this->proposal->scopeItems()->max('sort_order') ?? 0;
+
+        foreach ($rows as $row) {
+            $this->proposal->scopeItems()->create($row + ['sort_order' => ++$maxSort]);
+        }
+
+        $this->proposal->load('scopeItems');
+
+        $sections = collect($rows)->pluck('category')->unique()->count();
+
+        return [
+            'ok' => true,
+            'message' => 'Added ' . count($rows) . ' scope item' . (count($rows) === 1 ? '' : 's')
+                . ' in ' . $sections . ' section' . ($sections === 1 ? '' : 's') . '.',
+        ];
+    }
+
+    /** This proposal's scope as portable JSON, for Import on another proposal or server. */
+    public function exportScopeJson(): string
+    {
+        if (! $this->isAdmin) {
+            return '';
+        }
+
+        return \App\Support\ScopeJson::export(
+            $this->proposal->scopeItems()->orderBy('sort_order')->get(),
+            $this->proposal->project_title,
+        );
+    }
+
+    /**
+     * Ask Claude to draft scope sections from an instruction. Returns the draft for preview;
+     * the page imports it through importScopeJson() only when the person accepts it.
+     */
+    public function draftScopeWithClaude(string $instructions): array
+    {
+        if (! $this->isAdmin) {
+            return ['ok' => false, 'message' => 'Not authorized.'];
+        }
+
+        $instructions = trim($instructions);
+
+        if (mb_strlen($instructions) < 10) {
+            return ['ok' => false, 'message' => 'Describe what the scope should cover — a sprint list, features, or a brief.'];
+        }
+
+        try {
+            $rows = app(\App\Services\ClaudeService::class)->draftScope(mb_substr($instructions, 0, 20000), [
+                'project_title' => $this->proposal->project_title,
+                'client_company' => $this->proposal->client_company,
+                'introduction' => $this->proposal->introduction,
+                'existing_sections' => $this->proposal->scopeItems()->orderBy('sort_order')->pluck('category')->unique()->values()->all(),
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return ['ok' => false, 'message' => $e instanceof \RuntimeException || $e instanceof \InvalidArgumentException
+                ? $e->getMessage()
+                : 'The draft failed — please try again.'];
+        }
+
+        return [
+            'ok' => true,
+            'json' => \App\Support\ScopeJson::export($rows),
+            'sections' => collect($rows)->groupBy('category')->map(fn ($items, $title) => [
+                'title' => $title,
+                'items' => $items->values()->all(),
+            ])->values()->all(),
+        ];
+    }
+
     public function updateScopeItem(int $id, string $title, string $description = '', array $bullets = []): void
     {
         if (! $this->isAdmin) return;
