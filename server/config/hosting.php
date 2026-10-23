@@ -24,8 +24,15 @@ return [
     | profile saved in PayPal's invoice settings fills in invoices made on paypal.com, not
     | these. The logo must be a public https URL; PayPal shows it at up to 250×90.
     */
-    'business_name' => env('HOSTING_BUSINESS_NAME', 'DivStrong Productions, LLC'),
+    // The trading name; PayPal adds "issued by DivStrong Productions, LLC (doing business as
+    // divStrong)" from the account's legal name on its own.
+    'business_name' => env('HOSTING_BUSINESS_NAME', 'divStrong'),
     'website' => env('HOSTING_WEBSITE', 'https://www.divstrong.com'),
+    // Shown on the invoice. Must be an address confirmed on the PayPal account, or PayPal
+    // rejects the invoice; set HOSTING_INVOICER_EMAIL empty to leave it off.
+    'invoicer_email' => env('HOSTING_INVOICER_EMAIL', 'billing@divstrong.com'),
+    // US number, digits only.
+    'phone' => env('HOSTING_PHONE', '8043159609'),
     'logo_url' => env('HOSTING_LOGO_URL', 'https://www.divstrong.com/images/logo-invoice.png'),
     'address' => [
         'address_line_1' => env('HOSTING_ADDRESS_LINE_1', '14321 Winter Breeze Drive'),

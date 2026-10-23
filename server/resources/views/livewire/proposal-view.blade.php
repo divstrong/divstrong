@@ -14,6 +14,10 @@
             section.pdf-cover { min-height: 0 !important; height: auto !important; padding: 3rem 2rem !important; }
             /* Hide interactive-only and chrome elements */
             nav, video, .pdf-hide, [x-show="showShare"], [x-cloak] { display: none !important; }
+            /* The PDF is the plain, readable copy: imagery-led marketing sections stay on the web page. */
+            .pdf-omit { display: none !important; }
+            /* The PDF cover is its own page. */
+            .pdf-plain-cover { break-after: page; page-break-after: always; }
             /* Freeze animations/transitions so Puppeteer captures a stable frame */
             *, *::before, *::after {
                 animation-duration: 0s !important;
@@ -193,6 +197,55 @@
     @endunless
 
     {{-- ========== COVER SECTION ========== --}}
+    @if($isPdfMode)
+    {{-- PDF cover: plain text, no video or photography, so it prints cleanly at paper width.
+         Inline styles on purpose: it must lay out the same whether or not the CSS build has
+         these utilities, and it is only ever rendered for the PDF. --}}
+    <section class="pdf-plain-cover bg-white" style="min-height: 9.6in; display: flex; flex-direction: column; padding: 0.25in 0.35in 0;">
+        <img src="{{ asset('images/logo.png') }}" alt="divStrong" style="height: 38px; width: auto; align-self: flex-start;">
+
+        <div style="margin-top: 2.6in;">
+            <p style="font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #ed2537; margin: 0;">Digital Services Proposal</p>
+            <h1 style="margin: 18px 0 0; font-size: 46px; line-height: 1.12; font-weight: 700; color: #111827;">
+                {{ $proposal->project_title ?: ($proposal->client_company ?: $proposal->client_name) }}
+            </h1>
+            @if($proposal->rfp_number)
+                <p style="margin: 12px 0 0; font-size: 16px; color: #6b7280;">RFP #{{ $proposal->rfp_number }}</p>
+            @endif
+        </div>
+
+        <div style="margin-top: auto; margin-bottom: 0.2in; border-top: 1px solid #e5e7eb; padding-top: 28px; display: grid; grid-template-columns: 1fr 1fr; row-gap: 26px; column-gap: 32px; font-size: 14px; color: #374151;">
+            @php $label = 'font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9ca3af; margin: 0 0 6px;'; @endphp
+            <div>
+                <p style="{{ $label }}">Prepared for</p>
+                @if($proposal->client_company)
+                    <p style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">{{ $proposal->client_company }}</p>
+                    <p style="margin: 2px 0 0;">{{ $proposal->client_name }}</p>
+                @else
+                    <p style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">{{ $proposal->client_name }}</p>
+                @endif
+                @if($proposal->client_domain)
+                    <p style="margin: 2px 0 0; color: #6b7280;">{{ $proposal->client_domain }}</p>
+                @endif
+            </div>
+            <div>
+                <p style="{{ $label }}">Prepared by</p>
+                <p style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">divStrong</p>
+                <p style="margin: 2px 0 0; color: #6b7280;">www.divstrong.com</p>
+            </div>
+            <div>
+                <p style="{{ $label }}">Date</p>
+                <p style="margin: 0;">{{ $proposal->proposal_date->format('F j, Y') }}</p>
+            </div>
+            @if($proposal->valid_until)
+                <div>
+                    <p style="{{ $label }}">Valid until</p>
+                    <p style="margin: 0;">{{ $proposal->valid_until->format('F j, Y') }}</p>
+                </div>
+            @endif
+        </div>
+    </section>
+    @else
     <section class="relative min-h-screen flex items-center justify-center px-4 sm:px-6 bg-gray-900 pdf-cover">
         {{-- Background video --}}
         <div class="absolute inset-0 overflow-hidden">
@@ -307,8 +360,8 @@
         @if($isAdmin)
             <a href="{{ route('proposal.cover', $proposal->uuid) }}" target="_blank" rel="noopener"
                class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/90 border border-gray-200 text-gray-600 hover:bg-white hover:text-gray-900 shadow-sm transition cursor-pointer backdrop-blur-sm">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h6m0 0l-3-3m3 3l-3 3M4 7h6a2 2 0 012 2v0M4 7l3-3m-3 3l3 3"/></svg>
-                Proposal PDF
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z"/></svg>
+                QR Code
             </a>
             <a href="{{ route('proposal.badge', $proposal->uuid) }}" target="_blank" rel="noopener"
                class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/90 border border-gray-200 text-gray-600 hover:bg-white hover:text-gray-900 shadow-sm transition cursor-pointer backdrop-blur-sm">
@@ -491,6 +544,7 @@
             </div>
         </div>
     </section>
+    @endif
 
     {{-- ========== OVERVIEW SECTION ========== --}}
     @if(($proposal->overview_enabled && $proposal->introduction) || $isAdmin)
@@ -1070,7 +1124,7 @@
 
     {{-- ========== ABOUT US SECTION ========== --}}
     @if($proposal->about_enabled || $isAdmin)
-    <section id="about" class="relative scroll-mt-16 @if($proposal->about_enabled) bg-neutral-900 @endif">
+    <section id="about" class="pdf-omit relative scroll-mt-16 @if($proposal->about_enabled) bg-neutral-900 @endif">
         {{-- Admin toggle bar (shown above section, outside dark bg for legibility) --}}
         @if($isAdmin)
             <div class="pdf-hide px-4 sm:px-6 pt-8 bg-white">
@@ -1169,7 +1223,7 @@
 
                 {{-- Import + Add Item buttons --}}
                 @if($isAdmin)
-                <div class="ml-auto flex items-center gap-4">
+                <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
                     {{-- Draft scope with Claude: prompt → preview → add. Nothing is saved until "Add to scope". --}}
                     <div x-data="{
                              open: false,
@@ -1179,17 +1233,25 @@
                              draft: null,
                              json: '',
                              adding: false,
+                             elapsed: 0,
+                             timer: null,
+                             // Shown while waiting, one after another, so a minute-long draft never looks stuck.
+                             stages: ['Reading your instructions…', 'Planning the sections…', 'Writing scope items…', 'Writing deliverables…', 'Checking it against your list…', 'Almost there…'],
+                             get stage() { return this.stages[Math.min(Math.floor(this.elapsed / 12), this.stages.length - 1)]; },
                              async generate() {
                                  this.error = '';
                                  if (this.prompt.trim().length < 10) { this.error = 'Describe what the scope should cover — paste a sprint table, a feature list, or a brief.'; return; }
                                  this.busy = true; this.draft = null;
+                                 this.elapsed = 0;
+                                 clearInterval(this.timer);
+                                 this.timer = setInterval(() => this.elapsed++, 1000);
                                  try {
                                      const result = await $wire.draftScopeWithClaude(this.prompt);
                                      if (result?.ok) { this.draft = result.sections; this.json = result.json; }
                                      else { this.error = result?.message || 'The draft failed.'; }
                                  } catch (e) {
                                      this.error = 'The request did not finish — long drafts can take a minute or two. Please try again.';
-                                 } finally { this.busy = false; }
+                                 } finally { this.busy = false; clearInterval(this.timer); }
                              },
                              async accept() {
                                  this.adding = true;
@@ -1202,7 +1264,7 @@
                          }"
                          @keydown.escape.window="if (! busy) open = false">
                         <button @click="open = true"
-                                class="inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:text-gray-900 transition-colors cursor-pointer">
+                                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand border border-brand/30 rounded-lg hover:bg-brand hover:text-white transition-colors cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg>
                             Draft with Claude
                         </button>
@@ -1221,13 +1283,23 @@
                                               placeholder="e.g. 12 sprints — 1 Discovery and foundation: confirm workflows, permissions…"
                                               class="w-full text-sm text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none"></textarea>
 
-                                    <p x-show="busy" x-cloak class="text-sm text-gray-500 flex items-center gap-2">
-                                        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle><path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                                        Drafting — this usually takes 30–90 seconds.
-                                    </p>
+                                    {{-- Loading panel: big spinner, changing status line and a running clock. --}}
+                                    <div x-show="busy" x-cloak x-transition.opacity
+                                         class="flex flex-col items-center justify-center text-center gap-4 py-10 rounded-xl bg-gray-50 border border-dashed border-gray-200">
+                                        <svg class="animate-spin w-12 h-12 text-brand" fill="none" viewBox="0 0 24 24" role="status" aria-label="Drafting">
+                                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-20"></circle>
+                                            <path fill="currentColor" class="opacity-90" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-semibold text-gray-900" x-text="stage"></p>
+                                            <p class="mt-1 text-xs text-gray-500">
+                                                <span x-text="elapsed + 's'"></span> · drafts usually take 30–90 seconds — keep this window open.
+                                            </p>
+                                        </div>
+                                    </div>
                                     <p x-show="error" x-text="error" x-cloak class="text-sm text-red-600"></p>
 
-                                    <template x-if="draft">
+                                    <template x-if="draft && ! busy">
                                         <div class="border border-gray-200 rounded-xl divide-y divide-gray-100">
                                             <template x-for="section in draft" :key="section.title">
                                                 <div class="p-4">
@@ -1253,8 +1325,10 @@
                                     <button x-show="draft" x-cloak @click="generate()" x-bind:disabled="busy || adding"
                                             class="text-sm font-medium text-brand hover:text-gray-900 cursor-pointer disabled:opacity-50">Redraft</button>
                                     <button x-show="! draft" @click="generate()" x-bind:disabled="busy"
-                                            class="px-5 py-2.5 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-60 disabled:cursor-wait cursor-pointer"
-                                            x-text="busy ? 'Drafting…' : 'Draft scope'"></button>
+                                            class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-60 disabled:cursor-wait cursor-pointer">
+                                        <svg x-show="busy" x-cloak class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle><path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                        <span x-text="busy ? 'Drafting…' : 'Draft scope'"></span>
+                                    </button>
                                     <button x-show="draft" x-cloak @click="accept()" x-bind:disabled="busy || adding"
                                             class="px-5 py-2.5 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-60 cursor-pointer"
                                             x-text="adding ? 'Adding…' : 'Add ' + itemCount + ' items to scope'"></button>
@@ -1317,7 +1391,8 @@
                              },
                          }">
                         <button @click="importOpen = true"
-                                class="text-sm font-medium text-brand hover:text-gray-900 transition-colors cursor-pointer">
+                                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand border border-brand/30 rounded-lg hover:bg-brand hover:text-white transition-colors cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
                             Import
                         </button>
 
@@ -1744,7 +1819,7 @@
         $processHeading = $proposal->process_heading ?? 'Ship early. Ship often. Level up together.';
         $processSubheading = $proposal->process_subheading ?? "We don't disappear for six months and hand you a finished product. We deliver something usable at every stage — you ride it, learn from it, and we iterate toward the end goal together.";
     @endphp
-    <section id="process" class="relative py-12 sm:py-20 px-4 sm:px-6 scroll-mt-16 overflow-hidden bg-neutral-900">
+    <section id="process" class="pdf-omit relative py-12 sm:py-20 px-4 sm:px-6 scroll-mt-16 overflow-hidden bg-neutral-900">
         {{-- Background image --}}
         <div class="absolute inset-0 bg-cover bg-center opacity-20 grayscale"
              style="background-image: url('{{ $processBg }}?v={{ $proposal->updated_at?->timestamp }}');"></div>
@@ -2454,7 +2529,7 @@
         }
         .differentiator-pulse { animation: differentiator-pulse 3.5s ease-in-out infinite; }
     </style>
-    <section id="why-custom" class="relative py-32 sm:py-44 px-4 sm:px-6 scroll-mt-16 overflow-hidden" style="background-color: #111;">
+    <section id="why-custom" class="pdf-omit relative py-32 sm:py-44 px-4 sm:px-6 scroll-mt-16 overflow-hidden" style="background-color: #111;">
         {{-- Background image at 40% opacity for contrast --}}
         <div class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
              style="background-image: url('{{ $diffBg }}?v={{ $proposal->updated_at?->timestamp }}');"></div>
@@ -2750,6 +2825,14 @@
                                 @endif
                                 {{ $milestone->title }}
                             </span>
+                            @if($isAdmin && $milestone->invoice_paypal_id && ! $milestone->isPaid())
+                                <span class="ml-auto shrink-0 inline-flex items-center gap-2 text-xs text-gray-400">
+                                    Invoice #{{ $milestone->invoice_number }} &middot; {{ implode(', ', (array) $milestone->invoice_recipients) }}
+                                    <button wire:click="resetMilestoneInvoice({{ $milestone->id }})"
+                                            wire:confirm="Cancel invoice #{{ $milestone->invoice_number }} in PayPal (if still open) and reset this milestone so a fresh invoice can be sent?"
+                                            class="text-brand hover:text-gray-900 font-medium cursor-pointer">Reset invoice</button>
+                                </span>
+                            @endif
                         </div>
 
                         {{-- Edit mode --}}
@@ -2922,7 +3005,7 @@
 
     {{-- ========== PAST PERFORMANCE SECTION ========== --}}
     @if($proposal->performance_enabled || $isAdmin)
-    <section id="performance" class="relative py-12 sm:py-20 px-4 sm:px-6 scroll-mt-16 overflow-hidden bg-neutral-900">
+    <section id="performance" class="pdf-omit relative py-12 sm:py-20 px-4 sm:px-6 scroll-mt-16 overflow-hidden bg-neutral-900">
         {{-- Background image --}}
         <div class="absolute inset-0 bg-cover bg-center opacity-15 grayscale"
              style="background-image: url('{{ asset('images/richmond.png') }}');"></div>
@@ -3362,7 +3445,7 @@
                 <h2 class="text-3xl font-bold text-gray-900">Terms & Conditions</h2>
 
                 @if($isAdmin)
-                <div class="ml-auto flex items-center gap-4">
+                <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
                     {{-- Import terms from another proposal --}}
                     <div x-data="{
                              importOpen: false,
@@ -3393,7 +3476,8 @@
                          }">
                         {{-- Import link --}}
                         <button @click="importOpen = true"
-                                class="text-sm font-medium text-brand hover:text-gray-900 transition-colors cursor-pointer">
+                                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-brand border border-brand/30 rounded-lg hover:bg-brand hover:text-white transition-colors cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
                             Import
                         </button>
 
@@ -3719,7 +3803,7 @@
                     @if($proposal->milestones->count() && !$isAdmin)
                     <div class="mt-12 pt-12 border-t border-gray-200 text-left max-w-xl mx-auto">
                         <h3 class="text-xl font-bold text-gray-900 mb-2 text-center">Payment Schedule</h3>
-                        <p class="text-sm text-gray-500 mb-6 text-center">Complete milestone payments to get your project started.</p>
+                        <p class="text-sm text-gray-500 mb-6 text-center">Request an invoice for each milestone — it arrives from PayPal and can be paid by card or PayPal.</p>
 
                         <div class="space-y-3">
                             @foreach($proposal->milestones as $milestone)
@@ -3727,7 +3811,27 @@
                                 $msAmount = round(($milestone->percentage / 100) * $proposal->total, 2);
                             @endphp
                             <div class="border rounded-xl p-4 transition-all
-                                        {{ $milestone->payment_status === 'paid' ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-gray-200' }}">
+                                        {{ $milestone->payment_status === 'paid' ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-gray-200' }}"
+                                 x-data="{
+                                     invoiceOpen: false,
+                                     invoiceEmails: @js(implode(', ', $milestone->invoice_recipients ?: array_filter([$proposal->client_email]))),
+                                     invoiceBusy: false,
+                                     invoiceError: '',
+                                     invoiceSent: '',
+                                     async sendInvoice() {
+                                         this.invoiceError = '';
+                                         this.invoiceBusy = true;
+                                         try {
+                                             const result = await $wire.sendMilestoneInvoice({{ $milestone->id }}, this.invoiceEmails);
+                                             if (result?.ok) { this.invoiceSent = result.message; }
+                                             else { this.invoiceError = result?.message || 'The invoice could not be sent.'; }
+                                         } catch (e) {
+                                             this.invoiceError = 'Something went wrong. Please try again.';
+                                         } finally {
+                                             this.invoiceBusy = false;
+                                         }
+                                     },
+                                 }">
                                 {{-- Stacks below sm: the title gets the full width and the pay button
                                      becomes a full-width target instead of being squeezed against it. --}}
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -3746,13 +3850,82 @@
                                             Paid
                                         </span>
                                     @else
-                                        <button wire:click="selectMilestoneForPayment({{ $milestone->id }})"
-                                                class="w-full sm:w-auto shrink-0 px-4 py-3 sm:py-2 bg-brand hover:bg-brand-dark text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer
-                                                       {{ $payingMilestoneId === $milestone->id ? 'ring-2 ring-brand/30' : '' }}">
-                                            Pay ${{ number_format($msAmount, 2) }}
-                                        </button>
+                                        {{-- Billed by PayPal invoice: the client gets a real invoice to file and
+                                             reconcile, and the payment is on record in PayPal. --}}
+                                        <div class="pdf-hide shrink-0">
+                                            @if($milestone->hasOpenInvoice())
+                                                <a href="{{ $milestone->invoice_url }}" target="_blank" rel="noopener"
+                                                   class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-brand hover:bg-brand-dark text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer">
+                                                    View &amp; Pay Invoice
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                                </a>
+                                            @else
+                                                <button @click="invoiceOpen = true; invoiceSent = ''; invoiceError = ''"
+                                                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-brand hover:bg-brand-dark text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                                    Send Invoice
+                                                </button>
+                                            @endif
+                                        </div>
                                     @endif
                                 </div>
+
+                                @unless($milestone->isPaid())
+                                    {{-- Once an invoice is out: which one, to whom, and a way to send it again. --}}
+                                    @if($milestone->hasOpenInvoice())
+                                        <div class="pdf-hide mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                                            <span>
+                                                Invoice #{{ $milestone->invoice_number }} sent {{ $milestone->invoice_sent_at?->format('M j, Y') }}
+                                                to {{ implode(', ', (array) $milestone->invoice_recipients) }}
+                                            </span>
+                                            <button type="button" @click="invoiceOpen = true; invoiceSent = ''; invoiceError = ''"
+                                                    class="text-brand hover:text-gray-900 font-medium cursor-pointer">Resend</button>
+                                        </div>
+                                    @endif
+
+                                    {{-- Confirm: where should the invoice go? --}}
+                                    <div x-show="invoiceOpen" x-cloak x-transition.opacity
+                                         class="pdf-hide fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+                                         @keydown.escape.window="if (! invoiceBusy) invoiceOpen = false">
+                                        <div @click.outside="if (! invoiceBusy) invoiceOpen = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-md text-left">
+                                            <div class="p-6 border-b border-gray-100">
+                                                <h3 class="text-lg font-bold text-gray-900">{{ $milestone->hasOpenInvoice() ? 'Resend Invoice' : 'Send Invoice' }}</h3>
+                                                <p class="text-sm text-gray-500 mt-1">
+                                                    A PayPal invoice for <span class="font-medium text-gray-700">{{ $milestone->title }}</span>
+                                                    (${{ number_format($msAmount, 2) }}) will be emailed to the address below. You can pay it by card or PayPal.
+                                                    @if($milestone->hasOpenInvoice())
+                                                        The earlier copy is replaced, so it can't be paid twice.
+                                                    @endif
+                                                </p>
+                                            </div>
+                                            <div class="p-6 space-y-3">
+                                                <label x-show="! invoiceSent" class="block">
+                                                    <span class="text-xs font-medium text-gray-700">Send to</span>
+                                                    <input type="text" x-model="invoiceEmails" x-bind:disabled="invoiceBusy" @keydown.enter.prevent="if (! invoiceBusy) sendInvoice()"
+                                                           placeholder="accounts@yourcompany.com"
+                                                           class="mt-1 block w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                                                    <span class="mt-1 block text-xs text-gray-400">Separate up to three addresses with commas — e.g. to copy your accounts team.</span>
+                                                </label>
+                                                <p x-show="invoiceError" x-text="invoiceError" x-cloak class="text-sm text-red-600"></p>
+                                                <div x-show="invoiceSent" x-cloak class="flex items-start gap-3 p-3 rounded-lg bg-emerald-50 text-sm text-emerald-700">
+                                                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                                    <span x-text="invoiceSent"></span>
+                                                </div>
+                                            </div>
+                                            <div class="p-6 border-t border-gray-100 flex items-center justify-end gap-3">
+                                                <button x-show="! invoiceSent" @click="invoiceOpen = false" x-bind:disabled="invoiceBusy"
+                                                        class="text-sm text-gray-500 hover:text-gray-700 cursor-pointer disabled:opacity-50">Cancel</button>
+                                                <button x-show="! invoiceSent" @click="sendInvoice()" x-bind:disabled="invoiceBusy"
+                                                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-60 disabled:cursor-wait cursor-pointer">
+                                                    <svg x-show="invoiceBusy" x-cloak class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle><path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                                    <span x-text="invoiceBusy ? 'Sending…' : 'Send Invoice'"></span>
+                                                </button>
+                                                <button x-show="invoiceSent" x-cloak @click="invoiceOpen = false; $wire.$refresh()"
+                                                        class="px-5 py-2.5 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors cursor-pointer">Done</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endunless
 
                                 {{-- Payment fields for selected milestone --}}
                                 @if($payingMilestoneId === $milestone->id)

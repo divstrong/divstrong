@@ -58,6 +58,8 @@ class HostingBilling
 
         $created = $this->invoicing->create([
             'business_name' => $account->client?->company ?: $account->name,
+            'contact_name' => $account->client?->name,
+            'address' => MilestoneInvoicing::addressOf($account->client),
             'reference' => $account->domain,
             'currency' => 'USD',
             'amount' => $account->term_amount,

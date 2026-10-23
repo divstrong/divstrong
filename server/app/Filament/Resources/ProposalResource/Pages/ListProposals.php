@@ -24,6 +24,20 @@ class ListProposals extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            // Every proposal's content as Markdown + JSON, for searching and pulling content
+            // out of. Full-access admins only (no restricted role): it holds every client.
+            Actions\Action::make('exportAll')
+                ->label('Export all')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->visible(fn () => Auth::check() && ! Auth::user()->role)
+                ->requiresConfirmation()
+                ->modalHeading('Export all proposals')
+                ->modalDescription('Downloads a ZIP with one Markdown file per proposal, a combined proposals.json and an index. Includes overview, scope, investment, milestones, terms, change requests, roadmap and internal notes — not signature images or IP addresses.')
+                ->modalSubmitActionLabel('Download ZIP')
+                ->action(fn () => response()
+                    ->download(app(\App\Support\ProposalExporter::class)->zip(), 'divstrong-proposals-' . now()->format('Y-m-d') . '.zip')
+                    ->deleteFileAfterSend()),
             $this->generateProposalAction(),
             Actions\CreateAction::make()
                 ->label('Blank Proposal')

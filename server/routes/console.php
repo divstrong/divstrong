@@ -33,3 +33,8 @@ Schedule::command('hosting:renewals')
     ->dailyAt('09:00')
     ->timezone(config('scheduling.timezone', config('app.timezone')))
     ->withoutOverlapping();
+
+// Proposal milestones billed by PayPal invoice: mark them paid once PayPal says so.
+Schedule::command('proposals:sync-invoices')
+    ->hourly()
+    ->withoutOverlapping();

@@ -127,6 +127,8 @@ class ProposalView extends Component
         $this->converted = $this->proposal->status === ProposalStatus::Converted;
         $this->expired = $this->proposal->valid_until && $this->proposal->valid_until->isPast();
 
+        $this->syncMilestoneInvoices();
+
         $this->isAdmin = Auth::check();
 
         if ($this->isAdmin) {
@@ -796,6 +798,22 @@ class ProposalView extends Component
         $item = $this->proposal->milestones()->find($id);
         if ($item) {
             $item->delete();
+            $this->proposal->load('milestones');
+        }
+    }
+
+    /** Clear a milestone's PayPal invoice (cancelling any open copy) so a fresh one can be sent. */
+    public function resetMilestoneInvoice(int $id): void
+    {
+        if (! $this->isAdmin) return;
+
+        $item = $this->proposal->milestones()->find($id);
+        if ($item) {
+            try {
+                app(\App\Support\MilestoneInvoicing::class)->reset($item);
+            } catch (\RuntimeException $e) {
+                // Paid already: nothing to reset.
+            }
             $this->proposal->load('milestones');
         }
     }
@@ -1538,6 +1556,94 @@ class ProposalView extends Component
         $this->paymentError = '';
 
         $this->dispatch('init-paypal-payment', milestoneId: $milestoneId);
+    }
+
+    /**
+     * The client asks for a milestone's invoice: PayPal emails it to the address(es) given.
+     *
+     * Public on purpose — it is the client pressing it — so it is held to the same rule as the
+     * on-page payment (converted proposal, unpaid milestone), takes at most three addresses,
+     * and is rate limited per proposal so the page cannot be used to send PayPal mail at will.
+     */
+    public function sendMilestoneInvoice(int $milestoneId, string $emails): array
+    {
+        if (! $this->converted) {
+            return ['ok' => false, 'message' => 'Invoices are available once the proposal is approved.'];
+        }
+
+        $milestone = $this->proposal->milestones()->whereKey($milestoneId)->first();
+
+        if (! $milestone || $milestone->isPaid()) {
+            return ['ok' => false, 'message' => 'This milestone has already been paid.'];
+        }
+
+        $list = collect(preg_split('/[\s,;]+/', $emails, -1, PREG_SPLIT_NO_EMPTY))->map(fn ($e) => strtolower(trim($e)))->unique()->values();
+
+        if ($list->isEmpty()) {
+            return ['ok' => false, 'message' => 'Enter the email address the invoice should go to.'];
+        }
+
+        if ($list->count() > 3) {
+            return ['ok' => false, 'message' => 'Up to three email addresses, please.'];
+        }
+
+        if ($bad = $list->first(fn ($e) => ! filter_var($e, FILTER_VALIDATE_EMAIL))) {
+            return ['ok' => false, 'message' => "\"{$bad}\" doesn't look like an email address."];
+        }
+
+        $key = 'milestone-invoice:' . $this->proposal->id;
+
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 6)) {
+            return ['ok' => false, 'message' => 'Too many invoice requests — please try again in a little while.'];
+        }
+
+        \Illuminate\Support\Facades\RateLimiter::hit($key, 3600);
+
+        try {
+            $milestone = app(\App\Support\MilestoneInvoicing::class)->send($this->proposal, $milestone, $list->all());
+        } catch (\App\Exceptions\PayPalException $e) {
+            report($e);
+
+            return ['ok' => false, 'message' => 'PayPal could not create the invoice right now. Please try again shortly, or contact us.'];
+        } catch (\RuntimeException $e) {
+            return ['ok' => false, 'message' => $e->getMessage()];
+        }
+
+        $this->proposal->load('milestones');
+
+        return [
+            'ok' => true,
+            'message' => 'Invoice #' . $milestone->invoice_number . ' sent to ' . implode(', ', $milestone->invoice_recipients) . '. It should arrive from PayPal within a few minutes.',
+            'url' => $milestone->invoice_url,
+        ];
+    }
+
+    /**
+     * Bring open milestone invoices up to date with PayPal. Run on page load for an approved
+     * proposal, at most every ten minutes per proposal, so a client who has just paid comes
+     * back to "Paid" without waiting for the daily sync.
+     */
+    protected function syncMilestoneInvoices(): void
+    {
+        if (! $this->converted || ! $this->proposal->milestones->contains(fn ($m) => $m->hasOpenInvoice())) {
+            return;
+        }
+
+        if (! \Illuminate\Support\Facades\Cache::add('milestone-invoice-sync:' . $this->proposal->id, true, 600)) {
+            return;
+        }
+
+        $invoicing = app(\App\Support\MilestoneInvoicing::class);
+
+        foreach ($this->proposal->milestones->filter(fn ($m) => $m->hasOpenInvoice()) as $milestone) {
+            try {
+                $invoicing->sync($this->proposal, $milestone);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Milestone invoice sync failed', ['milestone' => $milestone->id, 'error' => $e->getMessage()]);
+            }
+        }
+
+        $this->proposal->load('milestones');
     }
 
     public function cancelPayment(): void

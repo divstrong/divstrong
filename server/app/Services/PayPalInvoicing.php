@@ -32,12 +32,17 @@ class PayPalInvoicing
     public function create(array $invoice, array $emails): array
     {
         // No invoice_number sent: PayPal assigns the next one in the account's own sequence.
-        $recipients = collect($emails)->values()->map(fn (string $email, int $i) => $i === 0
-            ? ['billing_info' => array_filter([
+        // The first address is the one billed, with whatever we know about them — name,
+        // company, postal address — so the invoice reads "Bill to: Ryan Leach, Fresh Move
+        // Media, …" rather than a bare email. The rest are copied.
+        $recipients = [[
+            'billing_info' => array_filter([
+                'name' => $this->personName($invoice['contact_name'] ?? null),
                 'business_name' => $invoice['business_name'] ?? null,
-                'email_address' => $email,
-            ])]
-            : null)->filter()->values()->all();
+                'email_address' => $emails[0] ?? null,
+                'address' => $this->address($invoice['address'] ?? null),
+            ]),
+        ]];
 
         $payload = [
             'detail' => [
@@ -46,13 +51,21 @@ class PayPalInvoicing
                 'currency_code' => $invoice['currency'] ?? 'USD',
                 'note' => $invoice['note'] ?? null,
                 'term' => $invoice['term'] ?? null,
-                'payment_term' => ['due_date' => $invoice['due_date']],
+                // A date when there is one (hosting renewals); otherwise due on receipt.
+                'payment_term' => filled($invoice['due_date'] ?? null)
+                    ? ['due_date' => $invoice['due_date']]
+                    : ['term_type' => 'DUE_ON_RECEIPT'],
             ],
             // Sent in full every time: the API does not fall back to the business profile
             // saved in PayPal, so anything left out here is simply missing from the invoice.
             'invoicer' => [
                 'business_name' => config('hosting.business_name'),
+                // Must be an email confirmed on the PayPal account, or PayPal refuses the invoice.
+                'email_address' => config('hosting.invoicer_email') ?: null,
                 'address' => array_filter((array) config('hosting.address')),
+                'phones' => filled(config('hosting.phone'))
+                    ? [['country_code' => '1', 'national_number' => preg_replace('/\D/', '', (string) config('hosting.phone')), 'phone_type' => 'MOBILE']]
+                    : null,
                 'website' => config('hosting.website'),
                 'logo_url' => config('hosting.logo_url'),
             ],
@@ -90,14 +103,17 @@ class PayPalInvoicing
     }
 
     /**
-     * Mark the invoice sent without PayPal emailing anyone, and return the payer link.
+     * Send the invoice and return the payer link.
+     *
+     * By default PayPal emails nobody — the hosting renewals go out in our own branded notice.
+     * Pass $emailRecipient to have PayPal deliver its own invoice email instead.
      */
-    public function send(string $id): string
+    public function send(string $id, bool $emailRecipient = false): string
     {
         $response = $this->request(fn (PendingRequest $http) => $http
             ->post($this->url("/v2/invoicing/invoices/{$id}/send"), [
                 'send_to_invoicer' => false,
-                'send_to_recipient' => false,
+                'send_to_recipient' => $emailRecipient,
             ]), 'send invoice');
 
         $href = $response->json('href');
@@ -125,6 +141,45 @@ class PayPalInvoicing
                 'send_to_invoicer' => false,
                 'send_to_recipient' => false,
             ]), 'cancel invoice');
+    }
+
+    /** "Ryan Leach" → {given_name: Ryan, surname: Leach}; PayPal wants the parts. */
+    private function personName(?string $name): ?array
+    {
+        $name = trim((string) $name);
+
+        if ($name === '') {
+            return null;
+        }
+
+        $parts = preg_split('/\s+/', $name, 2);
+
+        return array_filter(['given_name' => $parts[0], 'surname' => $parts[1] ?? null]);
+    }
+
+    /**
+     * A postal address from loose parts. Client records do not always split it into fields —
+     * sometimes the whole thing sits in the first line — so lines are joined rather than
+     * guessed at, and nothing is sent at all without a first line.
+     *
+     * @param  array{line1?: ?string, line2?: ?string, city?: ?string, state?: ?string, zip?: ?string}|null  $address
+     */
+    private function address(?array $address): ?array
+    {
+        $line1 = trim(preg_replace('/\s*[\r\n]+\s*/', ', ', (string) ($address['line1'] ?? '')));
+
+        if ($line1 === '') {
+            return null;
+        }
+
+        return array_filter([
+            'address_line_1' => mb_substr($line1, 0, 300),
+            'address_line_2' => filled($address['line2'] ?? null) ? mb_substr(trim($address['line2']), 0, 300) : null,
+            'admin_area_2' => $address['city'] ?? null,
+            'admin_area_1' => $address['state'] ?? null,
+            'postal_code' => $address['zip'] ?? null,
+            'country_code' => 'US',
+        ]);
     }
 
     private function url(string $path): string
