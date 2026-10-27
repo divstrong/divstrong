@@ -18,6 +18,22 @@
             .pdf-omit { display: none !important; }
             /* The PDF cover is its own page. */
             .pdf-plain-cover { break-after: page; page-break-after: always; }
+            /* Overview + signature on one page of its own. Laid out at the printable width (Letter
+               less the 0.5in margins) so the fit script below measures what will print; the
+               exhibit image stacks under the text instead of beside it. */
+            section.pdf-overview { width: 7.5in; margin: 0 auto; padding: 0 !important; break-before: page; break-after: page; }
+            section.pdf-overview > div { max-width: none !important; }
+            section.pdf-overview .grid { display: block !important; }
+            section.pdf-overview .sm\:pl-8 { padding-left: 0 !important; }
+            section.pdf-overview h2 { font-size: 22pt !important; }
+            section.pdf-overview .flex.items-center.gap-3.mb-4 { margin-bottom: 0.15in !important; }
+            section.pdf-overview .prose-light { font-size: var(--overview-size, 11.5pt) !important; line-height: 1.5 !important; }
+            section.pdf-overview .prose-light p + p,
+            section.pdf-overview .prose-light p + ul,
+            section.pdf-overview .prose-light ul + p { margin-top: 0.7em !important; }
+            section.pdf-overview .overview-signature { margin-top: 0.25in !important; }
+            section.pdf-overview .overview-signature img:last-child { height: 64px !important; }
+            section.pdf-overview img[alt="Overview exhibit"] { display: block; max-height: var(--overview-image, 3in); width: auto !important; margin: 0.2in auto 0; }
             /* Freeze animations/transitions so Puppeteer captures a stable frame */
             *, *::before, *::after {
                 animation-duration: 0s !important;
@@ -26,6 +42,22 @@
                 transition-delay: 0s !important;
             }
         </style>
+        {{-- Step the overview text (and exhibit image) down until the section fits the 10in of
+             printable height. Runs on load, well before the renderer captures the page. --}}
+        <script>
+            window.addEventListener('load', () => {
+                const section = document.querySelector('section.pdf-overview');
+                if (! section) return;
+                const limit = 9.85 * 96;
+                let size = 11.5, image = 3;
+                while (section.scrollHeight > limit && size > 8.5) {
+                    size -= 0.25;
+                    image = Math.max(1.5, image - 0.2);
+                    section.style.setProperty('--overview-size', size + 'pt');
+                    section.style.setProperty('--overview-image', image + 'in');
+                }
+            });
+        </script>
     @endif
 
     {{-- ========== STICKY NAV BAR ========== --}}
@@ -363,11 +395,6 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z"/></svg>
                 QR Code
             </a>
-            <a href="{{ route('proposal.badge', $proposal->uuid) }}" target="_blank" rel="noopener"
-               class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white/90 border border-gray-200 text-gray-600 hover:bg-white hover:text-gray-900 shadow-sm transition cursor-pointer backdrop-blur-sm">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                Badge
-            </a>
             <div x-data="{ showShare: false, shareSent: false }"
                  @proposal-shared.window="shareSent = true">
                 <button @click="showShare = true; shareSent = false"
@@ -464,16 +491,71 @@
 
             {{-- Company Name (large heading) --}}
             @if($isAdmin)
-                <div class="mb-4 inline-block relative">
-                    <select wire:model.live="editingClientId"
-                            class="appearance-none bg-transparent border-0 border-b-2 border-dashed border-transparent hover:border-gray-300 focus:border-brand focus:ring-0 text-white font-bold text-4xl sm:text-5xl lg:text-6xl text-center cursor-pointer pr-10 pl-2 py-1 transition-colors leading-tight">
-                        <option value="" class="text-gray-900 text-base">Select Client</option>
-                        @foreach($this->clients as $client)
-                            <option value="{{ $client->id }}" class="text-gray-900 text-base">{{ $client->company ?? $client->name }}</option>
-                        @endforeach
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center text-gray-300">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                {{-- Client picker: type to filter by company, contact or email. Picking one sets
+                     editingClientId, which copies the client's details onto the proposal. --}}
+                <div class="mb-4 inline-block relative"
+                     x-data="{
+                         open: false,
+                         query: '',
+                         active: 0,
+                         clients: @js($this->clients->map(fn ($c) => [
+                             'id' => $c->id,
+                             'label' => $c->company ?: $c->name,
+                             'detail' => collect([$c->company ? $c->name : null, $c->email])->filter()->implode(' · '),
+                         ])->values()),
+                         get current() { return this.clients.find(c => c.id === $wire.editingClientId); },
+                         get results() {
+                             const terms = this.query.toLowerCase().split(/\s+/).filter(Boolean);
+                             return this.clients
+                                 .filter(c => terms.every(t => (c.label + ' ' + c.detail).toLowerCase().includes(t)))
+                                 .slice(0, 50);
+                         },
+                         show() { this.open = true; this.query = ''; this.active = 0; this.$nextTick(() => this.$refs.search.focus()); },
+                         move(step) {
+                             const n = this.results.length;
+                             if (! n) return;
+                             this.active = (this.active + step + n) % n;
+                             this.$nextTick(() => this.$refs.list.children[this.active]?.scrollIntoView({ block: 'nearest' }));
+                         },
+                         pick(client) {
+                             if (! client) return;
+                             this.open = false;
+                             if (client.id !== $wire.editingClientId) $wire.set('editingClientId', client.id);
+                         },
+                     }"
+                     @keydown.escape.window="open = false"
+                     @click.outside="open = false">
+                    <button type="button" @click="open ? open = false : show()"
+                            class="inline-flex items-center gap-3 bg-transparent border-0 border-b-2 border-dashed border-transparent hover:border-gray-300 text-white font-bold text-4xl sm:text-5xl lg:text-6xl text-center cursor-pointer px-2 py-1 transition-colors leading-tight">
+                        <span x-text="current ? current.label : 'Select Client'">{{ $proposal->client_company ?: ($proposal->client_name ?: 'Select Client') }}</span>
+                        <svg class="w-5 h-5 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+
+                    <div x-show="open" x-cloak x-transition.opacity
+                         class="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-30 w-[min(28rem,calc(100vw-2rem))] bg-white rounded-xl shadow-2xl ring-1 ring-black/5 text-left overflow-hidden">
+                        <div class="p-2 border-b border-gray-100">
+                            <input x-ref="search" x-model="query" type="text" placeholder="Search company, contact or email…"
+                                   @input="active = 0"
+                                   @keydown.arrow-down.prevent="move(1)"
+                                   @keydown.arrow-up.prevent="move(-1)"
+                                   @keydown.enter.prevent="pick(results[active])"
+                                   class="w-full text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none">
+                        </div>
+                        <ul x-ref="list" class="max-h-72 overflow-y-auto py-1" role="listbox">
+                            <template x-for="(client, i) in results" :key="client.id">
+                                <li role="option" :aria-selected="i === active"
+                                    @click="pick(client)" @mouseenter="active = i"
+                                    :class="i === active ? 'bg-brand/10' : ''"
+                                    class="px-3 py-2 cursor-pointer flex items-center gap-2">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-medium text-gray-900 truncate" x-text="client.label"></p>
+                                        <p x-show="client.detail" class="text-xs text-gray-500 truncate" x-text="client.detail"></p>
+                                    </div>
+                                    <svg x-show="current && client.id === current.id" class="w-4 h-4 text-brand shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                </li>
+                            </template>
+                        </ul>
+                        <p x-show="! results.length" class="px-3 py-4 text-sm text-gray-500">No clients match “<span x-text="query"></span>”.</p>
                     </div>
                 </div>
             @else
@@ -549,7 +631,7 @@
     {{-- ========== OVERVIEW SECTION ========== --}}
     @if(($proposal->overview_enabled && $proposal->introduction) || $isAdmin)
     @php $hasOverviewImage = (bool) $proposal->overview_image; @endphp
-    <section id="overview" class="py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
+    <section id="overview" class="pdf-overview py-12 sm:py-20 px-4 sm:px-6 bg-white scroll-mt-16">
         <div class="{{ $hasOverviewImage ? 'max-w-6xl' : 'max-w-4xl' }} mx-auto">
             @if($isAdmin)
                 <div class="pdf-hide mb-8 p-3 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4 flex-wrap">
@@ -575,6 +657,119 @@
                     <div class="ml-auto flex items-center gap-2 pdf-hide"
                          x-data="{ showUpload: false }"
                          @overview-image-uploaded.window="showUpload = false">
+                        {{-- Draft the overview with Claude: instruction → previewed text → apply. Runs through
+                             the same queued-draft route and polling as the scope drafter. --}}
+                        <div x-data="{
+                                 open: false,
+                                 prompt: '',
+                                 busy: false,
+                                 error: '',
+                                 reply: '',
+                                 overview: null,
+                                 saving: false,
+                                 elapsed: 0,
+                                 timer: null,
+                                 async generate() {
+                                     this.error = ''; this.reply = '';
+                                     if (this.prompt.trim().length < 3) { this.error = 'Describe the overview you want, or what to change in it.'; return; }
+                                     this.busy = true; this.overview = null; this.elapsed = 0;
+                                     clearInterval(this.timer);
+                                     this.timer = setInterval(() => this.elapsed++, 1000);
+                                     try {
+                                         const started = await $wire.draftOverviewWithClaude(this.prompt);
+                                         let result = started;
+                                         let runFailed = null;
+                                         if (started?.ok) {
+                                             fetch(started.run_url, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' } })
+                                                 .then(r => { if ([401, 403, 404, 419].includes(r.status)) runFailed = r.status === 419 ? 'Your session expired — reload the page and try again.' : 'Not authorized to run drafts.'; })
+                                                 .catch(() => {});
+                                             const deadline = Date.now() + 5 * 60 * 1000;
+                                             do {
+                                                 await new Promise(r => setTimeout(r, 2500));
+                                                 try { result = await $wire.scopeDraftResult(started.token); }
+                                                 catch (e) { result = { status: 'pending' }; }
+                                             } while (result?.status === 'pending' && ! runFailed && Date.now() < deadline);
+                                             if (runFailed) { result = { ok: false, message: runFailed }; }
+                                             if (result?.status === 'pending') { result = { ok: false, message: 'The draft is taking unusually long. Please try again.' }; }
+                                         }
+                                         if (result?.ok) {
+                                             this.reply = result.reply || '';
+                                             this.overview = result.overview || null;
+                                             if (! this.overview && ! this.reply) { this.reply = 'Claude found nothing to change for that instruction.'; }
+                                         } else { this.error = result?.message || 'The draft failed.'; }
+                                     } catch (e) {
+                                         this.error = 'The request did not finish. Please try again.';
+                                     } finally { this.busy = false; clearInterval(this.timer); }
+                                 },
+                                 async accept() {
+                                     this.saving = true; this.error = '';
+                                     try {
+                                         const result = await $wire.applyOverview(this.overview);
+                                         if (result?.ok) { this.open = false; this.overview = null; this.reply = ''; this.prompt = ''; }
+                                         else { this.error = result?.message || 'Could not save the overview.'; }
+                                     } catch (e) {
+                                         this.error = 'Could not save the overview — please try again.';
+                                     } finally { this.saving = false; }
+                                 },
+                             }"
+                             @keydown.escape.window="if (! busy) open = false">
+                            <button @click="open = true"
+                                    class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white border border-brand/30 text-brand hover:bg-brand hover:text-white shadow-sm transition cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg>
+                                Generate Overview
+                            </button>
+
+                            <div x-show="open" x-cloak x-transition.opacity
+                                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                                <div @click.outside="if (! busy && ! saving) open = false"
+                                     class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col text-left">
+                                    <div class="p-6 border-b border-gray-100">
+                                        <h3 class="text-lg font-bold text-gray-900">Generate Overview with Claude</h3>
+                                        <p class="text-sm text-gray-500 mt-1">Paste a brief or notes, or say what to change — "make it shorter", "warmer tone", "mention the March launch". Claude rewrites the overview; you preview it before anything is saved.</p>
+                                    </div>
+
+                                    <div class="p-6 space-y-4 overflow-y-auto">
+                                        <textarea x-model="prompt" rows="6" x-bind:disabled="busy"
+                                                  placeholder="e.g. Write the overview from the RFP: they need a new website and a customer service portal…"
+                                                  class="w-full text-sm text-gray-900 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none"></textarea>
+
+                                        <div x-show="busy" x-cloak x-transition.opacity
+                                             class="flex flex-col items-center justify-center text-center gap-4 py-10 rounded-xl bg-gray-50 border border-dashed border-gray-200">
+                                            <svg class="animate-spin w-12 h-12 text-brand" fill="none" viewBox="0 0 24 24" role="status" aria-label="Drafting">
+                                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-20"></circle>
+                                                <path fill="currentColor" class="opacity-90" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                            </svg>
+                                            <div>
+                                                <p class="text-sm font-semibold text-gray-900">Writing the overview…</p>
+                                                <p class="mt-1 text-xs text-gray-500"><span x-text="elapsed + 's'"></span> · usually under a minute — keep this window open.</p>
+                                            </div>
+                                        </div>
+                                        <p x-show="error" x-text="error" x-cloak class="text-sm text-red-600"></p>
+                                        <p x-show="reply && ! busy" x-text="reply" x-cloak class="text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2"></p>
+
+                                        {{-- Server-side cleaned to plain formatting tags before it reaches here. --}}
+                                        <div x-show="overview && ! busy" x-cloak
+                                             class="prose-light max-w-none text-base leading-relaxed border border-gray-200 rounded-xl p-5"
+                                             x-html="overview"></div>
+                                    </div>
+
+                                    <div class="p-6 border-t border-gray-100 flex items-center justify-end gap-3">
+                                        <button @click="open = false" x-bind:disabled="busy || saving"
+                                                class="text-sm text-gray-500 hover:text-gray-700 cursor-pointer disabled:opacity-50">Close</button>
+                                        <button x-show="overview" x-cloak @click="generate()" x-bind:disabled="busy || saving"
+                                                class="text-sm font-medium text-brand hover:text-gray-900 cursor-pointer disabled:opacity-50">Redraft</button>
+                                        <button x-show="! overview" @click="generate()" x-bind:disabled="busy"
+                                                class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-60 disabled:cursor-wait cursor-pointer">
+                                            <span x-text="busy ? 'Drafting…' : 'Generate'"></span>
+                                        </button>
+                                        <button x-show="overview" x-cloak @click="accept()" x-bind:disabled="busy || saving"
+                                                class="px-5 py-2.5 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-60 cursor-pointer"
+                                                x-text="saving ? 'Saving…' : 'Replace overview'"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <button @click="showUpload = !showUpload"
                                 class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-gray-900 shadow-sm transition cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -637,7 +832,7 @@
                 @endif
 
                 {{-- Signature block --}}
-                <div style="margin-top: 2rem; display: flex; align-items: center; gap: 1.25rem;">
+                <div class="overview-signature" style="margin-top: 2rem; display: flex; align-items: center; gap: 1.25rem;">
                     <img src="{{ asset('images/jim.png') }}"
                          alt="James Doyle"
                          style="width: 56px; height: 56px; border-radius: 9999px; object-fit: cover; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; flex-shrink: 0;">
@@ -1224,43 +1419,72 @@
                 {{-- Import + Add Item buttons --}}
                 @if($isAdmin)
                 <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
-                    {{-- Draft scope with Claude: prompt → preview → add. Nothing is saved until "Add to scope". --}}
+                    {{-- Draft scope with Claude: instruction → previewed changes (add / edit / remove) → apply.
+                         Nothing is saved until "Apply changes". --}}
                     <div x-data="{
                              open: false,
                              prompt: '',
                              busy: false,
                              error: '',
+                             reply: '',
                              draft: null,
-                             json: '',
+                             operations: [],
                              adding: false,
                              elapsed: 0,
                              timer: null,
                              // Shown while waiting, one after another, so a minute-long draft never looks stuck.
-                             stages: ['Reading your instructions…', 'Planning the sections…', 'Writing scope items…', 'Writing deliverables…', 'Checking it against your list…', 'Almost there…'],
+                             stages: ['Reading your instructions…', 'Reviewing the current scope…', 'Deciding what to change…', 'Writing scope items…', 'Writing deliverables…', 'Almost there…'],
                              get stage() { return this.stages[Math.min(Math.floor(this.elapsed / 12), this.stages.length - 1)]; },
+                             labels: { create: 'Add', update: 'Edit', delete: 'Remove', rename_section: 'Rename section', delete_section: 'Remove section' },
+                             tones: { create: 'bg-green-50 text-green-700', update: 'bg-amber-50 text-amber-700', delete: 'bg-red-50 text-red-700', rename_section: 'bg-blue-50 text-blue-700', delete_section: 'bg-red-50 text-red-700' },
                              async generate() {
-                                 this.error = '';
-                                 if (this.prompt.trim().length < 10) { this.error = 'Describe what the scope should cover — paste a sprint table, a feature list, or a brief.'; return; }
-                                 this.busy = true; this.draft = null;
+                                 this.error = ''; this.reply = '';
+                                 if (this.prompt.trim().length < 3) { this.error = 'Describe the scope you want, or what to change in it.'; return; }
+                                 this.busy = true; this.draft = null; this.operations = [];
                                  this.elapsed = 0;
                                  clearInterval(this.timer);
                                  this.timer = setInterval(() => this.elapsed++, 1000);
                                  try {
-                                     const result = await $wire.draftScopeWithClaude(this.prompt);
-                                     if (result?.ok) { this.draft = result.sections; this.json = result.json; }
-                                     else { this.error = result?.message || 'The draft failed.'; }
+                                     // Queue the draft, fire the request that runs it without waiting on it (a proxy
+                                     // may time that request out; the server finishes regardless), then poll.
+                                     const started = await $wire.draftScopeWithClaude(this.prompt);
+                                     let result = started;
+                                     let runFailed = null;
+                                     if (started?.ok) {
+                                         fetch(started.run_url, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' } })
+                                             .then(r => { if ([401, 403, 404, 419].includes(r.status)) runFailed = r.status === 419 ? 'Your session expired — reload the page and try again.' : 'Not authorized to run drafts.'; })
+                                             .catch(() => {});
+                                     }
+                                     if (started?.ok) {
+                                         const deadline = Date.now() + 8 * 60 * 1000;
+                                         do {
+                                             await new Promise(r => setTimeout(r, 3000));
+                                             try { result = await $wire.scopeDraftResult(started.token); }
+                                             catch (e) { result = { status: 'pending' }; } // a dropped poll is not a failed draft
+                                         } while (result?.status === 'pending' && ! runFailed && Date.now() < deadline);
+                                         if (runFailed) { result = { ok: false, message: runFailed }; }
+                                         if (result?.status === 'pending') { result = { ok: false, message: 'The draft is taking unusually long. Please try again.' }; }
+                                     }
+                                     if (result?.ok) {
+                                         this.reply = result.reply || '';
+                                         this.operations = result.operations || [];
+                                         this.draft = (result.changes || []).length ? result.changes : null;
+                                         if (! this.draft && ! this.reply) { this.reply = 'Claude found nothing to change for that instruction.'; }
+                                     } else { this.error = result?.message || 'The draft failed.'; }
                                  } catch (e) {
                                      this.error = 'The request did not finish — long drafts can take a minute or two. Please try again.';
                                  } finally { this.busy = false; clearInterval(this.timer); }
                              },
                              async accept() {
-                                 this.adding = true;
-                                 const result = await $wire.importScopeJson(this.json);
-                                 this.adding = false;
-                                 if (result?.ok) { this.open = false; this.draft = null; this.prompt = ''; }
-                                 else { this.error = result?.message || 'Could not add the draft.'; }
+                                 this.adding = true; this.error = '';
+                                 try {
+                                     const result = await $wire.applyScopeChanges(this.operations);
+                                     if (result?.ok) { this.open = false; this.draft = null; this.operations = []; this.reply = ''; this.prompt = ''; }
+                                     else { this.error = result?.message || 'Could not apply the changes.'; }
+                                 } catch (e) {
+                                     this.error = 'Could not apply the changes — please try again.';
+                                 } finally { this.adding = false; }
                              },
-                             get itemCount() { return (this.draft || []).reduce((n, s) => n + s.items.length, 0); },
                          }"
                          @keydown.escape.window="if (! busy) open = false">
                         <button @click="open = true"
@@ -1275,7 +1499,7 @@
                                  class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
                                 <div class="p-6 border-b border-gray-100">
                                     <h3 class="text-lg font-bold text-gray-900">Draft Scope with Claude</h3>
-                                    <p class="text-sm text-gray-500 mt-1">Paste a sprint table, a feature list, or describe the work. Claude writes the sections in the proposal's voice — you preview them before anything is added.</p>
+                                    <p class="text-sm text-gray-500 mt-1">Paste a sprint table or feature list, or say what to change — "drop sprint 6", "make the bullets more concrete", "add a mobile app phase". Claude decides what to add, edit or remove; you preview the changes before anything is saved.</p>
                                 </div>
 
                                 <div class="p-6 space-y-4 overflow-y-auto">
@@ -1298,21 +1522,28 @@
                                         </div>
                                     </div>
                                     <p x-show="error" x-text="error" x-cloak class="text-sm text-red-600"></p>
+                                    <p x-show="reply && ! busy" x-text="reply" x-cloak class="text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2"></p>
 
+                                    {{-- Keyed by position: titles repeat (two "QA" items, a renamed section) and duplicate keys break Alpine. --}}
                                     <template x-if="draft && ! busy">
                                         <div class="border border-gray-200 rounded-xl divide-y divide-gray-100">
-                                            <template x-for="section in draft" :key="section.title">
+                                            <template x-for="(change, i) in draft" :key="i">
                                                 <div class="p-4">
-                                                    <p class="text-sm font-bold text-gray-900" x-text="section.title"></p>
-                                                    <template x-for="item in section.items" :key="item.title">
-                                                        <div class="mt-2 pl-3 border-l-2 border-brand/30">
-                                                            <p class="text-sm font-medium text-gray-800" x-text="item.title"></p>
-                                                            <p class="text-xs text-gray-500" x-text="item.description"></p>
-                                                            <ul class="mt-1 list-disc list-inside text-xs text-gray-600">
-                                                                <template x-for="b in item.bullets"><li x-text="b"></li></template>
-                                                            </ul>
-                                                        </div>
-                                                    </template>
+                                                    <div class="flex items-center gap-2 flex-wrap">
+                                                        <span class="text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded" :class="tones[change.action]" x-text="labels[change.action]"></span>
+                                                        <span class="text-xs text-gray-400" x-text="change.section"></span>
+                                                    </div>
+                                                    <p class="mt-1.5 text-sm font-medium text-gray-800">
+                                                        <template x-if="change.from && change.title"><span><span class="line-through text-gray-400" x-text="change.from"></span> → </span></template>
+                                                        <template x-if="change.action === 'rename_section'"><span><span class="line-through text-gray-400" x-text="change.section"></span> → </span></template>
+                                                        <span :class="(change.action === 'delete' || change.action === 'delete_section') && 'line-through text-gray-500'" x-text="change.title || change.from"></span>
+                                                    </p>
+                                                    <p x-show="change.action === 'delete_section'" class="text-xs text-gray-500" x-text="'Removes ' + change.count + ' item' + (change.count === 1 ? '' : 's')"></p>
+                                                    <p x-show="change.move_to" class="text-xs text-gray-500" x-text="'Moves to ' + change.move_to"></p>
+                                                    <p x-show="change.description" class="text-xs text-gray-500 mt-0.5" x-text="change.description"></p>
+                                                    <ul x-show="(change.bullets || []).length" class="mt-1 list-disc list-inside text-xs text-gray-600">
+                                                        <template x-for="(b, j) in (change.bullets || [])" :key="j"><li x-text="b"></li></template>
+                                                    </ul>
                                                 </div>
                                             </template>
                                         </div>
@@ -1331,7 +1562,7 @@
                                     </button>
                                     <button x-show="draft" x-cloak @click="accept()" x-bind:disabled="busy || adding"
                                             class="px-5 py-2.5 bg-brand text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-60 cursor-pointer"
-                                            x-text="adding ? 'Adding…' : 'Add ' + itemCount + ' items to scope'"></button>
+                                            x-text="adding ? 'Applying…' : 'Apply ' + (draft || []).length + ' change' + ((draft || []).length === 1 ? '' : 's')"></button>
                                 </div>
                             </div>
                         </div>
@@ -3702,7 +3933,7 @@
                             @endif
                         </div>
                     </div>
-                @elseif(!$isAdmin && !$converted && !$declined && !$expired)
+                @elseif(!$isPdfMode && !$isAdmin && !$converted && !$declined && !$expired)
                     {{-- Client signature form --}}
                     {{-- signerName tracks the input locally because wire:model is deferred, and
                          hasSignature comes from the pad's own event: it lives behind wire:ignore,
@@ -4201,14 +4432,6 @@
 
                         <p class="mt-4 text-sm font-medium text-gray-900">Scan to view this proposal online</p>
                         <p class="mt-1 text-xs text-gray-400 break-all">{{ $proposalQrUrl }}</p>
-
-                        @if($isAdmin)
-                            <a href="{{ route('proposal.badge', $proposal->uuid) }}" target="_blank" rel="noopener"
-                               class="mt-5 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg bg-brand text-white hover:bg-gray-900 shadow-sm transition cursor-pointer">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                                Print Badge
-                            </a>
-                        @endif
                     </div>
                 </div>
             </div>

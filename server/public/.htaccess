@@ -3,9 +3,12 @@
         Options -MultiViews -Indexes
     </IfModule>
 
-    # PHP upload limits
-    php_value upload_max_filesize 20M
-    php_value post_max_size 25M
+    # PHP upload limits. Only valid under mod_php; on PHP-FPM (production) an unguarded php_value
+    # is a fatal .htaccess error that 500s every request, so set these in Plesk > PHP Settings there.
+    <IfModule mod_php.c>
+        php_value upload_max_filesize 20M
+        php_value post_max_size 25M
+    </IfModule>
 
     RewriteEngine On
 

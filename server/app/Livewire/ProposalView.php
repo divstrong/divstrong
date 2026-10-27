@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Renderless;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -380,7 +381,8 @@ class ProposalView extends Component
             return new Collection();
         }
 
-        return Client::orderBy('name')->get();
+        // Sorted by the label the picker shows — company, else contact name.
+        return Client::orderByRaw("COALESCE(NULLIF(company, ''), name)")->get();
     }
 
     public function getScopeLibraryProperty(): Collection
@@ -512,9 +514,16 @@ class ProposalView extends Component
     }
 
     /**
-     * Ask Claude to draft scope sections from an instruction. Returns the draft for preview;
-     * the page imports it through importScopeJson() only when the person accepts it.
+     * Ask Claude what an instruction means for this proposal's scope — new sections, edits,
+     * renames, removals. Nothing is saved until the page sends the previewed changes back
+     * through applyScopeChanges().
+     *
+     * A large draft runs past the web server's proxy timeout, and there is no queue worker. So
+     * this only queues the instruction under a token; the page then fires the proposal.scope-draft
+     * route without waiting on it (runScopeDraft() keeps going even if the proxy gives up on that
+     * request) and polls scopeDraftResult() until the result lands in the cache.
      */
+    #[Renderless]
     public function draftScopeWithClaude(string $instructions): array
     {
         if (! $this->isAdmin) {
@@ -523,33 +532,205 @@ class ProposalView extends Component
 
         $instructions = trim($instructions);
 
-        if (mb_strlen($instructions) < 10) {
-            return ['ok' => false, 'message' => 'Describe what the scope should cover — a sprint list, features, or a brief.'];
+        if (mb_strlen($instructions) < 3) {
+            return ['ok' => false, 'message' => 'Describe the scope you want, or what to change in it.'];
         }
 
+        return $this->queueDraft('scope', $instructions);
+    }
+
+    /** Same flow as draftScopeWithClaude(), for the Overview text; applied through applyOverview(). */
+    #[Renderless]
+    public function draftOverviewWithClaude(string $instructions): array
+    {
+        if (! $this->isAdmin) {
+            return ['ok' => false, 'message' => 'Not authorized.'];
+        }
+
+        $instructions = trim($instructions);
+
+        if (mb_strlen($instructions) < 3) {
+            return ['ok' => false, 'message' => 'Describe the overview you want, or what to change in it.'];
+        }
+
+        return $this->queueDraft('overview', $instructions);
+    }
+
+    private function queueDraft(string $kind, string $instructions): array
+    {
+        $token = (string) \Illuminate\Support\Str::uuid();
+
+        \Illuminate\Support\Facades\Cache::put("scope-draft:{$token}", [
+            'proposal_id' => $this->proposal->id,
+            'status' => 'pending',
+            'kind' => $kind,
+            'instructions' => mb_substr($instructions, 0, 20000),
+        ], now()->addMinutes(20));
+
+        return [
+            'ok' => true,
+            'token' => $token,
+            'run_url' => route('proposal.scope-draft', ['uuid' => $this->proposal->uuid, 'token' => $token]),
+        ];
+    }
+
+    /**
+     * Run a queued draft to completion and store the result. Called from its own request; keeps
+     * running after the client or a proxy disconnects.
+     */
+    public static function runScopeDraft(string $uuid, string $token): void
+    {
+        $key = "scope-draft:{$token}";
+        $entry = \Illuminate\Support\Facades\Cache::get($key);
+        $proposal = Proposal::where('uuid', $uuid)->first();
+
+        // Only a pending draft for this proposal, and only once — a retried request is a no-op.
+        if (! $proposal || ! is_array($entry) || ($entry['proposal_id'] ?? null) !== $proposal->id
+            || ($entry['status'] ?? null) !== 'pending' || ! empty($entry['running'])) {
+            return;
+        }
+
+        \Illuminate\Support\Facades\Cache::put($key, ['running' => true] + $entry, now()->addMinutes(20));
+
+        @ignore_user_abort(true);
+        @set_time_limit(0);
+
+        $result = ($entry['kind'] ?? 'scope') === 'overview'
+            ? self::draftOverview($proposal, $entry['instructions'])
+            : self::draftScope($proposal, $entry['instructions']);
+
+        \Illuminate\Support\Facades\Cache::put($key, ['proposal_id' => $proposal->id, 'status' => 'done'] + $result, now()->addMinutes(20));
+    }
+
+    /** Poll for a draft started by draftScopeWithClaude(). */
+    #[Renderless]
+    public function scopeDraftResult(string $token): array
+    {
+        if (! $this->isAdmin) {
+            return ['status' => 'done', 'ok' => false, 'message' => 'Not authorized.'];
+        }
+
+        $entry = \Illuminate\Support\Facades\Cache::get("scope-draft:{$token}");
+
+        if (! is_array($entry) || ($entry['proposal_id'] ?? null) !== $this->proposal->id) {
+            return ['status' => 'done', 'ok' => false, 'message' => 'That draft has expired — please run it again.'];
+        }
+
+        return array_diff_key($entry, array_flip(['proposal_id', 'instructions', 'running', 'kind']));
+    }
+
+    private static function draftOverview(Proposal $proposal, string $instructions): array
+    {
         try {
-            $rows = app(\App\Services\ClaudeService::class)->draftScope(mb_substr($instructions, 0, 20000), [
-                'project_title' => $this->proposal->project_title,
-                'client_company' => $this->proposal->client_company,
-                'introduction' => $this->proposal->introduction,
-                'existing_sections' => $this->proposal->scopeItems()->orderBy('sort_order')->pluck('category')->unique()->values()->all(),
+            $draft = app(\App\Services\ClaudeService::class)->draftOverview($instructions, [
+                'project_title' => $proposal->project_title,
+                'client_company' => $proposal->client_company,
+                'client_name' => $proposal->client_name,
+                'introduction' => $proposal->introduction,
+                'current_scope' => \App\Support\ScopeEdits::describe($proposal->scopeItems()->orderBy('sort_order')->get()),
             ]);
         } catch (\Throwable $e) {
             report($e);
 
-            return ['ok' => false, 'message' => $e instanceof \RuntimeException || $e instanceof \InvalidArgumentException
+            return ['ok' => false, 'message' => $e instanceof \RuntimeException
                 ? $e->getMessage()
                 : 'The draft failed — please try again.'];
         }
 
+        $overview = self::cleanOverviewHtml($draft['overview']);
+
         return [
             'ok' => true,
-            'json' => \App\Support\ScopeJson::export($rows),
-            'sections' => collect($rows)->groupBy('category')->map(fn ($items, $title) => [
-                'title' => $title,
-                'items' => $items->values()->all(),
-            ])->values()->all(),
+            'reply' => $draft['reply'],
+            'overview' => $overview !== '' && $overview !== trim((string) $proposal->introduction) ? $overview : null,
         ];
+    }
+
+    /** Save an Overview previewed from draftOverviewWithClaude(). */
+    public function applyOverview(string $html): array
+    {
+        if (! $this->isAdmin) {
+            return ['ok' => false, 'message' => 'Not authorized.'];
+        }
+
+        $html = self::cleanOverviewHtml($html);
+
+        if ($html === '') {
+            return ['ok' => false, 'message' => 'There is no overview to save.'];
+        }
+
+        $this->proposal->update(['introduction' => $html]);
+        $this->proposal->refresh();
+        $this->editingIntroduction = $html;
+
+        return ['ok' => true, 'message' => 'Overview updated.'];
+    }
+
+    /** Model output is rendered unescaped, so keep only the formatting tags the overview uses. */
+    private static function cleanOverviewHtml(string $html): string
+    {
+        $html = strip_tags($html, '<p><strong><em><b><i><ul><ol><li><br>');
+
+        // strip_tags keeps attributes on allowed tags; drop them all.
+        return trim(preg_replace('/<(p|strong|em|b|i|ul|ol|li|br)\b[^>]*>/i', '<$1>', $html) ?? '');
+    }
+
+    private static function draftScope(Proposal $proposal, string $instructions): array
+    {
+        $items = $proposal->scopeItems()->orderBy('sort_order')->get();
+
+        try {
+            $plan = app(\App\Services\ClaudeService::class)->planScopeChanges(mb_substr($instructions, 0, 20000), [
+                'project_title' => $proposal->project_title,
+                'client_company' => $proposal->client_company,
+                'introduction' => $proposal->introduction,
+                'current_scope' => \App\Support\ScopeEdits::describe($items),
+                'library' => \App\Support\ScopeEdits::describeLibrary(
+                    ScopeLibrary::where('is_active', true)->orderBy('category')->orderBy('sort_order')->get()
+                ),
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return ['ok' => false, 'message' => $e instanceof \RuntimeException
+                ? $e->getMessage()
+                : 'The draft failed — please try again.'];
+        }
+
+        $prepared = \App\Support\ScopeEdits::prepare($plan['operations'], $items);
+
+        return [
+            'ok' => true,
+            'reply' => $plan['reply'],
+            'operations' => $prepared['operations'],
+            'changes' => $prepared['changes'],
+        ];
+    }
+
+    /** Apply changes previewed from draftScopeWithClaude(). */
+    public function applyScopeChanges(array $operations): array
+    {
+        if (! $this->isAdmin) {
+            return ['ok' => false, 'message' => 'Not authorized.'];
+        }
+
+        try {
+            $counts = \App\Support\ScopeEdits::apply($this->proposal, $operations);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return ['ok' => false, 'message' => 'Could not apply the changes — please try again.'];
+        }
+
+        $this->proposal->load('scopeItems');
+
+        $parts = array_filter([
+            $counts['created'] ? "{$counts['created']} added" : null,
+            $counts['updated'] ? "{$counts['updated']} updated" : null,
+            $counts['deleted'] ? "{$counts['deleted']} removed" : null,
+        ]);
+
+        return ['ok' => true, 'message' => $parts ? 'Scope updated: ' . implode(', ', $parts) . '.' : 'Scope updated.'];
     }
 
     public function updateScopeItem(int $id, string $title, string $description = '', array $bullets = []): void

@@ -77,6 +77,14 @@ Route::get('/proposal/{uuid}', ProposalView::class)
     ->name('proposal.view')
     ->middleware('track.proposal.view');
 
+// Runs a Claude scope draft queued by ProposalView::draftScopeWithClaude(). The page fires this
+// and does not wait on it — it polls for the result — so a proxy timing this request out is harmless.
+Route::post('/proposal/{uuid}/scope-draft/{token}', function (string $uuid, string $token) {
+    ProposalView::runScopeDraft($uuid, $token);
+
+    return response()->noContent();
+})->middleware('auth')->name('proposal.scope-draft');
+
 Route::get('/proposal/{uuid}/pdf', [\App\Http\Controllers\ProposalPdfController::class, 'download'])
     ->name('proposal.pdf');
 

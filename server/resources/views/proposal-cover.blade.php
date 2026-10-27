@@ -118,6 +118,10 @@
         color: #6b7280;
         letter-spacing: 0.5pt;
         word-break: break-all;
+        text-decoration: underline;
+        text-decoration-color: #ed2537;
+        text-decoration-thickness: 1.5pt;
+        text-underline-offset: 3pt;
     }
 
     /* Footer */
@@ -126,15 +130,10 @@
         padding: 0.3in 0.75in 0.5in;
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
         border-top: 1px solid #e5e7eb;
     }
     .footer img { height: 24pt; width: auto; }
-    .footer .footer-meta {
-        font-size: 8.5pt;
-        color: #9ca3af;
-        text-align: right;
-    }
 
     /* Print toolbar (hidden when printing) */
     .toolbar {
@@ -218,14 +217,11 @@
             <div class="qr-box">
                 {!! $qr !!}
             </div>
-            <div class="qr-url">{{ $proposal->public_url }}</div>
+            <a class="qr-url" href="{{ $proposal->public_url }}">{{ $proposal->public_url }}</a>
         </div>
 
         <div class="footer">
             <img src="{{ asset('images/logo.png') }}" alt="divStrong">
-            <div class="footer-meta">
-                Prepared by divStrong &middot; divstrong.com
-            </div>
         </div>
     </div>
 </body>

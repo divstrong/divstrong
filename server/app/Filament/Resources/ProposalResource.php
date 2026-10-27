@@ -68,7 +68,8 @@ class ProposalResource extends Resource
                                         Forms\Components\Select::make('client_id')
                                             ->label('Client')
                                             ->relationship('client', 'name')
-                                            ->searchable()
+                                            ->getOptionLabelFromRecordUsing(fn (Client $record) => Pages\ListProposals::clientLabel($record))
+                                            ->searchable(['name', 'company', 'email'])
                                             ->preload()
                                             ->live()
                                             ->afterStateUpdated(function ($state, callable $set) {

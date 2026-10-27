@@ -88,14 +88,23 @@ class ClaudeService
         return $content;
     }
 
-    private function sendWithRetry(array $content, int $maxRetries = 2): \Illuminate\Http\Client\Response
+    /**
+     * @param  array{max_tokens?: int, effort?: string, format?: array, timeout?: int}  $options
+     *         per-call overrides; "format" is an output_config.format (structured output) block
+     */
+    private function sendWithRetry(array $content, int $maxRetries = 2, array $options = []): \Illuminate\Http\Client\Response
     {
         $attempt = 0;
+
+        $outputConfig = array_filter([
+            'effort' => $options['effort'] ?? $this->effort,
+            'format' => $options['format'] ?? null,
+        ]);
 
         while (true) {
             $attempt++;
 
-            $response = Http::timeout(180)
+            $response = Http::timeout($options['timeout'] ?? 180)
                 ->withHeaders([
                     'x-api-key' => $this->apiKey,
                     'anthropic-version' => '2023-06-01',
@@ -103,8 +112,8 @@ class ClaudeService
                 ])
                 ->post('https://api.anthropic.com/v1/messages', [
                     'model' => $this->model,
-                    'max_tokens' => $this->maxTokens,
-                    'output_config' => ['effort' => $this->effort],
+                    'max_tokens' => $options['max_tokens'] ?? $this->maxTokens,
+                    'output_config' => $outputConfig,
                     'messages' => [
                         [
                             'role' => 'user',
@@ -888,16 +897,18 @@ class ClaudeService
     }
 
     /**
-     * Draft scope sections for an existing proposal from a free-text instruction — a sprint
-     * table pasted in, a list of features, "same as last time but add a mobile app".
+     * Turn a free-text instruction into changes to a proposal's existing scope — a sprint table
+     * pasted in, "drop sprint 6 and fold its work into 5", "tighten every description", "add a
+     * mobile app phase". Claude reads the current scope (with item ids) and decides what to
+     * create, edit, rename or delete; the person never has to name ids or library entries.
      *
-     * Returns rows in App\Support\ScopeJson's shape, ready to preview and then import. Nothing
-     * is saved here: the person who asked looks at it first.
+     * Returns {reply, operations} in App\Support\ScopeEdits' shape. Nothing is saved here: the
+     * person who asked previews the changes first.
      *
-     * @param  array{project_title?: ?string, client_company?: ?string, introduction?: ?string, existing_sections?: array<int, string>}  $context
-     * @return array<int, array{category: string, title: string, description: string, bullets: array<int, string>}>
+     * @param  array{project_title?: ?string, client_company?: ?string, introduction?: ?string, current_scope?: string, library?: string}  $context
+     * @return array{reply: string, operations: array<int, array<string, mixed>>}
      */
-    public function draftScope(string $instructions, array $context = []): array
+    public function planScopeChanges(string $instructions, array $context = []): array
     {
         @set_time_limit(0);
 
@@ -905,56 +916,188 @@ class ClaudeService
         $client = $this->cleanContactField($context['client_company'] ?? null) ?? 'the client';
         $intro = trim(preg_replace('/\s+/', ' ', strip_tags((string) ($context['introduction'] ?? ''))));
         $intro = $intro !== '' ? mb_substr($intro, 0, 4000) : 'Not written yet.';
-        $existing = collect($context['existing_sections'] ?? [])->filter()->implode("\n- ");
-        $existing = $existing !== '' ? "- {$existing}" : 'None yet.';
+        $current = $this->cleanContactField($context['current_scope'] ?? null) ?? 'The scope is empty.';
+        $library = $this->cleanContactField($context['library'] ?? null) ?? 'None.';
 
         $prompt = <<<PROMPT
-        You are writing the Scope of Work section of a divStrong proposal: the part that tells the client, section by section, exactly what they get.
+        You maintain the Scope of Work section of a divStrong proposal: the part that tells the client, section by section, exactly what they get. The proposal lead has typed an instruction below. Work out what they want done to the scope and express it as a list of operations against the current scope.
 
         PROJECT: {$project}
         CLIENT: {$client}
 
-        PROPOSAL OVERVIEW (for context; do not repeat it):
+        PROPOSAL OVERVIEW (context only):
         {$intro}
 
-        SECTIONS ALREADY IN THE SCOPE (do not duplicate them; continue the numbering if you add more sprints):
-        {$existing}
+        CURRENT SCOPE — sections in order, each item with its id:
+        {$current}
 
-        WHAT TO WRITE — the proposal lead's instructions:
+        HOUSE SCOPE LIBRARY — reusable items divStrong often includes. Adapt one when it genuinely fits what the lead asked for; never add one they did not ask for:
+        {$library}
+
+        THE LEAD'S INSTRUCTION:
         """
         {$instructions}
         """
 
+        HOW TO INTERPRET IT:
+        - Decide for yourself whether this means writing new scope, revising existing items, restructuring sections, removing work, or some mix. The lead will not name item ids, library entries or operations — that is your job.
+        - A pasted sprint table or feature list for an empty scope means create the whole scope. The same list against an existing scope means bring the scope in line with it: update items that cover the same work, create what is missing, delete what the list no longer includes.
+        - A targeted request ("rename sprint 3", "drop the SEO item", "make the bullets more concrete") touches only what it names. Leave every other item alone — do not emit operations for items you are not changing.
+        - Prefer "update" over delete-and-recreate when an item keeps its purpose.
+        - When sprints are added or removed in the middle, renumber the following sprint sections with rename_section so the numbering stays continuous.
+        - If the instruction is not about the scope at all (a question, a bug report, something unrelated), return no operations and say in "reply" what this tool can do.
+
         {$this->clientVoiceBlock()}
 
-        STRUCTURE:
-        - Follow the instructions' structure exactly. If they list sprints or phases, write one section per sprint or phase, in that order, and do not merge, split, or add any.
-        - Sprint sections are titled "Sprint #N — Theme In Title Case" (an em dash, a 2-5 word theme). Other sections get a short Title Case name.
-        - Each section holds 2-4 scope items. Each item has a specific Title Case title, a one-or-two sentence description in plain language, and 2-4 concrete deliverable bullets — things handed over, not activities.
-        - Cover everything the instructions put in each section. Never add systems, vendors, numbers, or features the instructions and overview do not mention; where the instructions say something is conditional ("if retained", "agreed"), keep it conditional.
+        WRITING RULES FOR NEW OR REWRITTEN ITEMS:
+        - Sprint sections are titled "Sprint #N — Theme In Title Case" (an em dash, a 2-5 word theme). Other sections get a short Title Case name. Match the naming already used in the current scope.
+        - A section holds 2-5 items. Each item has a specific Title Case title, a one-or-two sentence plain-language description, and 2-4 concrete deliverable bullets — things handed over, not activities.
+        - Never add systems, vendors, numbers or features the instruction, overview or current scope do not mention; where the instruction says something is conditional ("if retained", "agreed"), keep it conditional.
 
-        RESPOND WITH JSON ONLY, IN THIS EXACT SHAPE:
-        ```json
-        {
-            "sections": [
-                {
-                    "title": "<section title>",
-                    "items": [
-                        { "title": "<item title>", "description": "<one or two sentences>", "bullets": ["<deliverable>", "<deliverable>"] }
-                    ]
-                }
-            ]
-        }
-        ```
+        OPERATIONS — every field is always present; use "" / 0 / [] for fields an action does not use:
+        - create: new item. "section" = the section it goes in (existing or new). "after_section" = for a NEW section only, the existing section it should follow ("" = at the end; "^" = at the very start). item_id = 0.
+        - update: change item "item_id". Set only the fields that change — "" for title/description and [] for bullets mean keep as is. A non-empty "section" moves the item to that section (end of it).
+        - delete: remove item "item_id".
+        - rename_section: rename "section" to "new_section" (all its items follow).
+        - delete_section: remove section "section" and every item in it.
+
+        "reply": one or two plain sentences telling the lead what you changed and anything you deliberately left out or need from them.
         PROMPT;
 
-        $response = $this->sendWithRetry([['type' => 'text', 'text' => $prompt]]);
-        $parsed = $this->decodeJsonBlock($this->firstTextBlock($response));
+        $response = $this->sendWithRetry([['type' => 'text', 'text' => $prompt]], options: [
+            // A full multi-sprint scope plus thinking runs well past the default cap.
+            'max_tokens' => max($this->maxTokens, 32000),
+            'effort' => 'medium',
+            'timeout' => 300,
+            'format' => ['type' => 'json_schema', 'schema' => $this->scopeChangesSchema()],
+        ]);
 
-        if (! is_array($parsed)) {
-            throw new \RuntimeException('Claude did not return a scope I could read. Try again, or simplify the instructions.');
+        if ($response->json('stop_reason') === 'max_tokens') {
+            throw new \RuntimeException('That change is too large to draft in one go. Try it a few sprints at a time.');
         }
 
-        return \App\Support\ScopeJson::parse($parsed);
+        $parsed = json_decode($this->firstTextBlock($response), true);
+
+        if (! is_array($parsed)) {
+            throw new \RuntimeException('Claude did not return changes I could read. Please try again.');
+        }
+
+        return [
+            'reply' => trim((string) ($parsed['reply'] ?? '')),
+            'operations' => array_values(array_filter((array) ($parsed['operations'] ?? []), 'is_array')),
+        ];
+    }
+
+    private function scopeChangesSchema(): array
+    {
+        $string = ['type' => 'string'];
+
+        return [
+            'type' => 'object',
+            'properties' => [
+                'reply' => $string,
+                'operations' => [
+                    'type' => 'array',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'action' => ['type' => 'string', 'enum' => ['create', 'update', 'delete', 'rename_section', 'delete_section']],
+                            'item_id' => ['type' => 'integer'],
+                            'section' => $string,
+                            'new_section' => $string,
+                            'after_section' => $string,
+                            'title' => $string,
+                            'description' => $string,
+                            'bullets' => ['type' => 'array', 'items' => $string],
+                        ],
+                        'required' => ['action', 'item_id', 'section', 'new_section', 'after_section', 'title', 'description', 'bullets'],
+                        'additionalProperties' => false,
+                    ],
+                ],
+            ],
+            'required' => ['reply', 'operations'],
+            'additionalProperties' => false,
+        ];
+    }
+
+    /**
+     * Write or revise a proposal's Overview from a free-text instruction — "write the overview
+     * from this brief", "make it shorter", "mention the March launch date". Claude reads the
+     * current overview and scope and returns the full replacement text.
+     *
+     * Returns {reply, overview}; an empty overview means nothing to change. Nothing is saved here.
+     *
+     * @param  array{project_title?: ?string, client_company?: ?string, client_name?: ?string, introduction?: ?string, current_scope?: string}  $context
+     * @return array{reply: string, overview: string}
+     */
+    public function draftOverview(string $instructions, array $context = []): array
+    {
+        @set_time_limit(0);
+
+        $project = $this->cleanContactField($context['project_title'] ?? null) ?? 'this project';
+        $client = $this->cleanContactField($context['client_company'] ?? null)
+            ?? $this->cleanContactField($context['client_name'] ?? null) ?? 'the client';
+        $current = trim((string) ($context['introduction'] ?? ''));
+        $current = $current !== '' ? mb_substr($current, 0, 12000) : 'Not written yet.';
+        $scope = $this->cleanContactField($context['current_scope'] ?? null) ?? 'The scope is empty.';
+
+        $prompt = <<<PROMPT
+        You write the Overview section of a divStrong proposal: the opening pages a client reads before the scope and pricing. The proposal lead has typed an instruction below. Work out what they want and return the complete Overview as it should read afterwards.
+
+        PROJECT: {$project}
+        CLIENT: {$client}
+
+        CURRENT OVERVIEW (HTML):
+        {$current}
+
+        SCOPE OF WORK (context only — do not restate it item by item):
+        {$scope}
+
+        THE LEAD'S INSTRUCTION:
+        """
+        {$instructions}
+        """
+
+        HOW TO INTERPRET IT:
+        - Decide whether this means writing the Overview from scratch, revising it, or a targeted edit. Pasted notes, a brief or RFP text mean write (or rewrite) the Overview from them.
+        - A targeted request ("shorter", "warmer", "mention the March launch", "drop the second paragraph") changes only what it names. Keep every other sentence as it is.
+        - If the instruction is not about the Overview at all (a question, something unrelated), return an empty "overview" and say in "reply" what this tool can do.
+
+        {$this->clientVoiceBlock()}
+
+        WRITING RULES:
+        - Unless the lead asks otherwise: 2-4 paragraphs. First mirror back what the client is trying to achieve, in their terms. Then how divStrong will deliver it. Then why this team is the right fit, with genuine enthusiasm.
+        - Address the reader as "you" and "your team". Never invent a client name, people, dates, numbers, systems or commitments the instruction, current overview or scope do not mention.
+        - HTML only: <p> paragraphs, with <strong>, <em>, <ul>/<li> where the lead asks for them. No headings, no markdown, no inline styles.
+
+        "overview": the full replacement HTML, or "" when nothing should change.
+        "reply": one or two plain sentences telling the lead what you changed and anything you need from them.
+        PROMPT;
+
+        $response = $this->sendWithRetry([['type' => 'text', 'text' => $prompt]], options: [
+            'effort' => 'medium',
+            'timeout' => 300,
+            'format' => ['type' => 'json_schema', 'schema' => [
+                'type' => 'object',
+                'properties' => ['reply' => ['type' => 'string'], 'overview' => ['type' => 'string']],
+                'required' => ['reply', 'overview'],
+                'additionalProperties' => false,
+            ]],
+        ]);
+
+        if ($response->json('stop_reason') === 'max_tokens') {
+            throw new \RuntimeException('That overview ran too long to draft. Try asking for something shorter.');
+        }
+
+        $parsed = json_decode($this->firstTextBlock($response), true);
+
+        if (! is_array($parsed)) {
+            throw new \RuntimeException('Claude did not return an overview I could read. Please try again.');
+        }
+
+        return [
+            'reply' => trim((string) ($parsed['reply'] ?? '')),
+            'overview' => trim((string) ($parsed['overview'] ?? '')),
+        ];
     }
 }
